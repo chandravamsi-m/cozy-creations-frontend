@@ -1,13 +1,20 @@
 // src/App.jsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import MainLayout from './layouts/MainLayout';
 
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Home from './pages/Home/Home';
+// lazy pages
+const Home = lazy(() => import('./pages/Home/Home'));
+const About = lazy(() => import('./pages/About/About'));
+const Products = lazy(() => import('./pages/Products/Products'));
+const Custom = lazy(() => import('./pages/Custom/Custom'));
+const Contact = lazy(() => import('./pages/Contact/Contact'));
+const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
 export default function App() {
+  // Refs used by GSAP and passed down to Home
   const heroRef = useRef(null);
   const heroNavRef = useRef(null);
   const productSectionRef = useRef(null);
@@ -17,72 +24,102 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      gsap.registerPlugin(ScrollTrigger);
-      const heroEl = heroRef.current;
-      const navEl = stickyNavRef.current;
-      const productEl = productSectionRef.current;
-      const heroNavEl = heroNavRef.current;
-      if (!heroEl || !navEl || !productEl || !heroNavEl) return;
+  let attempt = 0;
+  const maxAttempts = 12; // try for ~1.2s (12 * 100ms)
+  let ctx = null;
 
-      const ctx = gsap.context(() => {
-        gsap.set(navEl, { autoAlpha: 0, y: -20 });
-        gsap.set(heroNavEl, { autoAlpha: 1 });
+  const tryInit = () => {
+    attempt += 1;
+    const heroEl = heroRef.current;
+    const navEl = stickyNavRef.current;
+    const productEl = productSectionRef.current;
+    const heroNavEl = heroNavRef.current;
 
-        // Hero parallax upward
-        gsap.to(heroEl, {
-          y: -NAV_HEIGHT,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: productEl,
-            start: 'top bottom',
-            end: `top top+=${NAV_HEIGHT}`,
-            scrub: true,
-          },
+    if (heroEl && navEl && productEl && heroNavEl) {
+      try {
+        gsap.registerPlugin(ScrollTrigger);
+        ctx = gsap.context(() => {
+          gsap.set(navEl, { autoAlpha: 0, y: -20 });
+          gsap.set(heroNavEl, { autoAlpha: 1 });
+
+          // Hero parallax upward
+          gsap.to(heroEl, {
+            y: -NAV_HEIGHT,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: productEl,
+              start: 'top bottom',
+              end: `top top+=${NAV_HEIGHT}`,
+              scrub: true,
+            },
+          });
+
+          // Navbar fade/slide in
+          gsap.to(navEl, {
+            autoAlpha: 1,
+            y: 0,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: productEl,
+              start: `top top+=${NAV_HEIGHT}`,
+              end: `top top+=${NAV_HEIGHT + 10}`,
+              toggleActions: 'play none none reverse',
+            },
+          });
+
+          // Hero nav fade out when sticky appears
+          gsap.to(heroNavEl, {
+            autoAlpha: 0,
+            ease: 'power1.out',
+            scrollTrigger: {
+              trigger: productEl,
+              start: `top top+=${NAV_HEIGHT}`,
+              end: `top top+=${NAV_HEIGHT + 40}`,
+              toggleActions: 'play none none reverse',
+            },
+          });
         });
-
-        // Navbar fade/slide in
-        gsap.to(navEl, {
-          autoAlpha: 1,
-          y: 0,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: productEl,
-            start: `top top+=${NAV_HEIGHT}`,
-            end: `top top+=${NAV_HEIGHT + 10}`,
-            toggleActions: 'play none none reverse',
-          },
-        });
-
-        // Hero nav fade out when sticky appears
-        gsap.to(heroNavEl, {
-          autoAlpha: 0,
-          ease: 'power1.out',
-          scrollTrigger: {
-            trigger: productEl,
-            start: `top top+=${NAV_HEIGHT}`,
-            end: `top top+=${NAV_HEIGHT + 40}`,
-            toggleActions: 'play none none reverse',
-          },
-        });
-      });
-
-      return () => ctx.revert();
-    } catch (err) {
-      console.error('GSAP initialization error:', err);
+      } catch (err) {
+        console.error('GSAP initialization error:', err);
+      }
+    } else if (attempt < maxAttempts) {
+      // try again shortly (allow child components to mount)
+      setTimeout(tryInit, 100);
+    } else {
+      // giving up after attempts — log for debugging
+      console.warn('GSAP: refs not available after retries; animations not initialized.');
     }
-  }, []);
+  };
+
+  tryInit();
+
+  return () => {
+    if (ctx) ctx.revert();
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // keep as empty deps; retry logic handles timing
 
   return (
-    <div className="relative w-full min-h-screen bg-white font-montserrat">
-      {/* Navbar gets the stickyNavRef and menu state */}
-      <Navbar stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-
-      {/* Home page receives hero/product refs for GSAP */}
-      <Home heroRef={heroRef} heroNavRef={heroNavRef} productSectionRef={productSectionRef} />
-
-      {/* Footer */}
-      <Footer />
-    </div>
+    <BrowserRouter>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <Routes>
+          {/* Layout route — passes menu and stickyNavRef down to layout */}
+          <Route
+            path="/"
+            element={<MainLayout stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />}
+          >
+            <Route
+              index
+              element={<Home heroRef={heroRef} heroNavRef={heroNavRef} productSectionRef={productSectionRef} />}
+            />
+            <Route path="about" element={<About />} />
+            <Route path="products" element={<Products />} />
+            <Route path="custom" element={<Custom />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   );
 }
