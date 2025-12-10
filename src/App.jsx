@@ -25,8 +25,9 @@ export default function App() {
 
   useEffect(() => {
   let attempt = 0;
-  const maxAttempts = 12; // try for ~1.2s (12 * 100ms)
+  const maxAttempts = 12; // ~1.2s total retry window
   let ctx = null;
+  let didSetNavVisibleFallback = false;
 
   const tryInit = () => {
     attempt += 1;
@@ -35,6 +36,7 @@ export default function App() {
     const productEl = productSectionRef.current;
     const heroNavEl = heroNavRef.current;
 
+    // If all refs present, initialize GSAP as before
     if (heroEl && navEl && productEl && heroNavEl) {
       try {
         gsap.registerPlugin(ScrollTrigger);
@@ -82,12 +84,32 @@ export default function App() {
       } catch (err) {
         console.error('GSAP initialization error:', err);
       }
+    } else if (navEl && attempt >= maxAttempts && !didSetNavVisibleFallback) {
+      // refs didn't appear — likely on a non-home page.
+      // Make the sticky navbar visible so all pages show the nav.
+      // We do this without GSAP (direct DOM style) to avoid side-effects.
+      try {
+        navEl.style.opacity = '1';
+        navEl.style.transform = 'translateY(0)';
+        // Ensure pointer events enabled
+        navEl.style.pointerEvents = 'auto';
+      } catch (e) {
+        // ignore styling errors
+      }
+      didSetNavVisibleFallback = true;
     } else if (attempt < maxAttempts) {
-      // try again shortly (allow child components to mount)
+      // Try again shortly to allow Home to mount
       setTimeout(tryInit, 100);
     } else {
-      // giving up after attempts — log for debugging
-      console.warn('GSAP: refs not available after retries; animations not initialized.');
+      // Give up after retries; a fallback may have been applied above
+      if (!didSetNavVisibleFallback && navEl) {
+        try {
+          navEl.style.opacity = '1';
+          navEl.style.transform = 'translateY(0)';
+          navEl.style.pointerEvents = 'auto';
+        } catch (e) {}
+        didSetNavVisibleFallback = true;
+      }
     }
   };
 
@@ -97,7 +119,7 @@ export default function App() {
     if (ctx) ctx.revert();
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []); // keep as empty deps; retry logic handles timing
+}, []); // keep empty deps — retry logic handles timing
 
   return (
     <BrowserRouter>
@@ -110,7 +132,14 @@ export default function App() {
           >
             <Route
               index
-              element={<Home heroRef={heroRef} heroNavRef={heroNavRef} productSectionRef={productSectionRef} />}
+              element={<Home
+  heroRef={heroRef}
+  heroNavRef={heroNavRef}
+  productSectionRef={productSectionRef}
+  menuOpen={menuOpen}
+  setMenuOpen={setMenuOpen}
+/>
+}
             />
             <Route path="about" element={<About />} />
             <Route path="products" element={<Products />} />

@@ -28,12 +28,13 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
+            {/* Desktop: Contact as a NavLink styled like a button */}
+            <NavLink
+              to="/contact"
               className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors"
-              type="button"
             >
               Contact Us
-            </button>
+            </NavLink>
 
             <button
               className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
@@ -57,9 +58,15 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
           <NavLink onClick={() => setMenuOpen(false)} to="/about" className="block hover:text-yellow-accent">About Us</NavLink>
           <NavLink onClick={() => setMenuOpen(false)} to="/products" className="block hover:text-yellow-accent">Products</NavLink>
           <NavLink onClick={() => setMenuOpen(false)} to="/custom" className="block hover:text-yellow-accent">Custom</NavLink>
-          <button onClick={() => setMenuOpen(false)} className="w-full bg-yellow-accent text-black rounded-md py-2 text-xs font-semibold hover:bg-yellow-500 transition-colors" type="button">
+
+          {/* Mobile contact entry — closes menu when clicked */}
+          <NavLink
+            onClick={() => setMenuOpen(false)}
+            to="/contact"
+            className="w-full block bg-yellow-accent text-black rounded-md py-2 text-xs font-semibold text-center hover:bg-yellow-500 transition-colors"
+          >
             Contact Us
-          </button>
+          </NavLink>
         </div>
       </div>
     </nav>
