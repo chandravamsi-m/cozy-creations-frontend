@@ -1,6 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 
 import unnamed7 from './assets/images/unnamed-7.png';
 import logo from './assets/images/logo image.png';
@@ -13,25 +16,64 @@ import ellipse175 from './assets/images/ellipse-175.png';
 import whatsapp2 from './assets/images/whatsapp-2.png';
 import whatsapp3 from './assets/images/whatsapp-3.png';
 
-// --- IMPORTANT: adjust these imports if your images are named/located differently ---
+// Collections
 import flowerImg from './assets/images/collections/flower.png';
 import animalImg from './assets/images/collections/animal.png';
 import festiveImg from './assets/images/collections/festive.png';
 import glassjarImg from './assets/images/collections/glassjar.png';
 import specialImg from './assets/images/collections/special.png';
-// ------------------------------------------------------------------------------------
-
-import union from './assets/images/union.png';
-import union1 from './assets/images/union-1.png';
-import union2 from './assets/images/union-2.png';
-import union3 from './assets/images/union-3.png';
 
 import mailRounded from './assets/svgs/mail-rounded.svg';
 import call from './assets/svgs/call.svg';
 import searchBold from './assets/svgs/search-bold.svg';
 import vector from './assets/svgs/vector.svg';
 
-import { fetchData, endpoints } from './services/api';
+// --- Static (fallback) features used directly in the component ---
+const INITIAL_FEATURES = [
+  {
+    id: 1,
+    title: 'Handmade With Love',
+    desc: 'Small-batch poured with warmth, care & personal detail.',
+    image: 'ellipse-172',
+    bgIndex: 0,
+  },
+  {
+    id: 2,
+    title: 'Natural Wax Only',
+    desc: 'Soft, clean-burning wax free from toxins and chemicals.',
+    image: 'ellipse-173',
+    bgIndex: 1,
+  },
+  {
+    id: 3,
+    title: 'Aroma Rich Scents',
+    desc: 'Fragrance that lingers, calms and transforms your space.',
+    image: 'ellipse-174',
+    bgIndex: 2,
+  },
+  {
+    id: 4,
+    title: 'Perfect for Gifting',
+    desc: 'Thoughtfully crafted candles ready to spark joy.',
+    image: 'ellipse-175',
+    bgIndex: 3,
+  },
+];
+
+const COLLECTIONS = [
+  { id: 'flower', title: 'Flower', image: flowerImg },
+  { id: 'animal', title: 'Animal', image: animalImg },
+  { id: 'festive', title: 'Festive', image: festiveImg },
+  { id: 'glassjar', title: 'Glass Jar', image: glassjarImg },
+  { id: 'special', title: 'Special', image: specialImg },
+];
+
+const IMAGE_MAP = {
+  'ellipse-172': ellipse172,
+  'ellipse-173': ellipse173,
+  'ellipse-174': ellipse174,
+  'ellipse-175': ellipse175,
+};
 
 function PajamasScrollDown({ className }) {
   return (
@@ -42,11 +84,6 @@ function PajamasScrollDown({ className }) {
 }
 
 export default function App() {
-  // Data state
-  const [features, setFeatures] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState([]);
-
   // Refs used in GSAP and layout
   const heroRef = useRef(null);
   const productSectionRef = useRef(null);
@@ -64,71 +101,9 @@ export default function App() {
 
   // Helper: map feature image keys to local images
   const getImage = (imageName) => {
-    const images = {
-      'ellipse-172': ellipse172,
-      'ellipse-173': ellipse173,
-      'ellipse-174': ellipse174,
-      'ellipse-175': ellipse175,
-    };
-    return images[imageName] || imageName || ellipse172;
+    const images = IMAGE_MAP;
+    return images[imageName] || ellipse172;
   };
-
-  // Fetch feature & product data (features has fallback)
-  useEffect(() => {
-    fetchData(endpoints.features)
-      .then((data) => {
-        setFeatures(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.log('Features endpoint not available, using fallback data.');
-        setFeatures([
-          {
-            id: 1,
-            title: 'Handmade With Love',
-            desc: 'Small-batch poured with warmth, care & personal detail.',
-            image: 'ellipse-172',
-            bgIndex: 0,
-          },
-          {
-            id: 2,
-            title: 'Natural Wax Only',
-            desc: 'Soft, clean-burning wax free from toxins and chemicals.',
-            image: 'ellipse-173',
-            bgIndex: 1,
-          },
-          {
-            id: 3,
-            title: 'Aroma Rich Scents',
-            desc: 'Fragrance that lingers, calms and transforms your space.',
-            image: 'ellipse-174',
-            bgIndex: 2,
-          },
-          {
-            id: 4,
-            title: 'Perfect for Gifting',
-            desc: 'Thoughtfully crafted candles ready to spark joy.',
-            image: 'ellipse-175',
-            bgIndex: 3,
-          },
-        ]);
-        setLoading(false);
-      });
-
-    fetchData(endpoints.products)
-      .then((response) => {
-        console.log('Products API Response:', response);
-        if (response && response.success && response.data && Array.isArray(response.data)) {
-          setProducts(response.data);
-        } else {
-          console.warn('Unexpected API response structure:', response);
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching products:', err);
-        setProducts([]);
-      });
-  }, []);
 
   // GSAP setup (unchanged logic)
   useEffect(() => {
@@ -188,35 +163,6 @@ export default function App() {
     }
   }, []);
 
-  const getUnion = (index) => {
-    const unions = [union, union1, union2, union3];
-    return unions[index % unions.length];
-  };
-
-  const getProductImageUrl = (url) => {
-    if (!url) return rectangle60;
-    if (
-      url.startsWith('http') &&
-      (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg') || url.includes('unsplash.com/photos'))
-    ) {
-      const photoIdMatch = url.match(/photos\/[^-]+-([A-Za-z0-9_-]+)$/);
-      if (photoIdMatch && photoIdMatch[1]) {
-        return `https://images.unsplash.com/photo-${photoIdMatch[1]}?w=800&h=800&fit=crop`;
-      }
-      return url;
-    }
-    return rectangle60;
-  };
-
-  // Static collections (5 categories)
-  const collections = [
-    { id: 'flower', title: 'Flower', image: flowerImg },
-    { id: 'animal', title: 'Animal', image: animalImg },
-    { id: 'festive', title: 'Festive', image: festiveImg },
-    { id: 'glassjar', title: 'Glass Jar', image: glassjarImg },
-    { id: 'special', title: 'Special', image: specialImg },
-  ];
-
   // Update arrow visibility on mount & resize
   useEffect(() => {
     const updateArrows = () => {
@@ -256,52 +202,8 @@ export default function App() {
 
   return (
     <div className="relative w-full min-h-screen bg-white font-montserrat">
-      {/* Sticky Navbar - fades in when scrolled past hero */}
-      <nav ref={stickyNavRef} className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-lg">
-        <div className="relative max-w-[1280px] mx-auto px-4 py-2">
-          <div className="flex justify-between items-center">
-            <div className="h-10 w-28 relative overflow-hidden">
-              <img src={logo} alt="Logo" className="absolute w-[100%] h-[100%] object-contain" />
-            </div>
-
-            <div className="hidden md:flex gap-10 text-xs text-white uppercase">
-              <a href="#" className="hover:text-yellow-accent transition-colors">Home</a>
-              <a href="#" className="hover:text-yellow-accent transition-colors">About Us</a>
-              <a href="#" className="hover:text-yellow-accent transition-colors">Products</a>
-              <a href="#" className="hover:text-yellow-accent transition-colors">Custom</a>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors">
-                Contact Us
-              </button>
-              <button
-                className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
-                onClick={() => setMenuOpen((prev) => !prev)}
-                aria-label="Toggle menu"
-                type="button"
-              >
-                ☰
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile dropdown - attached, full width */}
-          <div
-            className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-3 text-white text-sm shadow-lg origin-top transition-all duration-250 ease-out z-40 ${
-              menuOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95 pointer-events-none'
-            }`}
-          >
-            <a href="#" className="block hover:text-yellow-accent">Home</a>
-            <a href="#" className="block hover:text-yellow-accent">About Us</a>
-            <a href="#" className="block hover:text-yellow-accent">Products</a>
-            <a href="#" className="block hover:text-yellow-accent">Custom</a>
-            <button className="w-full bg-yellow-accent text-black rounded-md py-2 text-xs font-semibold hover:bg-yellow-500 transition-colors" type="button">
-              Contact Us
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* Navbar (sticky) - extracted component. Note: top bar remains in this page only. */}
+      <Navbar stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
 
       {/* Hero Section - Sticky */}
       <div ref={heroRef} className="sticky top-0 w-full h-screen overflow-hidden z-0">
@@ -313,7 +215,7 @@ export default function App() {
 
         {/* Content Overlay */}
         <div className="absolute inset-0 flex flex-col items-center">
-          {/* Header/Nav */}
+          {/* Header/Nav Top Bar (page-specific - not part of Navbar component) */}
           <div className="w-full max-w-[1280px] px-4 pt-4 flex flex-col gap-2">
             {/* Top Bar */}
             <div className="flex flex-col md:flex-row items-center text-white text-xs w-full">
@@ -339,7 +241,7 @@ export default function App() {
 
             <div className="w-full h-[1px] bg-white/20 my-2"></div>
 
-            {/* Navigation */}
+            {/* Hero Navigation (visible inside hero) */}
             <div className="flex justify-between items-center relative" ref={heroNavRef}>
               <div className="h-12 w-32 relative overflow-">
                 <img src={logo} alt="Logo" className="absolute w-[100%] h-[100%] object-contain" />
@@ -366,21 +268,6 @@ export default function App() {
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Hero mobile dropdown - full width, attached to nav */}
-          <div
-            className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-3 text-white text-sm shadow-lg origin-top transition-all duration-250 ease-out z-40 ${
-              menuOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-95 pointer-events-none'
-            }`}
-          >
-            <a href="#" className="block hover:text-yellow-accent">Home</a>
-            <a href="#" className="block hover:text-yellow-accent">About Us</a>
-            <a href="#" className="block hover:text-yellow-accent">Products</a>
-            <a href="#" className="block hover:text-yellow-accent">Custom</a>
-            <button className="w-full bg-yellow-accent text-black py-2 text-xs font-semibold hover:bg-yellow-500 transition-colors" type="button">
-              Contact Us
-            </button>
           </div>
 
           {/* Hero Text */}
@@ -446,7 +333,6 @@ export default function App() {
               canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
           >
-            {/* Left SVG chevron (real arrow) */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" stroke="black" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -461,7 +347,6 @@ export default function App() {
               canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
           >
-            {/* Right SVG chevron (real arrow) */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M9 6l6 6-6 6" stroke="black" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -474,7 +359,7 @@ export default function App() {
             className="overflow-x-auto no-scrollbar"
           >
             <div className="flex gap-6 items-stretch w-max md:w-full px-4 md:px-0 py-4">
-              {collections.map((col) => (
+              {COLLECTIONS.map((col) => (
                 <div key={col.id} className="flex-shrink-0 w-56 md:flex-1 md:w-auto">
                   <div className="flex flex-col items-center text-center cursor-pointer group">
                     <div className="w-56 h-56 md:w-[320px] md:h-[320px] overflow-hidden rounded-lg mb-4 shadow-md bg-gray-100">
@@ -491,7 +376,6 @@ export default function App() {
 
                     <button
                       type="button"
-                      onClick={() => { window.location.href = `/collections/${col.id}`; }}
                       className="mt-2 bg-yellow-accent px-4 py-2 rounded-md text-sm font-medium text-black hover:bg-yellow-500 transition"
                     >
                       Explore {col.title}
@@ -516,7 +400,7 @@ export default function App() {
           <p className="text-lg text-black mb-16 text-center px-4">Candles crafted to comfort, glow and soothe your space.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-8">
-            {features.map((feature) => (
+            {INITIAL_FEATURES.map((feature) => (
               <div key={feature.id} className="flex flex-col items-center text-center">
                 <div className="mb-6 flex justify-center items-center">
                   <img src={getImage(feature.image)} alt={feature.title} className="w-[170px] h-[170px] rounded-full object-cover" />
@@ -535,47 +419,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* Footer Section */}
-      <div className="relative w-full bg-[#191816] text-white py-16 overflow-visible z-10">
-        <div className="hidden lg:block overflow-visible absolute top-[-170px] right-[2%] w-[380px] h-[500px] opacity-100 pointer-events-none">
-          <img src={whatsapp2} alt="Decor" className="w-full h-[100%] object-contain" />
-        </div>
-
-        <div className="w-full max-w-[1280px] mx-auto px-8 relative z-10">
-          <div className="flex flex-col md:flex-row gap-10 md:gap-20 items-center md:items-start">
-            <div className="w-[300px] h-[200px] rounded-2xl overflow-hidden relative">
-              <img src={whatsapp3} alt="Footer Candle" className="w-full h-full object-fill" />
-            </div>
-
-            <div className="flex gap-20">
-              <div className="flex flex-col gap-3 text-sm capitalize">
-                <a href="#" className="hover:text-yellow-accent">Home</a>
-                <a href="#" className="hover:text-yellow-accent">About Us</a>
-                <a href="#" className="hover:text-yellow-accent">Products</a>
-                <a href="#" className="hover:text-yellow-accent">Customize</a>
-                <a href="#" className="hover:text-yellow-accent">Contact Us</a>
-              </div>
-
-              <div className="flex flex-col gap-4 text-sm">
-                <p>Instagram</p>
-                <p className="flex items-center gap-2">
-                  <img src={mailRounded} alt="Email" className="w-4 h-4" />
-                  <a href="mailto:cozycandlecorner13@gmail.com" className="underline">cozycandlecorner13@gmail.com</a>
-                </p>
-                <p className="flex items-center gap-2">
-                  <img src={call} alt="Call" className="w-4 h-4" />
-                  <span>8019401322</span>
-                </p>
-                <p>📍 Hyderabad, Gajularamaram</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full h-[1px] bg-white my-8"></div>
-
-          <div className="text-center text-xs text-white">© 2025 Cozy Creations. All rights reserved.</div>
-        </div>
-      </div>
+      {/* Footer (extracted component) */}
+      <Footer />
     </div>
   );
 }
+
