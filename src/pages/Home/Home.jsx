@@ -114,15 +114,14 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
                 </div>
               </div>
             </div>
-
             <div className="w-full h-[1px] bg-white/20 my-2"></div>
 
-            {/* Hero Navigation (visible inside hero) */}
             <div
               className="flex justify-between items-center relative"
               ref={heroNavRef}
             >
-              <div className="h-12 w-32 relative overflow-">
+              {/* Logo: centered on small screens, left on md+ */}
+              <div className="h-12 w-32 relative mx-auto md:mx-0 md:order-1">
                 <img
                   src={logo}
                   alt="Logo"
@@ -130,7 +129,7 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
                 />
               </div>
 
-              <div className="hidden md:flex gap-10 text-xs text-white uppercase">
+              <div className="hidden md:flex gap-10 text-xs text-white uppercase md:order-2">
                 <NavLink
                   to="/"
                   className={({ isActive }) =>
@@ -176,7 +175,7 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
                 </NavLink>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 md:order-3">
                 <NavLink
                   to="/contact"
                   className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors"
@@ -184,16 +183,7 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
                   Contact Us
                 </NavLink>
 
-                <button
-  className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
-  aria-label="Toggle menu"
-  aria-expanded={menuOpen ? 'true' : 'false'}
-  onClick={() => setMenuOpen((prev) => !prev)}
-  type="button"
->
-  ☰
-</button>
-
+                {/* removed hamburger button for small screens as requested */}
               </div>
             </div>
           </div>
