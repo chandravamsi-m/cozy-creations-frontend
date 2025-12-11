@@ -243,31 +243,37 @@ export default function ProductsPage() {
   };
 
   return (
-    <main className="p-6 max-w-[1200px] mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Products</h1>
+    <main className="p-4 sm:p-6 max-w-[1200px] mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Products</h1>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4 items-center">
-        <label className="text-sm font-medium">Category:</label>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="p-2 border rounded"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-6 items-stretch sm:items-center">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium whitespace-nowrap">Category:</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="p-2 border rounded flex-1 sm:flex-none min-w-[120px]"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <label className="text-sm font-medium ml-4">Search:</label>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name..."
-          className="p-2 border rounded flex-1"
-        />
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-sm font-medium whitespace-nowrap">Search:</label>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name..."
+              className="p-2 border rounded flex-1"
+            />
+          </div>
+        </div>
 
         <button
           onClick={() => {
@@ -275,7 +281,7 @@ export default function ProductsPage() {
             setSearch("");
             loadProducts("");
           }}
-          className="ml-2 p-2 border rounded bg-gray-100"
+          className="p-2 border rounded bg-gray-100 hover:bg-gray-200 transition-colors whitespace-nowrap"
         >
           Reset
         </button>
@@ -293,7 +299,7 @@ export default function ProductsPage() {
           {filtered.length === 0 ? (
             <div className="py-12 text-center text-gray-700">No products found.</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filtered.map((p) => (
                 <article
                   key={p.id}
@@ -361,7 +367,7 @@ export default function ProductsPage() {
             onClick={() => setModalOpen(false)}
           ></div>
 
-          <div className="relative z-10 max-w-2xl w-full bg-white rounded-lg p-6">
+          <div className="relative z-10 max-w-2xl w-full bg-white rounded-lg p-4 sm:p-6 mx-4 sm:mx-0 max-h-[90vh] overflow-y-auto">
             <button
               className="absolute top-3 right-3 text-gray-600"
               onClick={() => setModalOpen(false)}
@@ -378,7 +384,7 @@ export default function ProductsPage() {
               <div className="py-8 text-red-600">{detailError}</div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="h-64 bg-gray-100 overflow-hidden rounded">
                     <img
                       src={toImageSrc(selectedProduct?.imageUrl || selectedProduct?.image)}

@@ -21,7 +21,7 @@ const PHONE_REGEX = /^[0-9]{10,15}$/;
 function ContactCard({ icon, title, value, children }) {
   return (
     <div
-      className="bg-white rounded-lg w-[260px] h-[160px] flex flex-col items-center justify-between mt-40 overflow-hidden"
+      className="bg-white rounded-lg w-full sm:w-[260px] h-[140px] sm:h-[160px] flex flex-col items-center justify-between mt-20 sm:mt-32 md:mt-40 overflow-hidden"
       style={{
         boxShadow:
           "0px 4px 9px 0px rgba(0,0,0,0.1), 1px 17px 17px 0px rgba(0,0,0,0.09), 3px 38px 23px 0px rgba(0,0,0,0.05), 5px 67px 27px 0px rgba(0,0,0,0.01), 8px 104px 29px 0px rgba(0,0,0,0)",
@@ -293,14 +293,14 @@ export default function ContactUs() {
           />
         </div>
 
-        <div className="relative w-full pt-40">
-          <h1 className="text-center text-white text-4xl md:text-5xl font-normal tracking-wide">
+        <div className="relative w-full pt-20 sm:pt-32 md:pt-40">
+          <h1 className="text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide px-4">
             Contact Us
           </h1>
         </div>
 
-        <div className="relative w-full max-w-[1280px] mx-auto px-4 pb-8 -mt-8">
-          <div className="flex flex-wrap justify-center gap-3.5">
+        <div className="relative w-full max-w-[1280px] mx-auto px-4 sm:px-6 pb-8 -mt-8">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
             <ContactCard
               icon={mailRounded}
               title="Email"
@@ -322,13 +322,13 @@ export default function ContactUs() {
       </div>
 
       {/* Form */}
-      <div className="w-full flex justify-center py-10 px-4">
-        <div className="bg-white border-2 border-[#3d3021] rounded-[32px] w-full max-w-[820px] p-6 md:p-8">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-normal text-black uppercase mb-2">
+      <div className="w-full flex justify-center py-6 sm:py-10 px-4 sm:px-6">
+        <div className="bg-white border-2 border-[#3d3021] rounded-2xl sm:rounded-[32px] w-full max-w-[820px] p-4 sm:p-6 md:p-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-normal text-black uppercase mb-2">
               Bulk order request
             </h2>
-            <p className="text-base font-normal text-black uppercase">
+            <p className="text-sm sm:text-base font-normal text-black uppercase">
               Let's connect and create something beautiful
             </p>
           </div>
@@ -349,9 +349,9 @@ export default function ContactUs() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-xl font-medium text-black capitalize mb-2">
+              <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
                 Name
               </label>
               <input
@@ -361,8 +361,8 @@ export default function ContactUs() {
                 onChange={handleChange}
                 placeholder="enter your name"
                 autoComplete="name"
-                className="w-full h-[50px] px-4 border border-black rounded-xl 
-             text-base text-black placeholder:text-black/80 capitalize
+                className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl 
+             text-sm sm:text-base text-black placeholder:text-black/80 capitalize
              focus:outline-none focus:ring-2 focus:ring-yellow-accent 
              focus:border-transparent"
                 required
@@ -371,7 +371,7 @@ export default function ContactUs() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
                   Email
                 </label>
                 <input
@@ -381,12 +381,12 @@ export default function ContactUs() {
                   onChange={handleChange}
                   placeholder="enter your Email"
                   autoComplete="email"
-                  className="w-full h-[50px] px-4 border border-black rounded-xl text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                  className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
                   required
                 />
               </div>
               <div>
-                <label className="block text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
                   Phone
                 </label>
                 <input
@@ -397,7 +397,7 @@ export default function ContactUs() {
                   placeholder="enter your phone"
                   autoComplete="tel"
                   inputMode="tel"
-                  className="w-full h-[50px] px-4 border border-black rounded-xl text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                  className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
                   required
                 />
               </div>
@@ -405,7 +405,7 @@ export default function ContactUs() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
                   Collections
                 </label>
                 <div className="relative">
@@ -413,7 +413,7 @@ export default function ContactUs() {
                     name="collection"
                     value={formData.collection}
                     onChange={handleChange}
-                    className="w-full h-[50px] px-4 pr-10 border border-black rounded-xl text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
+                    className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 pr-8 sm:pr-10 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
                     required
                   >
                     <option value="">select collections</option>
@@ -442,7 +442,7 @@ export default function ContactUs() {
               </div>
 
               <div>
-                <label className="block text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
                   Product
                 </label>
                 <div className="relative">
@@ -450,7 +450,7 @@ export default function ContactUs() {
                     name="product"
                     value={formData.product}
                     onChange={handleChange}
-                    className="w-full h-[50px] px-4 pr-10 border border-black rounded-xl text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
+                    className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 pr-8 sm:pr-10 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
                     required
                     disabled={!formData.collection || loadingProducts}
                     aria-busy={loadingProducts}
@@ -489,7 +489,7 @@ export default function ContactUs() {
               </div>
 
               <div>
-                <label className="block text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
                   Quantity
                 </label>
                 <input
@@ -499,7 +499,7 @@ export default function ContactUs() {
                   onChange={handleChange}
                   placeholder="enter quantity"
                   min="1"
-                  className="w-full h-[50px] px-4 border border-black rounded-xl text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                  className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
                   required
                 />
               </div>
@@ -515,7 +515,7 @@ export default function ContactUs() {
                 onChange={handleChange}
                 placeholder="any custom request"
                 rows="4"
-                className="w-full min-h-[100px] px-4 py-4 border border-black rounded-xl text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent resize-none"
+                className="w-full min-h-[100px] px-3 sm:px-4 py-3 sm:py-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent resize-none"
               />
             </div>
 
@@ -530,7 +530,7 @@ export default function ContactUs() {
                 placeholder="enter your delivery location"
                 rows="4"
                 autoComplete="street-address"
-                className="w-full min-h-[100px] px-4 py-4 border border-black rounded-xl text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent resize-none"
+                className="w-full min-h-[100px] px-3 sm:px-4 py-3 sm:py-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent resize-none"
                 required
               />
             </div>

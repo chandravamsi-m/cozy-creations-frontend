@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -18,15 +19,23 @@ export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen }) {
     const navEl = stickyNavRef?.current;
     if (!navEl) return;
 
-    // If on home page, hide the sticky navbar initially (GSAP will handle it)
-    if (location.pathname === '/') {
-      try {
-        gsap.set(navEl, { autoAlpha: 0, y: -20 });
-      } catch (e) {
-        navEl.style.opacity = '0';
-        navEl.style.visibility = 'hidden';
-      }
-    } else {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      // If on home page, hide the sticky navbar initially (GSAP will handle it)
+      if (location.pathname === '/') {
+        try {
+          gsap.set(navEl, { autoAlpha: 0, y: -20 });
+          // Trigger ScrollTrigger refresh after a moment to ensure it recalculates
+          setTimeout(() => {
+            if (typeof ScrollTrigger !== 'undefined') {
+              ScrollTrigger.refresh();
+            }
+          }, 200);
+        } catch (e) {
+          navEl.style.opacity = '0';
+          navEl.style.visibility = 'hidden';
+        }
+      } else {
       // If not on home page, ensure navbar is visible - clear all GSAP properties first
       const makeVisible = () => {
         try {
@@ -47,12 +56,13 @@ export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen }) {
         navEl.style.setProperty('display', 'block', 'important');
       };
 
-      // Run immediately and also with a small delay to catch any late GSAP updates
-      makeVisible();
-      const timer = setTimeout(makeVisible, 100);
+        // Run immediately and also with a small delay to catch any late GSAP updates
+        makeVisible();
+        setTimeout(makeVisible, 100);
+      }
+    }, 50);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [location.pathname, stickyNavRef]);
 
   return (
