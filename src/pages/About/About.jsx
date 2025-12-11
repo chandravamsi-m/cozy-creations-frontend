@@ -47,11 +47,11 @@ export default function About() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 h-1/2 flex flex-col justify-center px-4 md:px-[100px]">
-          <h1 className="text-white text-4xl md:text-4xl font-normal uppercase mb-6">
+        <div className="relative z-10 h-1/2 flex flex-col justify-center px-2 pt-20 sm:pt-12 sm:px-4 md:px-[150px]">
+          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-normal uppercase mb-4 sm:mb-6">
             about us
           </h1>
-          <p className="text-white text-sm md:text-base leading-5 max-w-[543px] capitalize">
+          <p className="text-white text-xs sm:text-sm md:text-base leading-5 max-w-full sm:max-w-[543px] capitalize">
             Cozy Creations is a handcrafted candle brand dedicated to creating premium soy candles, aroma-rich gift candles, and custom candle designs that bring warmth, beauty, and comfort into everyday spaces. Our mission is to offer candles that not only look stunning but also fill your home with soothing fragrances and peaceful energy.
           </p>
         </div>
@@ -87,12 +87,16 @@ export default function About() {
       <section className="relative w-full min-h-screen bg-white px-16 md:px-[100px] pb-16">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
           {/* Images Grid - Left Side */}
-          <div className="w-full lg:w-1/2 h-screen relative">
-            <img src={aboutGrid} alt="About Grid" className="w-full h-full object-cover object-center" />
+          <div className="w-full lg:w-1/2 h-[300px] md:h-[500px] lg:h-screen relative">
+            <img 
+              src={aboutGrid} 
+              alt="About Grid" 
+              className="w-full h-full object-contain lg:object-cover object-center transition-all duration-200" 
+            />
           </div>
 
           {/* Text Content - Right Side */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center pt-16 ">
             <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
               Handmade Candles Crafted with Care
             </h2>
@@ -114,7 +118,7 @@ export default function About() {
       {/* Our Collections Section */}
       <section className="relative w-full min-h-screen bg-white px-0 mb-0 md:px-0 pt-16 pb-0">
         {/* Intro Text */}
-        <p className="text-base md:text-lg font-semibold text-black text-center capitalize mb-12 md:mb-16 max-w-4xl mx-auto px-0">
+        <p className="text-base md:text-lg font-semibold text-black text-center capitalize mb-12 md:mb-16 max-w-4xl mx-2 md:mx-auto px-0">
           Our collections include floral candles, animal-shaped candles, jar candles, spiral designs, festive specials, and personalized gift candles—perfect for home décor and gifting.
         </p>
 
