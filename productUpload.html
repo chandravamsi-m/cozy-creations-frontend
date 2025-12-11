@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Upload Product (Compressed Image)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
+    .container { max-width:550px; margin:auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    input, select, button { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+    button { background:#111; color:#fff; border:none; cursor:pointer; }
+    .hint { font-size:13px; color:#555; }
+    .success { color:green; font-weight:600; }
+    .error { color:#b00020; font-weight:600; }
+    img.preview { max-width:100%; border-radius:6px; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Product (with client-side image compression)</h2>
+
+    <input id="name" placeholder="Product Name" />
+    <input id="category" placeholder="Category" />
+    <input id="waxType" placeholder="Wax Type" />
+    <input id="weightGrams" type="number" placeholder="Weight (grams)" />
+    <input id="burnTimeHours" type="number" placeholder="Burn Time (hours)" />
+    <input id="price" type="number" placeholder="Price" />
+    <input id="quantityPack" type="number" placeholder="Quantity Pack" />
+
+    <select id="customizableFragrance">
+      <option value="true">Customizable Fragrance: Yes</option>
+      <option value="false">Customizable Fragrance: No</option>
+    </select>
+
+    <select id="customizableColor">
+      <option value="true">Customizable Color: Yes</option>
+      <option value="false">Customizable Color: No</option>
+    </select>
+
+    <label class="hint">Upload Image (will be resized & compressed):</label>
+    <input id="imageUpload" type="file" accept="image/*" />
+    <img id="preview" class="preview" style="display:none" />
+
+    <input id="altText" placeholder="Alt Text" />
+
+    <button id="uploadBtn">Upload Product</button>
+    <p id="msg"></p>
+
+    <p class="hint">Note: If compressed payload is still too large, the server will reject it (413). You can lower maxWidth / quality in the script below.</p>
+  </div>
+
+  <script>
+  // CONFIG: adjust these to reduce size further if needed
+  const MAX_WIDTH = 1200;          // max canvas width (px)
+  const MAX_HEIGHT = 1200;         // max canvas height (px)
+  const IMAGE_QUALITY = 0.7;       // JPEG quality 0..1
+  const MAX_PAYLOAD_BYTES = 900000; // ~900 KB final JSON size (tune as per server limit)
+
+  let compressedBase64 = "";
+
+  const input = document.getElementById('imageUpload');
+  const preview = document.getElementById('preview');
+  const msg = document.getElementById('msg');
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // Basic early size check: if file is extremely large, warn user
+    if (file.size > 10 * 1024 * 1024) { // 10MB original
+      msg.innerHTML = "<span class='error'>File is >10MB. Choose a smaller image.</span>";
+      compressedBase64 = "";
+      preview.style.display = 'none';
+      return;
+    }
+
+    try {
+      const img = await fileToImage(file);
+      // draw to canvas and compress
+      const compressedDataUrl = await compressImage(img, MAX_WIDTH, MAX_HEIGHT, IMAGE_QUALITY);
+      compressedBase64 = compressedDataUrl; // includes data:mime;base64,... prefix
+      preview.src = compressedBase64;
+      preview.style.display = 'block';
+      const bLen = getBase64SizeBytes(compressedBase64);
+      msg.innerHTML = `<span>Compressed image ~ ${(bLen/1024).toFixed(1)} KB</span>`;
+      console.log('Compressed bytes:', bLen);
+    } catch (err) {
+      console.error(err);
+      msg.innerHTML = "<span class='error'>Image processing failed.</span>";
+    }
+  });
+
+  document.getElementById('uploadBtn').addEventListener('click', async () => {
+    msg.innerHTML = '';
+
+    if (!compressedBase64) {
+      msg.innerHTML = "<span class='error'>Please upload an image first.</span>";
+      return;
+    }
+
+    const payload = {
+      name: document.getElementById('name').value || 'Unnamed Product',
+      category: document.getElementById('category').value || '',
+      waxType: document.getElementById('waxType').value || '',
+      weightGrams: Number(document.getElementById('weightGrams').value) || 0,
+      burnTimeHours: Number(document.getElementById('burnTimeHours').value) || 0,
+      price: Number(document.getElementById('price').value) || 0,
+      quantityPack: Number(document.getElementById('quantityPack').value) || 1,
+      customizableFragrance: document.getElementById('customizableFragrance').value === 'true',
+      customizableColor: document.getElementById('customizableColor').value === 'true',
+      imageUrl: compressedBase64,
+      altText: document.getElementById('altText').value || '',
+    };
+
+    const jsonStr = JSON.stringify(payload);
+    const bytes = new TextEncoder().encode(jsonStr).length;
+    console.log('Final JSON bytes:', bytes);
+
+    if (bytes > MAX_PAYLOAD_BYTES) {
+      msg.innerHTML = `<span class='error'>Payload too large (~${(bytes/1024).toFixed(0)} KB). Lower MAX_WIDTH / IMAGE_QUALITY or upload a smaller image.</span>`;
+      return;
+    }
+
+    try {
+      const res = await fetch('https://cozy-backend-1.onrender.com/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': 'super-secret-token'
+        },
+        body: jsonStr
+      });
+
+      // If server returns non-JSON (HTML error), handle gracefully:
+      const contentType = res.headers.get('Content-Type') || '';
+      if (!res.ok) {
+        let text = await res.text();
+        // show meaningful message, but avoid dumping huge HTML
+        msg.innerHTML = `<span class='error'>Upload failed: ${res.status} ${res.statusText}. Server message (first 300 chars): ${escapeHtml(text.slice(0,300))}</span>`;
+        console.error('Server response:', text);
+        return;
+      }
+
+      // success path: parse JSON only if content-type JSON
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        msg.innerHTML = "<span class='success'>Product uploaded successfully ✔</span>";
+        console.log('Server:', data);
+      } else {
+        // server returned success but not JSON (unlikely) — treat as success
+        msg.innerHTML = "<span class='success'>Product uploaded (non-JSON response).</span>";
+        console.log('Server response (non-json):', await res.text());
+      }
+    } catch (err) {
+      console.error(err);
+      msg.innerHTML = "<span class='error'>Request failed. See console for details.</span>";
+    }
+  });
+
+  // Helpers
+  function fileToImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = (e) => reject(e);
+      img.src = url;
+    });
+  }
+
+  function compressImage(img, maxW, maxH, quality) {
+    return new Promise((resolve) => {
+      let { width, height } = img;
+      // maintain aspect ratio
+      if (width > maxW || height > maxH) {
+        const ratio = Math.min(maxW / width, maxH / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      // use 'image/jpeg' for better compression; fallback to png if original has transparency
+      let mime = 'image/jpeg';
+      // If original has alpha we might lose it; but candles usually don't need alpha
+      const dataUrl = canvas.toDataURL(mime, quality);
+      resolve(dataUrl);
+    });
+  }
+
+  function getBase64SizeBytes(dataUrl) {
+    // data:image/jpeg;base64,...
+    const base64String = dataUrl.split(',')[1] || '';
+    // each base64 char = 6 bits => bytes = (length * 6) / 8 = length * 3 / 4
+    return Math.ceil(base64String.length * 3 / 4);
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"'\/]/g, function (s) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[s];
+    });
+  }
+  </script>
+</body>
+</html>
