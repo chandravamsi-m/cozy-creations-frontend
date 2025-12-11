@@ -19,10 +19,20 @@
     <h2>Upload Product (with client-side image compression)</h2>
 
     <input id="name" placeholder="Product Name" />
-    <input id="category" placeholder="Category" />
-    <input id="waxType" placeholder="Wax Type" />
+    <select id="category">
+      <option value="">Select Category</option>
+      <option value="flower">Flower</option>
+      <option value="animal">Animal</option>
+      <option value="festive">Festive</option>
+      <option value="special">Special</option>
+      <option value="glassJar">Glass Jar</option>
+    </select>
+    <select id="waxType">
+      <option value="soy" selected>Soy</option>
+      <option value="gel">Gel</option>
+    </select>
     <input id="weightGrams" type="number" placeholder="Weight (grams)" />
-    <input id="burnTimeHours" type="number" placeholder="Burn Time (hours)" />
+    <input id="burnTimeHours" type="text" placeholder="Burn Time (hours)" />
     <input id="price" type="number" placeholder="Price" />
     <input id="quantityPack" type="number" placeholder="Quantity Pack" />
 
@@ -91,18 +101,26 @@
 
   document.getElementById('uploadBtn').addEventListener('click', async () => {
     msg.innerHTML = '';
+    const uploadBtn = document.getElementById('uploadBtn');
+    const originalBtnText = uploadBtn.textContent;
 
     if (!compressedBase64) {
       msg.innerHTML = "<span class='error'>Please upload an image first.</span>";
       return;
     }
 
+    // Disable button and show loading
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+    uploadBtn.style.opacity = '0.6';
+    uploadBtn.style.cursor = 'not-allowed';
+
+    const burnTimeValue = document.getElementById('burnTimeHours').value.trim();
     const payload = {
       name: document.getElementById('name').value || 'Unnamed Product',
       category: document.getElementById('category').value || '',
       waxType: document.getElementById('waxType').value || '',
       weightGrams: Number(document.getElementById('weightGrams').value) || 0,
-      burnTimeHours: Number(document.getElementById('burnTimeHours').value) || 0,
       price: Number(document.getElementById('price').value) || 0,
       quantityPack: Number(document.getElementById('quantityPack').value) || 1,
       customizableFragrance: document.getElementById('customizableFragrance').value === 'true',
@@ -111,12 +129,22 @@
       altText: document.getElementById('altText').value || '',
     };
 
+    // Only include burnTimeHours if it has a value
+    if (burnTimeValue) {
+      payload.burnTimeHours = burnTimeValue;
+    }
+
     const jsonStr = JSON.stringify(payload);
     const bytes = new TextEncoder().encode(jsonStr).length;
     console.log('Final JSON bytes:', bytes);
 
     if (bytes > MAX_PAYLOAD_BYTES) {
       msg.innerHTML = `<span class='error'>Payload too large (~${(bytes/1024).toFixed(0)} KB). Lower MAX_WIDTH / IMAGE_QUALITY or upload a smaller image.</span>`;
+      // Re-enable button
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = originalBtnText;
+      uploadBtn.style.opacity = '1';
+      uploadBtn.style.cursor = 'pointer';
       return;
     }
 
@@ -137,6 +165,11 @@
         // show meaningful message, but avoid dumping huge HTML
         msg.innerHTML = `<span class='error'>Upload failed: ${res.status} ${res.statusText}. Server message (first 300 chars): ${escapeHtml(text.slice(0,300))}</span>`;
         console.error('Server response:', text);
+        // Re-enable button
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = originalBtnText;
+        uploadBtn.style.opacity = '1';
+        uploadBtn.style.cursor = 'pointer';
         return;
       }
 
@@ -145,6 +178,20 @@
         const data = await res.json();
         msg.innerHTML = "<span class='success'>Product uploaded successfully ✔</span>";
         console.log('Server:', data);
+        // Reset form on success
+        document.getElementById('name').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('waxType').value = 'soy';
+        document.getElementById('weightGrams').value = '';
+        document.getElementById('burnTimeHours').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('quantityPack').value = '';
+        document.getElementById('customizableFragrance').value = 'true';
+        document.getElementById('customizableColor').value = 'true';
+        document.getElementById('imageUpload').value = '';
+        document.getElementById('altText').value = '';
+        compressedBase64 = '';
+        preview.style.display = 'none';
       } else {
         // server returned success but not JSON (unlikely) — treat as success
         msg.innerHTML = "<span class='success'>Product uploaded (non-JSON response).</span>";
@@ -153,6 +200,12 @@
     } catch (err) {
       console.error(err);
       msg.innerHTML = "<span class='error'>Request failed. See console for details.</span>";
+    } finally {
+      // Re-enable button
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = originalBtnText;
+      uploadBtn.style.opacity = '1';
+      uploadBtn.style.cursor = 'pointer';
     }
   });
 
