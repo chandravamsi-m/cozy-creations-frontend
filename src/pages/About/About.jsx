@@ -72,7 +72,7 @@ export default function About() {
             </p>
           </div>
         </div>
-        <div className="w-full md:w-1/2 h-[400px] md:h-screen relative">
+        <div className="w-full md:w-1/2 h-[300px] sm:h-[400px] md:h-screen relative">
           <div className="w-full h-full bg-gray-200  overflow-hidden">
             <img 
               src={aboutJourney} 
@@ -84,10 +84,10 @@ export default function About() {
       </section>
 
       {/* Handmade Candles Section */}
-      <section className="relative w-full min-h-screen bg-white px-16 md:px-[100px] pb-16">
+      <section className="relative w-full min-h-screen bg-white px-4 sm:px-8 md:px-16 lg:px-[100px] pb-16">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
           {/* Images Grid - Left Side */}
-          <div className="w-full lg:w-1/2 h-[300px] md:h-[500px] lg:h-screen relative">
+          <div className="w-full lg:w-1/2 h-[250px] sm:h-[300px] md:h-[500px] lg:h-screen relative">
             <img 
               src={aboutGrid} 
               alt="About Grid" 
@@ -96,7 +96,7 @@ export default function About() {
           </div>
 
           {/* Text Content - Right Side */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center pt-16 ">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center pt-8 sm:pt-12 md:pt-16">
             <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
               Handmade Candles Crafted with Care
             </h2>

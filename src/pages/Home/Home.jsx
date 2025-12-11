@@ -226,12 +226,12 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
         ref={productSectionRef}
         className="relative w-full h-screen bg-white flex flex-col md:flex-row overflow-hidden z-20"
       >
-        <div className="w-full md:w-1/2 flex flex-col justify-center px-10 md:pl-[100px] py-16 h-full">
-          <h2 className="font-normal text-4xl md:text-[62px] leading-tight text-black uppercase max-w-xl mb-12">
+        <div className="w-full md:w-1/2 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:pl-[100px] py-8 sm:py-12 md:py-16 h-full">
+          <h2 className="font-normal text-2xl sm:text-3xl md:text-4xl lg:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-xl mb-6 sm:mb-8 md:mb-12 break-words">
             Elevate Your Space With Handcrafted Glow
           </h2>
           <div className="hidden md:block w-full max-w-[540px] h-[1px] bg-black mb-8"></div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               className="bg-yellow-accent px-6 py-3 rounded-md text-black font-medium text-base capitalize whitespace-nowrap"
               type="button"
@@ -375,7 +375,7 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
             Candles crafted to comfort, glow and soothe your space.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 px-4 sm:px-6 lg:px-8">
             {INITIAL_FEATURES.map((feature) => (
               <div
                 key={feature.id}

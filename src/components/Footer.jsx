@@ -13,34 +13,37 @@ return (
 </div>
 
 
-<div className="w-full max-w-[1280px] mx-auto px-8 relative z-10">
-<div className="flex flex-col md:flex-row gap-10 md:gap-20 items-center md:items-start">
-<div className="w-[300px] h-[200px] rounded-2xl overflow-hidden relative">
-<img src={whatsapp3} alt="Footer Candle" className="w-full h-full object-fill" />
+<div className="w-full max-w-[1280px] mx-auto px-4 sm:px-8 relative z-10">
+<div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-20 items-center md:items-start">
+<div className="w-full sm:w-[300px] h-[150px] sm:h-[200px] rounded-2xl overflow-hidden relative flex-shrink-0">
+<img src={whatsapp3} alt="Footer Candle" className="w-full h-full object-cover" />
 </div>
 
 
-<div className="flex gap-20">
+<div className="flex flex-col sm:flex-row gap-8 sm:gap-12 lg:gap-20 w-full sm:w-auto">
 <div className="flex flex-col gap-3 text-sm capitalize">
-<a href="#" className="hover:text-yellow-accent">Home</a>
-<a href="#" className="hover:text-yellow-accent">About Us</a>
-<a href="#" className="hover:text-yellow-accent">Products</a>
-<a href="#" className="hover:text-yellow-accent">Customize</a>
-<a href="#" className="hover:text-yellow-accent">Contact Us</a>
+<a href="#" className="hover:text-yellow-accent transition-colors">Home</a>
+<a href="#" className="hover:text-yellow-accent transition-colors">About Us</a>
+<a href="#" className="hover:text-yellow-accent transition-colors">Products</a>
+<a href="#" className="hover:text-yellow-accent transition-colors">Customize</a>
+<a href="#" className="hover:text-yellow-accent transition-colors">Contact Us</a>
 </div>
 
 
 <div className="flex flex-col gap-4 text-sm">
 <p>Instagram</p>
-<p className="flex items-center gap-2">
-<img src={mailRounded} alt="Email" className="w-4 h-4" />
-<a href="mailto:cozycandlecorner13@gmail.com" className="underline">cozycandlecorner13@gmail.com</a>
+<p className="flex items-center gap-2 flex-wrap">
+<img src={mailRounded} alt="Email" className="w-4 h-4 flex-shrink-0" />
+<a href="mailto:cozycandlecorner13@gmail.com" className="underline break-all">cozycandlecorner13@gmail.com</a>
 </p>
 <p className="flex items-center gap-2">
-<img src={call} alt="Call" className="w-4 h-4" />
+<img src={call} alt="Call" className="w-4 h-4 flex-shrink-0" />
 <span>8019401322</span>
 </p>
-<p>📍 Hyderabad, Gajularamaram</p>
+<p className="flex items-start gap-2">
+<span>📍</span>
+<span>Hyderabad, Gajularamaram</span>
+</p>
 </div>
 </div>
 </div>
