@@ -27,7 +27,6 @@ export default function App() {
   let attempt = 0;
   const maxAttempts = 12; // ~1.2s total retry window
   let ctx = null;
-  let didSetNavVisibleFallback = false;
 
   const tryInit = () => {
     attempt += 1;
@@ -36,11 +35,12 @@ export default function App() {
     const productEl = productSectionRef.current;
     const heroNavEl = heroNavRef.current;
 
-    // If all refs present, initialize GSAP as before
+    // If all refs present, initialize GSAP for home page only
     if (heroEl && navEl && productEl && heroNavEl) {
       try {
         gsap.registerPlugin(ScrollTrigger);
         ctx = gsap.context(() => {
+          // Ensure sticky navbar is hidden initially on home page
           gsap.set(navEl, { autoAlpha: 0, y: -20 });
           gsap.set(heroNavEl, { autoAlpha: 1 });
 
@@ -84,32 +84,9 @@ export default function App() {
       } catch (err) {
         console.error('GSAP initialization error:', err);
       }
-    } else if (navEl && attempt >= maxAttempts && !didSetNavVisibleFallback) {
-      // refs didn't appear — likely on a non-home page.
-      // Make the sticky navbar visible so all pages show the nav.
-      // We do this without GSAP (direct DOM style) to avoid side-effects.
-      try {
-        navEl.style.opacity = '1';
-        navEl.style.transform = 'translateY(0)';
-        // Ensure pointer events enabled
-        navEl.style.pointerEvents = 'auto';
-      } catch (e) {
-        // ignore styling errors
-      }
-      didSetNavVisibleFallback = true;
     } else if (attempt < maxAttempts) {
-      // Try again shortly to allow Home to mount
+      // Try again shortly to allow pages to mount
       setTimeout(tryInit, 100);
-    } else {
-      // Give up after retries; a fallback may have been applied above
-      if (!didSetNavVisibleFallback && navEl) {
-        try {
-          navEl.style.opacity = '1';
-          navEl.style.transform = 'translateY(0)';
-          navEl.style.pointerEvents = 'auto';
-        } catch (e) {}
-        didSetNavVisibleFallback = true;
-      }
     }
   };
 
