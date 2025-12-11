@@ -1,8 +1,7 @@
 // src/pages/ProductsPage.jsx
 import React, { useEffect, useState } from "react";
 import { fetchData, endpoints } from "../../services/api";
-import { toImageSrc } from "../../utils/image";
-
+import { getImageSrc } from "../../utils/image";
 
 /**
  * ProductsPage
@@ -124,7 +123,9 @@ export default function ProductsPage() {
       setFiltered([]);
       return;
     }
-    const s = String(search || "").trim().toLowerCase();
+    const s = String(search || "")
+      .trim()
+      .toLowerCase();
     const filteredList = products.filter((p) => {
       const matchesCategory = category ? p.category === category : true;
       const matchesSearch = s
@@ -216,14 +217,18 @@ export default function ProductsPage() {
 
       if (!resp.ok) {
         const txt = await resp.text();
-        throw new Error(`Server Error: ${resp.status} ${resp.statusText} - ${txt}`);
+        throw new Error(
+          `Server Error: ${resp.status} ${resp.statusText} - ${txt}`
+        );
       }
 
       const json = await resp.json();
       // backend returns { success: true, id: '...' }
       const createdId = json?.id ?? (json?.data && json.data.id) ?? null;
 
-      setEnqSuccess("Enquiry submitted successfully. We will contact you soon!");
+      setEnqSuccess(
+        "Enquiry submitted successfully. We will contact you soon!"
+      );
       // reset form fields
       setEnqName("");
       setEnqPhone("");
@@ -243,37 +248,31 @@ export default function ProductsPage() {
   };
 
   return (
-    <main className="p-4 sm:p-6 max-w-[1200px] mx-auto">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Products</h1>
+    <main className="p-6 max-w-[1200px] mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Products</h1>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-6 items-stretch sm:items-center">
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium whitespace-nowrap">Category:</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="p-2 border rounded flex-1 sm:flex-none min-w-[120px]"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="flex gap-3 mb-4 items-center">
+        <label className="text-sm font-medium">Category:</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="p-2 border rounded"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
 
-          <div className="flex items-center gap-2 flex-1">
-            <label className="text-sm font-medium whitespace-nowrap">Search:</label>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name..."
-              className="p-2 border rounded flex-1"
-            />
-          </div>
-        </div>
+        <label className="text-sm font-medium ml-4">Search:</label>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name..."
+          className="p-2 border rounded flex-1"
+        />
 
         <button
           onClick={() => {
@@ -281,7 +280,7 @@ export default function ProductsPage() {
             setSearch("");
             loadProducts("");
           }}
-          className="p-2 border rounded bg-gray-100 hover:bg-gray-200 transition-colors whitespace-nowrap"
+          className="ml-2 p-2 border rounded bg-gray-100"
         >
           Reset
         </button>
@@ -297,9 +296,11 @@ export default function ProductsPage() {
       {!loading && !error && (
         <>
           {filtered.length === 0 ? (
-            <div className="py-12 text-center text-gray-700">No products found.</div>
+            <div className="py-12 text-center text-gray-700">
+              No products found.
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((p) => (
                 <article
                   key={p.id}
@@ -308,12 +309,13 @@ export default function ProductsPage() {
                 >
                   <div className="h-48 bg-gray-100 mb-3 overflow-hidden">
                     <img
-                      src={toImageSrc(p.imageUrl || p.image)}
+                      src={getImageSrc(p.imageUrl || p.image, p.mimeType)}
                       alt={p.altText || p.name || "product"}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = "https://via.placeholder.com/400x300?text=No+image";
+                        e.currentTarget.src =
+                          "https://via.placeholder.com/400x300?text=No+image";
                       }}
                     />
                   </div>
@@ -321,7 +323,9 @@ export default function ProductsPage() {
                   <div className="flex-1">
                     <h2 className="text-lg font-semibold">{p.name}</h2>
                     <p className="text-sm text-gray-600 mt-1">
-                      {p.category && <span className="capitalize">{p.category} • </span>}
+                      {p.category && (
+                        <span className="capitalize">{p.category} • </span>
+                      )}
                       {p.waxType && <span>{p.waxType} wax • </span>}
                       {p.weightGrams && <span>{p.weightGrams}g • </span>}
                       {p.burnTimeHours && <span>{p.burnTimeHours}h burn</span>}
@@ -367,7 +371,7 @@ export default function ProductsPage() {
             onClick={() => setModalOpen(false)}
           ></div>
 
-          <div className="relative z-10 max-w-2xl w-full bg-white rounded-lg p-4 sm:p-6 mx-4 sm:mx-0 max-h-[90vh] overflow-y-auto">
+          <div className="relative z-10 max-w-2xl w-full bg-white rounded-lg p-6">
             <button
               className="absolute top-3 right-3 text-gray-600"
               onClick={() => setModalOpen(false)}
@@ -384,41 +388,80 @@ export default function ProductsPage() {
               <div className="py-8 text-red-600">{detailError}</div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="h-64 bg-gray-100 overflow-hidden rounded">
                     <img
-                      src={toImageSrc(selectedProduct?.imageUrl || selectedProduct?.image)}
-                      alt={selectedProduct?.altText || selectedProduct?.name || "product"}
+                      src={toImageSrc(
+                        selectedProduct?.imageUrl || selectedProduct?.image
+                      )}
+                      alt={
+                        selectedProduct?.altText ||
+                        selectedProduct?.name ||
+                        "product"
+                      }
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = "https://via.placeholder.com/600x400?text=No+image";
+                        e.currentTarget.src =
+                          "https://via.placeholder.com/600x400?text=No+image";
                       }}
                     />
                   </div>
 
                   <div>
-                    <h3 className="text-2xl font-bold">{selectedProduct?.name}</h3>
-                    <p className="text-sm text-gray-600 mt-2">{selectedProduct?.description || selectedProduct?.shortDesc || ""}</p>
-                    <div className="mt-4 text-xl font-bold">₹{selectedProduct?.price}</div>
+                    <h3 className="text-2xl font-bold">
+                      {selectedProduct?.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {selectedProduct?.description ||
+                        selectedProduct?.shortDesc ||
+                        ""}
+                    </p>
+                    <div className="mt-4 text-xl font-bold">
+                      ₹{selectedProduct?.price}
+                    </div>
 
                     <div className="mt-6">
                       <h4 className="font-medium mb-2">Quick Enquiry</h4>
 
-                      {enqSuccess && <div className="text-green-600 mb-2">{enqSuccess}</div>}
-                      {enqError && <div className="text-red-600 mb-2">{enqError}</div>}
+                      {enqSuccess && (
+                        <div className="text-green-600 mb-2">{enqSuccess}</div>
+                      )}
+                      {enqError && (
+                        <div className="text-red-600 mb-2">{enqError}</div>
+                      )}
 
                       <label className="block text-sm">Name</label>
-                      <input className="w-full p-2 border rounded mb-2" value={enqName} onChange={(e)=>setEnqName(e.target.value)} />
+                      <input
+                        className="w-full p-2 border rounded mb-2"
+                        value={enqName}
+                        onChange={(e) => setEnqName(e.target.value)}
+                      />
 
                       <label className="block text-sm">Phone</label>
-                      <input className="w-full p-2 border rounded mb-2" value={enqPhone} onChange={(e)=>setEnqPhone(e.target.value)} />
+                      <input
+                        className="w-full p-2 border rounded mb-2"
+                        value={enqPhone}
+                        onChange={(e) => setEnqPhone(e.target.value)}
+                      />
 
                       <label className="block text-sm">Quantity</label>
-                      <input type="number" min={1} className="w-24 p-2 border rounded mb-2" value={enqQuantity} onChange={(e)=>setEnqQuantity(e.target.value)} />
+                      <input
+                        type="number"
+                        min={1}
+                        className="w-24 p-2 border rounded mb-2"
+                        value={enqQuantity}
+                        onChange={(e) => setEnqQuantity(e.target.value)}
+                      />
 
-                      <label className="block text-sm">Customization / Notes (optional)</label>
-                      <textarea className="w-full p-2 border rounded mb-3" value={enqCustomization} onChange={(e)=>setEnqCustomization(e.target.value)} />
+                      <label className="block text-sm">
+                        Customization / Notes (optional)
+                      </label>
+                      <textarea
+                        className="w-full p-2 border rounded mb-3"
+                        value={enqCustomization}
+                        onChange={(e) => setEnqCustomization(e.target.value)}
+                      />
 
                       <div className="flex gap-2 mt-2">
                         <button
@@ -429,7 +472,10 @@ export default function ProductsPage() {
                           {enqSubmitting ? "Submitting…" : "Submit Enquiry"}
                         </button>
 
-                        <button onClick={() => setModalOpen(false)} className="px-4 py-2 border rounded">
+                        <button
+                          onClick={() => setModalOpen(false)}
+                          className="px-4 py-2 border rounded"
+                        >
                           Close
                         </button>
                       </div>

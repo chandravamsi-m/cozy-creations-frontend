@@ -59,204 +59,210 @@
   </div>
 
   <script>
-  // CONFIG: adjust these to reduce size further if needed
-  const MAX_WIDTH = 1200;          // max canvas width (px)
-  const MAX_HEIGHT = 1200;         // max canvas height (px)
-  const IMAGE_QUALITY = 0.7;       // JPEG quality 0..1
-  const MAX_PAYLOAD_BYTES = 900000; // ~900 KB final JSON size (tune as per server limit)
+/* Iterative compression + upload (replace your current script) */
 
-  let compressedBase64 = "";
+// CONFIG — tune these
+const START_MAX_WIDTH = 1200;
+const START_MAX_HEIGHT = 1200;
+const START_QUALITY = 0.7;
+const MIN_QUALITY = 0.25;
+const QUALITY_STEP = 0.1;       // how much to reduce quality each iteration
+const SCALE_STEP = 0.85;        // scale down dimensions each iteration
+const MAX_PAYLOAD_BYTES = 300000; // target max JSON size in bytes (~300 KB recommended)
+const MAX_ITERATIONS = 8;
 
-  const input = document.getElementById('imageUpload');
-  const preview = document.getElementById('preview');
-  const msg = document.getElementById('msg');
+let compressedBase64 = "";
+const input = document.getElementById('imageUpload');
+const preview = document.getElementById('preview');
+const msg = document.getElementById('msg');
 
-  input.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    // Basic early size check: if file is extremely large, warn user
-    if (file.size > 10 * 1024 * 1024) { // 10MB original
-      msg.innerHTML = "<span class='error'>File is >10MB. Choose a smaller image.</span>";
+input.addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) {
+    msg.innerHTML = "<span class='error'>File >15MB. Choose smaller image.</span>";
+    compressedBase64 = "";
+    preview.style.display = 'none';
+    return;
+  }
+  try {
+    const img = await fileToImage(file);
+    // compress iteratively to try to fit the payload
+    const result = await compressIteratively(img, START_MAX_WIDTH, START_MAX_HEIGHT, START_QUALITY);
+    if (!result) {
       compressedBase64 = "";
       preview.style.display = 'none';
+      msg.innerHTML = "<span class='error'>Could not compress below desired size. Try choosing a smaller image.</span>";
+      return;
+    }
+    compressedBase64 = result.dataUrl;
+    preview.src = compressedBase64;
+    preview.style.display = 'block';
+    msg.innerHTML = `<span>Compressed image ~ ${(result.size/1024).toFixed(1)} KB (attempts: ${result.attempts})</span>`;
+    console.log('Compressed bytes:', result.size);
+  } catch (err) {
+    console.error(err);
+    msg.innerHTML = "<span class='error'>Image processing failed.</span>";
+  }
+});
+
+document.getElementById('uploadBtn').addEventListener('click', async () => {
+  msg.innerHTML = '';
+  const uploadBtn = document.getElementById('uploadBtn');
+  const originalBtnText = uploadBtn.textContent;
+
+  if (!compressedBase64) {
+    msg.innerHTML = "<span class='error'>Please upload an image first.</span>";
+    return;
+  }
+
+  // Disable button and show loading
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Uploading...';
+  uploadBtn.style.opacity = '0.6';
+  uploadBtn.style.cursor = 'not-allowed';
+
+  const burnTimeValue = document.getElementById('burnTimeHours').value.trim();
+  const payload = {
+    name: document.getElementById('name').value || 'Unnamed Product',
+    category: document.getElementById('category').value || '',
+    waxType: document.getElementById('waxType').value || '',
+    weightGrams: Number(document.getElementById('weightGrams').value) || 0,
+    price: Number(document.getElementById('price').value) || 0,
+    quantityPack: Number(document.getElementById('quantityPack').value) || 1,
+    customizableFragrance: document.getElementById('customizableFragrance').value === 'true',
+    customizableColor: document.getElementById('customizableColor').value === 'true',
+    imageUrl: compressedBase64,
+    altText: document.getElementById('altText').value || '',
+  };
+
+  if (burnTimeValue) payload.burnTimeHours = burnTimeValue;
+
+  const jsonStr = JSON.stringify(payload);
+  const bytes = new TextEncoder().encode(jsonStr).length;
+  console.log('Final JSON bytes:', bytes);
+
+  if (bytes > MAX_PAYLOAD_BYTES) {
+    msg.innerHTML = `<span class='error'>Payload too large (~${(bytes/1024).toFixed(0)} KB). Try a smaller image or use multipart upload.</span>`;
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = originalBtnText;
+    uploadBtn.style.opacity = '1';
+    uploadBtn.style.cursor = 'pointer';
+    return;
+  }
+
+  try {
+    const res = await fetch('https://cozy-backend-1.onrender.com/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-secret': 'super-secret-token'
+      },
+      body: jsonStr
+    });
+
+    const contentType = res.headers.get('Content-Type') || '';
+    if (!res.ok) {
+      let text = await res.text();
+      msg.innerHTML = `<span class='error'>Upload failed: ${res.status} ${res.statusText}. Server message (first 300 chars): ${escapeHtml(text.slice(0,300))}</span>`;
+      console.error('Server response:', text);
       return;
     }
 
-    try {
-      const img = await fileToImage(file);
-      // draw to canvas and compress
-      const compressedDataUrl = await compressImage(img, MAX_WIDTH, MAX_HEIGHT, IMAGE_QUALITY);
-      compressedBase64 = compressedDataUrl; // includes data:mime;base64,... prefix
-      preview.src = compressedBase64;
-      preview.style.display = 'block';
-      const bLen = getBase64SizeBytes(compressedBase64);
-      msg.innerHTML = `<span>Compressed image ~ ${(bLen/1024).toFixed(1)} KB</span>`;
-      console.log('Compressed bytes:', bLen);
-    } catch (err) {
-      console.error(err);
-      msg.innerHTML = "<span class='error'>Image processing failed.</span>";
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      msg.innerHTML = "<span class='success'>Product uploaded successfully ✔</span>";
+      console.log('Server:', data);
+      // optional: reset form as you had before
+    } else {
+      msg.innerHTML = "<span class='success'>Product uploaded (non-JSON response).</span>";
+      console.log('Server response (non-json):', await res.text());
     }
+  } catch (err) {
+    console.error(err);
+    msg.innerHTML = "<span class='error'>Request failed. See console for details.</span>";
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = originalBtnText;
+    uploadBtn.style.opacity = '1';
+    uploadBtn.style.cursor = 'pointer';
+  }
+});
+
+// --- Helpers: iterative compression logic ---
+async function compressIteratively(img, startW, startH, startQuality) {
+  let w = startW, h = startH, quality = startQuality;
+  let attempts = 0;
+
+  while (attempts < MAX_ITERATIONS) {
+    attempts++;
+    // draw to canvas
+    const dataUrl = await compressImageToDataUrl(img, w, h, quality);
+    const size = getBase64SizeBytes(dataUrl);
+    // estimate full JSON size roughly: imageBytes + some small overhead (safe side)
+    // JSON overhead approx length of other fields -> we'll estimate + 2000 bytes
+    const estimatedTotal = size + 2000;
+    if (estimatedTotal <= MAX_PAYLOAD_BYTES) {
+      return { dataUrl, size, attempts };
+    }
+    // else reduce quality first, then scale down dimensions
+    if (quality - QUALITY_STEP >= MIN_QUALITY) {
+      quality = Math.max(MIN_QUALITY, quality - QUALITY_STEP);
+    } else {
+      // scale down dimensions
+      w = Math.max(200, Math.round(w * SCALE_STEP));
+      h = Math.max(200, Math.round(h * SCALE_STEP));
+      // also drop quality to minimum floor
+      quality = MIN_QUALITY;
+    }
+    // tiny safety delay to avoid blocking UI (not necessary but polite)
+    await new Promise(r => setTimeout(r, 10));
+  }
+  // if we didn't fit
+  return null;
+}
+
+function compressImageToDataUrl(img, maxW, maxH, quality) {
+  return new Promise((resolve) => {
+    let { width, height } = img;
+    if (width > maxW || height > maxH) {
+      const ratio = Math.min(maxW / width, maxH / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+    // use JPEG (good compression)
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    resolve(dataUrl);
   });
+}
 
-  document.getElementById('uploadBtn').addEventListener('click', async () => {
-    msg.innerHTML = '';
-    const uploadBtn = document.getElementById('uploadBtn');
-    const originalBtnText = uploadBtn.textContent;
-
-    if (!compressedBase64) {
-      msg.innerHTML = "<span class='error'>Please upload an image first.</span>";
-      return;
-    }
-
-    // Disable button and show loading
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = 'Uploading...';
-    uploadBtn.style.opacity = '0.6';
-    uploadBtn.style.cursor = 'not-allowed';
-
-    const burnTimeValue = document.getElementById('burnTimeHours').value.trim();
-    const payload = {
-      name: document.getElementById('name').value || 'Unnamed Product',
-      category: document.getElementById('category').value || '',
-      waxType: document.getElementById('waxType').value || '',
-      weightGrams: Number(document.getElementById('weightGrams').value) || 0,
-      price: Number(document.getElementById('price').value) || 0,
-      quantityPack: Number(document.getElementById('quantityPack').value) || 1,
-      customizableFragrance: document.getElementById('customizableFragrance').value === 'true',
-      customizableColor: document.getElementById('customizableColor').value === 'true',
-      imageUrl: compressedBase64,
-      altText: document.getElementById('altText').value || '',
-    };
-
-    // Only include burnTimeHours if it has a value
-    if (burnTimeValue) {
-      payload.burnTimeHours = burnTimeValue;
-    }
-
-    const jsonStr = JSON.stringify(payload);
-    const bytes = new TextEncoder().encode(jsonStr).length;
-    console.log('Final JSON bytes:', bytes);
-
-    if (bytes > MAX_PAYLOAD_BYTES) {
-      msg.innerHTML = `<span class='error'>Payload too large (~${(bytes/1024).toFixed(0)} KB). Lower MAX_WIDTH / IMAGE_QUALITY or upload a smaller image.</span>`;
-      // Re-enable button
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = originalBtnText;
-      uploadBtn.style.opacity = '1';
-      uploadBtn.style.cursor = 'pointer';
-      return;
-    }
-
-    try {
-      const res = await fetch('https://cozy-backend-1.onrender.com/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-secret': 'super-secret-token'
-        },
-        body: jsonStr
-      });
-
-      // If server returns non-JSON (HTML error), handle gracefully:
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!res.ok) {
-        let text = await res.text();
-        // show meaningful message, but avoid dumping huge HTML
-        msg.innerHTML = `<span class='error'>Upload failed: ${res.status} ${res.statusText}. Server message (first 300 chars): ${escapeHtml(text.slice(0,300))}</span>`;
-        console.error('Server response:', text);
-        // Re-enable button
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = originalBtnText;
-        uploadBtn.style.opacity = '1';
-        uploadBtn.style.cursor = 'pointer';
-        return;
-      }
-
-      // success path: parse JSON only if content-type JSON
-      if (contentType.includes('application/json')) {
-        const data = await res.json();
-        msg.innerHTML = "<span class='success'>Product uploaded successfully ✔</span>";
-        console.log('Server:', data);
-        // Reset form on success
-        document.getElementById('name').value = '';
-        document.getElementById('category').value = '';
-        document.getElementById('waxType').value = 'soy';
-        document.getElementById('weightGrams').value = '';
-        document.getElementById('burnTimeHours').value = '';
-        document.getElementById('price').value = '';
-        document.getElementById('quantityPack').value = '';
-        document.getElementById('customizableFragrance').value = 'true';
-        document.getElementById('customizableColor').value = 'true';
-        document.getElementById('imageUpload').value = '';
-        document.getElementById('altText').value = '';
-        compressedBase64 = '';
-        preview.style.display = 'none';
-      } else {
-        // server returned success but not JSON (unlikely) — treat as success
-        msg.innerHTML = "<span class='success'>Product uploaded (non-JSON response).</span>";
-        console.log('Server response (non-json):', await res.text());
-      }
-    } catch (err) {
-      console.error(err);
-      msg.innerHTML = "<span class='error'>Request failed. See console for details.</span>";
-    } finally {
-      // Re-enable button
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = originalBtnText;
-      uploadBtn.style.opacity = '1';
-      uploadBtn.style.cursor = 'pointer';
-    }
+// other helpers (reuse your functions)
+function fileToImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (e) => reject(e);
+    img.src = url;
   });
+}
 
-  // Helpers
-  function fileToImage(file) {
-    return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        resolve(img);
-      };
-      img.onerror = (e) => reject(e);
-      img.src = url;
-    });
-  }
+function getBase64SizeBytes(dataUrl) {
+  const base64String = dataUrl.split(',')[1] || '';
+  return Math.ceil(base64String.length * 3 / 4);
+}
 
-  function compressImage(img, maxW, maxH, quality) {
-    return new Promise((resolve) => {
-      let { width, height } = img;
-      // maintain aspect ratio
-      if (width > maxW || height > maxH) {
-        const ratio = Math.min(maxW / width, maxH / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      // use 'image/jpeg' for better compression; fallback to png if original has transparency
-      let mime = 'image/jpeg';
-      // If original has alpha we might lose it; but candles usually don't need alpha
-      const dataUrl = canvas.toDataURL(mime, quality);
-      resolve(dataUrl);
-    });
-  }
+function escapeHtml(str) {
+  return str.replace(/[&<>"'\/]/g, function (s) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[s];
+  });
+}
+</script>
 
-  function getBase64SizeBytes(dataUrl) {
-    // data:image/jpeg;base64,...
-    const base64String = dataUrl.split(',')[1] || '';
-    // each base64 char = 6 bits => bytes = (length * 6) / 8 = length * 3 / 4
-    return Math.ceil(base64String.length * 3 / 4);
-  }
-
-  function escapeHtml(str) {
-    return str.replace(/[&<>"'\/]/g, function (s) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[s];
-    });
-  }
-  </script>
 </body>
 </html>
