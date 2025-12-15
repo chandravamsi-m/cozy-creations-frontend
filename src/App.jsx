@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import MainLayout from './layouts/MainLayout';
+import { ProductsProvider } from './contexts/ProductsContext';
 
 // lazy pages
 const Home = lazy(() => import('./pages/Home/Home'));
@@ -160,15 +161,17 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <BrowserRouter>
-      <AppContent
-        heroRef={heroRef}
-        heroNavRef={heroNavRef}
-        productSectionRef={productSectionRef}
-        stickyNavRef={stickyNavRef}
-        menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen}
-      />
-    </BrowserRouter>
+    <ProductsProvider>
+      <BrowserRouter>
+        <AppContent
+          heroRef={heroRef}
+          heroNavRef={heroNavRef}
+          productSectionRef={productSectionRef}
+          stickyNavRef={stickyNavRef}
+          menuOpen={menuOpen}
+          setMenuOpen={setMenuOpen}
+        />
+      </BrowserRouter>
+    </ProductsProvider>
   );
 }
