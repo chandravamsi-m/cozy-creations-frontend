@@ -6,10 +6,35 @@ import logo from "../assets/images/logo image.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
 
-export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
+export default function Navbar({
+  stickyNavRef,
+  menuOpen,
+  setMenuOpen,
+  setLoginModalOpen,
+}) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logoutUser } = useAuth();
   const { cart } = useCart();
+
+  // SEPARATE STATES for desktop & mobile dropdown
+  const [desktopProfileOpen, setDesktopProfileOpen] = React.useState(false);
+  const [mobileProfileOpen, setMobileProfileOpen] = React.useState(false);
+
+  const desktopDropdownRef = React.useRef(null);
+
+  // Close only DESKTOP dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        desktopDropdownRef.current &&
+        !desktopDropdownRef.current.contains(e.target)
+      ) {
+        setDesktopProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Total quantity badge
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -33,7 +58,7 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
             />
           </div>
 
-          {/* DESKTOP NAV LINKS */}
+          {/* DESKTOP NAVIGATION */}
           <div className="hidden md:flex gap-10 text-xs text-white uppercase">
             <NavLink
               to="/"
@@ -45,6 +70,7 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
             >
               Home
             </NavLink>
+
             <NavLink
               to="/about"
               className={({ isActive }) =>
@@ -55,6 +81,7 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
             >
               About Us
             </NavLink>
+
             <NavLink
               to="/products"
               className={({ isActive }) =>
@@ -65,6 +92,7 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
             >
               Products
             </NavLink>
+
             <NavLink
               to="/custom"
               className={({ isActive }) =>
@@ -79,23 +107,69 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
 
           {/* RIGHT SIDE BUTTONS */}
           <div className="flex items-center gap-4">
-            {/* CONTACT BUTTON */}
+            {/* CONTACT */}
             <NavLink
               to="/contact"
-              className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors"
+              className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black hover:bg-yellow-500 transition-colors"
             >
               Contact Us
             </NavLink>
 
-            {/* LOGIN BUTTON */}
-            <button
-              onClick={() => navigate("/login")} // optional - or open modal
-              className="hidden md:inline-flex text-white text-xs hover:text-yellow-accent transition-colors"
-            >
-              {user ? "Profile" : "Login"}
-            </button>
+            {/* DESKTOP PROFILE DROPDOWN */}
+            {user ? (
+              <div className="relative hidden md:block" ref={desktopDropdownRef}>
+                <button
+                  onClick={() => setDesktopProfileOpen((prev) => !prev)}
+                  className="flex items-center gap-2 text-white text-xs hover:text-yellow-accent transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-yellow-accent flex items-center justify-center text-black font-semibold">
+                    {(user.displayName || user.email).charAt(0).toUpperCase()}
+                  </div>
+                  <span>Account</span>
+                  <span className="text-[10px]">▼</span>
+                </button>
 
-            {/* CART BUTTON */}
+                {desktopProfileOpen && (
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-[999] animate-fadeIn">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {user.displayName || "User"}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+
+                    <div className="py-2">
+                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
+                        My Profile
+                      </button>
+                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
+                        Orders
+                      </button>
+                      <button
+                        onClick={() => {
+                          logoutUser();
+                          setDesktopProfileOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => setLoginModalOpen(true)}
+                className="hidden md:inline-flex text-white text-xs hover:text-yellow-accent"
+              >
+                Login
+              </button>
+            )}
+
+            {/* DESKTOP CART */}
             <button
               onClick={() => navigate("/cart")}
               className="relative hidden md:flex items-center justify-center text-white"
@@ -112,64 +186,119 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
             <button
               className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
               onClick={() => setMenuOpen((prev) => !prev)}
-              aria-label="Toggle menu"
-              aria-expanded={menuOpen}
-              type="button"
             >
               ☰
             </button>
           </div>
         </div>
 
-        {/* MOBILE MENU DROPDOWN */}
+        {/* MOBILE MENU */}
         <div
-          className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-4 text-white text-sm shadow-lg origin-top transition-all duration-250 ease-out z-40 ${
+          className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-4 text-white text-sm shadow-lg transition-all duration-250 ${
             menuOpen
               ? "opacity-100 translate-y-0 scale-100"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
           }`}
         >
           <NavLink
-            onClick={() => setMenuOpen(false)}
             to="/"
+            onClick={() => setMenuOpen(false)}
             className="block hover:text-yellow-accent"
           >
             Home
           </NavLink>
+
           <NavLink
-            onClick={() => setMenuOpen(false)}
             to="/about"
+            onClick={() => setMenuOpen(false)}
             className="block hover:text-yellow-accent"
           >
             About Us
           </NavLink>
+
           <NavLink
-            onClick={() => setMenuOpen(false)}
             to="/products"
+            onClick={() => setMenuOpen(false)}
             className="block hover:text-yellow-accent"
           >
             Products
           </NavLink>
+
           <NavLink
-            onClick={() => setMenuOpen(false)}
             to="/custom"
+            onClick={() => setMenuOpen(false)}
             className="block hover:text-yellow-accent"
           >
             Custom
           </NavLink>
 
-          {/* Login */}
-          <button
-            onClick={() => {
-              setMenuOpen(false);
-              navigate("/login");
-            }}
-            className="block hover:text-yellow-accent"
-          >
-            {user ? "Profile" : "Login"}
-          </button>
+          {/* MOBILE PROFILE DROPDOWN */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setMobileProfileOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between py-2 px-1 hover:text-yellow-accent"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-yellow-accent flex items-center justify-center text-black font-semibold">
+                    {(user.displayName || user.email).charAt(0).toUpperCase()}
+                  </div>
+                  <span>Account</span>
+                </div>
+                <span className="text-xs">
+                  {mobileProfileOpen ? "▲" : "▼"}
+                </span>
+              </button>
 
-          {/* CART BUTTON */}
+              {mobileProfileOpen && (
+  <div className="mt-1 ml-2 border-l border-white/20 pl-3 space-y-3 animate-fadeIn">
+
+    {/* USER INFO BOX LIKE DESKTOP */}
+    <div className="bg-white/10 p-3 rounded-lg">
+      <p className="text-sm font-semibold">
+        {user.displayName || "User"}
+      </p>
+      <p className="text-xs text-white/70 truncate">
+        {user.email}
+      </p>
+    </div>
+
+    {/* LINKS */}
+    <button className="block w-full text-left py-1 hover:text-yellow-accent">
+      My Profile
+    </button>
+
+    <button className="block w-full text-left py-1 hover:text-yellow-accent">
+      Orders
+    </button>
+
+    <button
+      onClick={() => {
+        logoutUser();
+        setMenuOpen(false);
+        setMobileProfileOpen(false);
+      }}
+      className="block w-full text-left py-1 text-red-300 hover:text-red-200"
+    >
+      Logout
+    </button>
+  </div>
+)}
+
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                setLoginModalOpen(true);
+              }}
+              className="block hover:text-yellow-accent py-2"
+            >
+              Login
+            </button>
+          )}
+
+          {/* MOBILE CART */}
           <button
             onClick={() => {
               setMenuOpen(false);
@@ -185,9 +314,10 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
             )}
           </button>
 
+          {/* CONTACT BUTTON */}
           <NavLink
-            onClick={() => setMenuOpen(false)}
             to="/contact"
+            onClick={() => setMenuOpen(false)}
             className="w-full block bg-yellow-accent text-black rounded-md py-2 text-xs font-semibold text-center hover:bg-yellow-500 transition-colors"
           >
             Contact Us

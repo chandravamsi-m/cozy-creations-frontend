@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
-export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen }) {
+export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen, setLoginModalOpen }) {
   const location = useLocation();
 
   // Scroll to top on route change
@@ -68,7 +68,7 @@ export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen }) {
   return (
     <div className="relative w-full min-h-screen bg-white font-montserrat">
       {/* Sticky navbar available on every page */}
-      <Navbar stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      <Navbar stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} setLoginModalOpen={setLoginModalOpen}/>
 
       {/* Page content */}
       <main>

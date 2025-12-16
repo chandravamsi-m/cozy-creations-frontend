@@ -1,179 +1,197 @@
 // src/App.jsx
-import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import MainLayout from './layouts/MainLayout';
-import { ProductsProvider } from './contexts/ProductsContext';
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// lazy pages
-const Home = lazy(() => import('./pages/Home/Home'));
-const About = lazy(() => import('./pages/About/About'));
-const Products = lazy(() => import('./pages/Products/Products'));
-const Custom = lazy(() => import('./pages/Custom/Custom'));
-const Contact = lazy(() => import('./pages/Contact/Contact'));
-const CartPage = lazy(() => import('./pages/Cart/Cart'));
-const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
+import MainLayout from "./layouts/MainLayout";
+import { ProductsProvider } from "./contexts/ProductsContext";
+import { AuthProvider } from "./contexts/AuthContext"; // ⭐ REQUIRED
+import LoginModal from "./components/LoginModal";
+import { CartProvider } from "./hooks/useCart";
 
-// Inner component that has access to useLocation
-function AppContent({ heroRef, heroNavRef, productSectionRef, stickyNavRef, menuOpen, setMenuOpen }) {
+// Lazy pages
+const Home = lazy(() => import("./pages/Home/Home"));
+const About = lazy(() => import("./pages/About/About"));
+const Products = lazy(() => import("./pages/Products/Products"));
+const Custom = lazy(() => import("./pages/Custom/Custom"));
+const Contact = lazy(() => import("./pages/Contact/Contact"));
+const CartPage = lazy(() => import("./pages/Cart/Cart"));
+const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
+
+// Component with routing
+function AppContent({
+  heroRef,
+  heroNavRef,
+  productSectionRef,
+  stickyNavRef,
+  menuOpen,
+  setMenuOpen,
+  loginModalOpen,
+  setLoginModalOpen,
+}) {
   const location = useLocation();
   const NAV_HEIGHT = 72;
 
+  // GSAP logic (unchanged)
   useEffect(() => {
-    // Only initialize GSAP when on home page
-    if (location.pathname !== '/') {
-      return;
-    }
+    if (location.pathname !== "/") return;
 
     let attempt = 0;
-    const maxAttempts = 15; // ~1.5s total retry window
+    const maxAttempts = 15;
     let ctx = null;
 
     const tryInit = () => {
-      attempt += 1;
+      attempt++;
+
       const heroEl = heroRef.current;
       const navEl = stickyNavRef.current;
       const productEl = productSectionRef.current;
       const heroNavEl = heroNavRef.current;
 
-      // If all refs present, initialize GSAP for home page only
       if (heroEl && navEl && productEl && heroNavEl) {
         try {
           gsap.registerPlugin(ScrollTrigger);
-          
-          // Kill any existing ScrollTriggers on these elements
-          ScrollTrigger.getAll().forEach(trigger => {
-            const triggerEl = trigger.trigger || trigger.vars?.trigger;
-            if (triggerEl === productEl || triggerEl === heroEl || 
-                triggerEl === navEl || triggerEl === heroNavEl) {
+
+          ScrollTrigger.getAll().forEach((trigger) => {
+            const trigEl = trigger.trigger || trigger.vars?.trigger;
+            if ([productEl, heroEl, navEl, heroNavEl].includes(trigEl)) {
               trigger.kill();
             }
           });
 
           ctx = gsap.context(() => {
-            // Ensure sticky navbar is hidden initially on home page
             gsap.set(navEl, { autoAlpha: 0, y: -20 });
             gsap.set(heroNavEl, { autoAlpha: 1 });
 
-            // Hero parallax upward
             gsap.to(heroEl, {
               y: -NAV_HEIGHT,
-              ease: 'power2.out',
+              ease: "power2.out",
               scrollTrigger: {
                 trigger: productEl,
-                start: 'top bottom',
+                start: "top bottom",
                 end: `top top+=${NAV_HEIGHT}`,
                 scrub: true,
-                refreshPriority: 1,
               },
             });
 
-            // Navbar fade/slide in
             gsap.to(navEl, {
               autoAlpha: 1,
               y: 0,
-              ease: 'power2.out',
+              ease: "power2.out",
               scrollTrigger: {
                 trigger: productEl,
                 start: `top top+=${NAV_HEIGHT}`,
                 end: `top top+=${NAV_HEIGHT + 10}`,
-                toggleActions: 'play none none reverse',
-                refreshPriority: 1,
+                toggleActions: "play none none reverse",
               },
             });
 
-            // Hero nav fade out when sticky appears
             gsap.to(heroNavEl, {
               autoAlpha: 0,
-              ease: 'power1.out',
+              ease: "power1.out",
               scrollTrigger: {
                 trigger: productEl,
                 start: `top top+=${NAV_HEIGHT}`,
                 end: `top top+=${NAV_HEIGHT + 40}`,
-                toggleActions: 'play none none reverse',
-                refreshPriority: 1,
+                toggleActions: "play none none reverse",
               },
             });
 
-            // Refresh ScrollTrigger after a short delay to ensure proper calculation
-            setTimeout(() => {
-              ScrollTrigger.refresh();
-            }, 150);
+            setTimeout(() => ScrollTrigger.refresh(), 150);
           });
         } catch (err) {
-          console.error('GSAP initialization error:', err);
+          console.error("GSAP error", err);
         }
       } else if (attempt < maxAttempts) {
-        // Try again shortly to allow pages to mount
         setTimeout(tryInit, 100);
       }
     };
 
     tryInit();
-
-    return () => {
-      if (ctx) {
-        ctx.revert();
-      }
-      // Refresh ScrollTrigger on cleanup
-      setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 50);
-    };
-  }, [location.pathname, heroRef, heroNavRef, productSectionRef, stickyNavRef]);
+    return () => ctx?.revert();
+  }, [location.pathname]);
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <Routes>
-        {/* Layout route — passes menu and stickyNavRef down to layout */}
-        <Route
-          path="/"
-          element={<MainLayout stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />}
-        >
+    <>
+      {/* GLOBAL LOGIN MODAL */}
+      {loginModalOpen && (
+        <LoginModal closeModal={() => setLoginModalOpen(false)} />
+      )}
+
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            Loading...
+          </div>
+        }
+      >
+        <Routes>
           <Route
-            index
-            element={<Home
-              heroRef={heroRef}
-              heroNavRef={heroNavRef}
-              productSectionRef={productSectionRef}
-              menuOpen={menuOpen}
-              setMenuOpen={setMenuOpen}
-            />}
-          />
-          <Route path="about" element={<About />} />
-          <Route path="products" element={<Products />} />
-          <Route path="custom" element={<Custom />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="cart" element={<CartPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </Suspense>
+            path="/"
+            element={
+              <MainLayout
+                stickyNavRef={stickyNavRef}
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+                setLoginModalOpen={setLoginModalOpen}
+              />
+            }
+          >
+            <Route
+              index
+              element={
+                <Home
+                  heroRef={heroRef}
+                  heroNavRef={heroNavRef}
+                  productSectionRef={productSectionRef}
+                  menuOpen={menuOpen}
+                  setMenuOpen={setMenuOpen}
+                />
+              }
+            />
+            <Route path="about" element={<About />} />
+            <Route path="products" element={<Products />} />
+            <Route path="custom" element={<Custom />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="cart" element={<CartPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </>
   );
 }
 
 export default function App() {
-  // Refs used by GSAP and passed down to Home
   const heroRef = useRef(null);
   const heroNavRef = useRef(null);
   const productSectionRef = useRef(null);
   const stickyNavRef = useRef(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   return (
-    <ProductsProvider>
-      <BrowserRouter>
-        <AppContent
-          heroRef={heroRef}
-          heroNavRef={heroNavRef}
-          productSectionRef={productSectionRef}
-          stickyNavRef={stickyNavRef}
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-        />
-      </BrowserRouter>
-    </ProductsProvider>
+    <AuthProvider>
+      {" "}
+      {/* ⭐ FIXED */}
+      <CartProvider>
+        <ProductsProvider>
+          <BrowserRouter>
+            <AppContent
+              heroRef={heroRef}
+              heroNavRef={heroNavRef}
+              productSectionRef={productSectionRef}
+              stickyNavRef={stickyNavRef}
+              menuOpen={menuOpen}
+              setMenuOpen={setMenuOpen}
+              loginModalOpen={loginModalOpen}
+              setLoginModalOpen={setLoginModalOpen}
+            />
+          </BrowserRouter>
+        </ProductsProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }
