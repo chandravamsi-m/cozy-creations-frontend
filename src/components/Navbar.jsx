@@ -6,7 +6,12 @@ import logo from "../assets/images/logo image.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
 
-export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
+export default function Navbar({
+  stickyNavRef,
+  menuOpen,
+  setMenuOpen,
+  transparent = false,
+}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cart } = useCart();
@@ -17,7 +22,11 @@ export default function Navbar({ stickyNavRef, menuOpen, setMenuOpen }) {
   return (
     <nav
       ref={stickyNavRef}
-      className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-lg"
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        transparent
+          ? "bg-transparent"
+          : "bg-black/70 backdrop-blur-md shadow-lg"
+      }`}
     >
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">
