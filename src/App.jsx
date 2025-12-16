@@ -12,6 +12,7 @@ const About = lazy(() => import('./pages/About/About'));
 const Products = lazy(() => import('./pages/Products/Products'));
 const Custom = lazy(() => import('./pages/Custom/Custom'));
 const Contact = lazy(() => import('./pages/Contact/Contact'));
+const CartPage = lazy(() => import('./pages/Cart/Cart'));
 const NotFound = lazy(() => import('./pages/NotFound/NotFound'));
 
 // Inner component that has access to useLocation
@@ -144,6 +145,7 @@ function AppContent({ heroRef, heroNavRef, productSectionRef, stickyNavRef, menu
           <Route path="products" element={<Products />} />
           <Route path="custom" element={<Custom />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="cart" element={<CartPage />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

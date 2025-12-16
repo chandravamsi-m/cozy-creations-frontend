@@ -5,7 +5,6 @@ import mailRounded from "../../assets/svgs/mail-rounded.svg";
 import call from "../../assets/svgs/call.svg";
 import pin from "../../assets/svgs/ion_pin.svg";
 import instagram from "../../assets/svgs/instagram-fill.svg";
-import { endpoints } from "../../services/api"; // uses your api.js
 
 const COLLECTIONS = [
   { label: "Flower Collection", value: "flower" },

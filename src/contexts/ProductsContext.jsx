@@ -1,78 +1,87 @@
-// src/contexts/ProductsContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { fetchData, endpoints } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { fetchFirestoreProducts } from "../hooks/useProductsFirestore";
 
 const ProductsContext = createContext(null);
 
 export function ProductsProvider({ children }) {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastFetchTime, setLastFetchTime] = useState(null);
 
-  // Cache duration: 5 minutes
-  const CACHE_DURATION = 5 * 60 * 1000;
+  // Cache (in-memory)
+  const [cache, setCache] = useState({
+    all: null,
+    categories: {}
+  });
 
-  const loadProducts = async (forceRefresh = false) => {
-    // If we have recent data and not forcing refresh, return cached data
-    if (!forceRefresh && products.length > 0 && lastFetchTime) {
-      const timeSinceLastFetch = Date.now() - lastFetchTime;
-      if (timeSinceLastFetch < CACHE_DURATION) {
-        return products;
-      }
-    }
+  const loadProducts = useCallback(
+    async (category = "") => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    setLoading(true);
-    setError(null);
+        // 1️⃣ If category exists in cache → return instantly
+        if (category && cache.categories[category]) {
+          setProducts(cache.categories[category]);
+          setLoading(false);
+          return cache.categories[category];
+        }
 
-    try {
-      const json = await fetchData(endpoints.products);
-      // Handle both { success: true, data: [...] } and raw array
-      const data = json?.data || (Array.isArray(json) ? json : []);
-      
-      if (Array.isArray(data)) {
-        setProducts(data);
-        setLastFetchTime(Date.now());
-        return data;
-      } else {
+        // 2️⃣ If category = "" and we already have all products
+        if (!category && cache.all) {
+          setProducts(cache.all);
+          setLoading(false);
+          return cache.all;
+        }
+
+        // 3️⃣ Fetch from Firestore
+        const result = await fetchFirestoreProducts(category);
+
+        setProducts(result);
+
+        // Update cache
+        setCache((prev) => ({
+          all: category === "" ? result : prev.all,
+          categories: {
+            ...prev.categories,
+            ...(category && { [category]: result }),
+          },
+        }));
+
+        return result;
+      } catch (err) {
+        console.error("Product Load Error:", err);
+        setError("Failed to load products");
         setProducts([]);
-        return [];
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to load products', err);
-      setError(err?.message || 'Unable to load products. Please try again later.');
-      setProducts([]);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [cache]
+  );
 
-  // Preload products on mount
+  // Load all products at first mount
   useEffect(() => {
-    loadProducts();
+    loadProducts("");
   }, []);
 
-  const value = {
-    products,
-    loading,
-    error,
-    loadProducts,
-    refreshProducts: () => loadProducts(true),
-  };
-
   return (
-    <ProductsContext.Provider value={value}>
+    <ProductsContext.Provider
+      value={{
+        products,
+        loading,
+        error,
+        loadProducts,
+        refreshProducts: () => loadProducts("") // For admin panel usage
+      }}
+    >
       {children}
     </ProductsContext.Provider>
   );
 }
 
 export function useProducts() {
-  const context = useContext(ProductsContext);
-  if (!context) {
-    throw new Error('useProducts must be used within a ProductsProvider');
-  }
-  return context;
+  const ctx = useContext(ProductsContext);
+  if (!ctx) throw new Error("useProducts must be used inside ProductsProvider");
+  return ctx;
 }
-
