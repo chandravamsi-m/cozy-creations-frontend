@@ -18,8 +18,6 @@ import {
   COLLECTIONS,
 } from "../../utils/constants";
 
-import Navbar from "../../components/Navbar";
-
 function PajamasScrollDown({ className = "" }) {
   return (
     <div className={`${className} flex justify-center items-center`}>
@@ -28,33 +26,11 @@ function PajamasScrollDown({ className = "" }) {
   );
 }
 
-export default function Home({
-  heroRef,
-  heroNavRef,
-  productSectionRef,
-  menuOpen,
-  setMenuOpen,
-}) {
+export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen, setMenuOpen }) {
+
   const collectionsRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const [navSolid, setNavSolid] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!heroRef?.current) return;
-
-      const heroBottom = heroRef.current.getBoundingClientRect().bottom;
-
-      // when hero bottom touches navbar height (~80px)
-      setNavSolid(heroBottom <= 80);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [heroRef]);
 
   useEffect(() => {
     const updateArrows = () => {
@@ -88,21 +64,17 @@ export default function Home({
       behavior: "smooth",
     });
   };
-
   const scrollRight = () => {
     const el = collectionsRef.current;
     if (!el) return;
-    el.scrollBy({
-      left: Math.floor(el.clientWidth * 0.7),
-      behavior: "smooth",
-    });
+    el.scrollBy({ left: Math.floor(el.clientWidth * 0.7), behavior: "smooth" });
   };
 
   const getImage = (name) => IMAGE_MAP[name] || Object.values(IMAGE_MAP)[0];
 
   return (
     <>
-      {/* Hero Section */}
+      {/* Hero Section - Sticky */}
       <div
         ref={heroRef}
         className="sticky top-0 w-full h-screen overflow-hidden z-0"
@@ -119,27 +91,15 @@ export default function Home({
 
         {/* Content Overlay */}
         <div className="absolute inset-0 flex flex-col items-center">
-          {/* Shared Navbar */}
-          <Navbar
-            stickyNavRef={heroNavRef}
-            menuOpen={menuOpen}
-            setMenuOpen={setMenuOpen}
-            transparent={!navSolid}
-          />
-
-          {/*
-          ================================
-          PAGE-SPECIFIC TOP BAR + NAV
-          (TEMPORARILY DISABLED)
-          ================================
-          */}
-
-          {/*
+          {/* Header/Nav Top Bar (page-specific) */}
           <div className="w-full max-w-[1280px] px-4 pt-4 flex flex-col gap-2">
+            {/* Top Bar */}
             <div className="flex flex-col md:flex-row items-center text-white text-xs w-full">
+              {/* Mobile: centered offer only */}
               <div className="flex w-full justify-center items-center font-semibold sm:hidden">
                 offer on 25th december for christmas collection
               </div>
+              {/* Desktop: full bar */}
               <div className="hidden sm:flex w-full items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <img src={mailRounded} alt="Email" className="w-6 h-6" />
@@ -154,30 +114,85 @@ export default function Home({
                 </div>
               </div>
             </div>
-
             <div className="w-full h-[1px] bg-white/20 my-2"></div>
 
             <div
               className="flex justify-between items-center relative"
               ref={heroNavRef}
             >
-              <div className="h-12 w-32 relative mx-auto md:mx-0">
+              {/* Logo: centered on small screens, left on md+ */}
+              <div className="h-12 w-32 relative mx-auto md:mx-0 md:order-1">
                 <img
                   src={logo}
                   alt="Logo"
-                  className="absolute w-full h-full object-contain"
+                  className="absolute w-[100%] h-[100%] object-contain"
                 />
+              </div>
+
+              <div className="hidden md:flex gap-10 text-xs text-white uppercase md:order-2">
+                <NavLink
+                  to="/"
+                  className={({ isActive }) =>
+                    `hover:text-yellow-accent transition-colors ${
+                      isActive ? "text-yellow-accent" : ""
+                    }`
+                  }
+                >
+                  Home
+                </NavLink>
+
+                <NavLink
+                  to="/about"
+                  className={({ isActive }) =>
+                    `hover:text-yellow-accent transition-colors ${
+                      isActive ? "text-yellow-accent" : ""
+                    }`
+                  }
+                >
+                  About Us
+                </NavLink>
+
+                <NavLink
+                  to="/products"
+                  className={({ isActive }) =>
+                    `hover:text-yellow-accent transition-colors ${
+                      isActive ? "text-yellow-accent" : ""
+                    }`
+                  }
+                >
+                  Products
+                </NavLink>
+
+                <NavLink
+                  to="/custom"
+                  className={({ isActive }) =>
+                    `hover:text-yellow-accent transition-colors ${
+                      isActive ? "text-yellow-accent" : ""
+                    }`
+                  }
+                >
+                  Custom
+                </NavLink>
+              </div>
+
+              <div className="flex items-center gap-3 md:order-3">
+                <NavLink
+                  to="/contact"
+                  className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors"
+                >
+                  Contact Us
+                </NavLink>
+
+                {/* removed hamburger button for small screens as requested */}
               </div>
             </div>
           </div>
-          */}
 
           {/* Hero Text */}
           <div className="flex-1 flex flex-col justify-center items-center text-center gap-5 mt-10 text-white">
             <p className="font-semibold text-xs uppercase tracking-wider">
               Crafted with Love, Made for Happy Hearts
             </p>
-
             <div className="flex flex-col gap-2">
               <h1 className="font-bold text-4xl md:text-6xl leading-tight">
                 Handcrafted Candles
@@ -211,21 +226,26 @@ export default function Home({
         ref={productSectionRef}
         className="relative w-full h-screen bg-white flex flex-col md:flex-row overflow-hidden z-20"
       >
-        <div className="w-full md:w-1/2 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:pl-[100px] py-16 h-full">
-          <h2 className="font-normal text-2xl sm:text-3xl md:text-4xl lg:text-[62px] leading-tight text-black uppercase max-w-xl mb-12">
+        <div className="w-full md:w-1/2 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:pl-[100px] py-8 sm:py-12 md:py-16 h-full">
+          <h2 className="font-normal text-2xl sm:text-3xl md:text-4xl lg:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-xl mb-6 sm:mb-8 md:mb-12 break-words">
             Elevate Your Space With Handcrafted Glow
           </h2>
-
-          <div className="flex gap-4">
-            <button className="bg-yellow-accent px-6 py-3 rounded-md text-black font-medium">
+          <div className="hidden md:block w-full max-w-[540px] h-[1px] bg-black mb-8"></div>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button
+              className="bg-yellow-accent px-6 py-3 rounded-md text-black font-medium text-base capitalize whitespace-nowrap"
+              type="button"
+            >
               Explore collections
             </button>
-            <button className="border border-black px-6 py-3 rounded-md text-black font-medium hover:bg-black hover:text-white transition">
+            <button
+              className="border border-black px-6 py-3 rounded-md text-black font-medium text-base capitalize hover:bg-black hover:text-white transition whitespace-nowrap"
+              type="button"
+            >
               Customize Your Candle
             </button>
           </div>
         </div>
-
         <div className="w-full md:w-1/2 h-full overflow-hidden">
           <img
             src={rectangle60}
@@ -238,28 +258,94 @@ export default function Home({
       {/* Collections */}
       <div className="relative w-full bg-white py-16 z-10">
         <div className="max-w-[1280px] mx-auto px-4 relative">
-          <h2 className="font-normal text-4xl md:text-5xl text-black uppercase mb-8 text-center">
+          <h2 className="font-['Montserrat:Regular',sans-serif] font-normal text-4xl md:text-5xl text-black uppercase mb-8 text-center">
             Our Collections
           </h2>
+
+          {/* Left arrow */}
+          <button
+            type="button"
+            onClick={scrollLeft}
+            aria-label="Scroll collections left"
+            className={`absolute left-[0] top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-yellow-accent shadow-2xl flex items-center justify-center transition-transform hover:scale-105 ${
+              canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="black"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          {/* Right arrow */}
+          <button
+            type="button"
+            onClick={scrollRight}
+            aria-label="Scroll collections right"
+            className={`absolute right-[0] top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-yellow-accent shadow-2xl flex items-center justify-center transition-transform hover:scale-105 ${
+              canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 6l6 6-6 6"
+                stroke="black"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
 
           <div
             ref={collectionsRef}
             onScroll={onCollectionsScroll}
             className="overflow-x-auto no-scrollbar"
           >
-            <div className="flex gap-6 w-max md:w-full py-4">
+            <div className="flex gap-6 items-stretch w-max md:w-full px-4 md:px-0 py-4">
               {COLLECTIONS.map((col) => (
-                <div key={col.id} className="w-56 md:flex-1">
-                  <div className="flex flex-col items-center text-center group">
-                    <div className="w-56 h-56 md:w-[320px] md:h-[320px] rounded-lg overflow-hidden mb-4">
+                <div
+                  key={col.id}
+                  className="flex-shrink-0 w-56 md:flex-1 md:w-auto"
+                >
+                  <div className="flex flex-col items-center text-center cursor-pointer group">
+                    <div className="w-56 h-56 md:w-[320px] md:h-[320px] overflow-hidden rounded-lg mb-4 shadow-md bg-gray-100">
                       <img
                         src={col.image}
-                        alt={col.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition"
+                        alt={`${col.title} collection`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        onError={(e) => {
+                          e.target.src = rectangle60;
+                        }}
                       />
                     </div>
-                    <h3 className="text-lg text-black mb-2">{col.title}</h3>
-                    <button className="bg-yellow-accent px-4 py-2 rounded-md text-sm font-medium">
+                    <h3 className="font-normal text-lg text-black mb-2">
+                      {col.title}
+                    </h3>
+
+                    <button
+                      type="button"
+                      className="mt-2 bg-yellow-accent px-4 py-2 rounded-md text-sm font-medium text-black hover:bg-yellow-500 transition"
+                    >
                       Explore {col.title}
                     </button>
                   </div>
@@ -271,7 +357,7 @@ export default function Home({
       </div>
 
       {/* Why Choose Us */}
-      <div className="relative w-full min-h-[650px] bg-gray-50 overflow-hidden z-10">
+      <div className="relative w-full h-auto min-h-[650px] bg-gray-50 overflow-hidden z-10">
         <div className="absolute inset-0">
           <img
             src={macbookAir2}
@@ -281,24 +367,40 @@ export default function Home({
           <div className="absolute inset-0 bg-white/10 backdrop-blur-xl"></div>
         </div>
 
-        <div className="relative max-w-[1280px] mx-auto py-16 text-center">
-          <h2 className="font-semibold text-4xl mb-2">Why Choose Us</h2>
-          <p className="text-lg mb-16">
+        <div className="relative w-full max-w-[1280px] mx-auto py-16 flex flex-col items-center">
+          <h2 className="font-semibold text-4xl text-black capitalize mb-2 text-center">
+            Why Choose Us
+          </h2>
+          <p className="text-lg text-black mb-16 text-center px-4">
             Candles crafted to comfort, glow and soothe your space.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 px-4 sm:px-6 lg:px-8">
             {INITIAL_FEATURES.map((feature) => (
-              <div key={feature.id}>
-                <img
-                  src={getImage(feature.image)}
-                  alt={feature.title}
-                  className="w-[170px] h-[170px] mx-auto rounded-full mb-6"
-                />
+              <div
+                key={feature.id}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="mb-6 flex justify-center items-center">
+                  <img
+                    src={getImage(feature.image)}
+                    alt={feature.title}
+                    className="w-[170px] h-[170px] rounded-full object-cover"
+                  />
+                </div>
                 <h3 className="font-medium text-lg mb-2">{feature.title}</h3>
-                <p className="text-sm">{feature.desc}</p>
+                <p className="text-sm text-gray-800">{feature.desc}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-16 relative z-10">
+            <button
+              className="bg-yellow-accent px-8 py-3 rounded-lg font-medium text-black capitalize"
+              type="button"
+            >
+              View Catalogue
+            </button>
           </div>
         </div>
       </div>
