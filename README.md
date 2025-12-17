@@ -1,16 +1,80 @@
-# React + Vite
+# Cozy Creations (Web)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cozy Creations is a multi-page React + Vite web app for a handcrafted candle brand. It includes product browsing, filtering/sorting, cart, authentication, and an admin area, plus GSAP-powered hero navbar styling on the Home page.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** + **React Router**
+- **Vite** (dev/build tooling)
+- **Tailwind CSS**
+- **Firebase** (Auth + Firestore products)
+- **GSAP + ScrollTrigger** (Home hero navbar appearance changes)
 
-## React Compiler
+## Pages / routes
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **`/`**: Home (hero + scroll interactions)
+- **`/about`**: About Us
+- **`/products`**: Products (collections, filters, sort, pagination)
+- **`/custom`**: Custom candle configurator
+- **`/contact`**: Contact Us (excluded from hero auto-scroll + pajama scroll indicator)
+- **`/cart`**: Cart
+- **`/admin`**: Admin dashboard (requires admin user)
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Global navbar + footer** across pages
+- **Home-only navbar behavior**:
+  - On Home hero: navbar uses a “hero” style
+  - After hero: navbar switches to solid style
+- **Auto-scroll from hero after 5s** on Home/About/Products/Custom (cancels on user interaction)
+- **“Pajama” scroll indicator** on hero for all pages except Contact Us
+- **Products** loaded from **Firestore** (`products` collection, `isActive == true`)
+- **Cart** + auth-powered navbar states
+
+## Getting started
+
+### 1) Install
+
+```bash
+npm install
+```
+
+### 2) Environment variables
+
+Create a `.env` file in the project root with the following variables:
+
+```bash
+# Firebase
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+
+# Backend (used by some admin/enquiry flows)
+VITE_BACKEND_URL=
+```
+
+> Note: In Vite, only variables prefixed with `VITE_` are exposed to the client.
+
+### 3) Run the app
+
+```bash
+npm run dev
+```
+
+## Scripts
+
+- **`npm run dev`**: start dev server
+- **`npm run build`**: production build
+- **`npm run preview`**: preview production build locally
+- **`npm run lint`**: run ESLint
+
+## Assets
+
+- **Favicon**: `public/favicon.png` (lamp image used from the footer decor)
+
+## Notes for deployment
+
+- This is a single-page app served by Vite; make sure your host rewrites all routes to `index.html`.
