@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 
-export default function ProductCard({ product, onEnquire, onViewDetails }) {
+export default function ProductCard({ product }) {
   const [quantity, setQuantity] = useState(0);
 
   const { addItem, updateQuantity, removeItem, cart } = useCart();
@@ -97,8 +97,7 @@ export default function ProductCard({ product, onEnquire, onViewDetails }) {
 
       {/* PRODUCT IMAGE */}
       <div
-        onClick={onViewDetails}
-        className="cursor-pointer h-52 sm:h-60 lg:h-52 xl:h-44 bg-[#F5F5F0] overflow-hidden"
+        className="aspect-[4/3] bg-[#F5F5F0] overflow-hidden"
       >
         <img
           src={getImageSrc(product.imageUrl || product.image, product.mimeType)}
