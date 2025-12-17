@@ -42,7 +42,7 @@ export default function Navbar({
   return (
     <nav
       ref={stickyNavRef}
-      className="fixed top-0 left-0 w-full z-50 bg-black/50 backdrop-blur-md shadow-lg"
+      className="fixed top-0 left-0 w-full z-50 cc-nav-solid"
     >
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">

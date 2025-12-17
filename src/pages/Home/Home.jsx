@@ -1,16 +1,13 @@
 // src/pages/Home/Home.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import rectangle60 from "../../assets/images/rectangle-60.png";
 import unnamed7 from "../../assets/images/unnamed-7.png";
-import logo from "../../assets/images/logo image.png";
 import macbookAir2 from "../../assets/images/macbook-air-2.png";
 import whatsapp3 from "../../assets/images/whatsapp-3.png";
 
-import mailRounded from "../../assets/svgs/mail-rounded.svg";
-import call from "../../assets/svgs/call.svg";
 import searchBold from "../../assets/svgs/search-bold.svg";
-import vector from "../../assets/svgs/vector.svg";
+import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 
 import {
   INITIAL_FEATURES,
@@ -18,19 +15,18 @@ import {
   COLLECTIONS,
 } from "../../utils/constants";
 
-function PajamasScrollDown({ className = "" }) {
-  return (
-    <div className={`${className} flex justify-center items-center`}>
-      <img src={vector} alt="Scroll Down" className="w-full h-full" />
-    </div>
-  );
-}
-
-export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen, setMenuOpen }) {
+export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen }) {
 
   const collectionsRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Auto-scroll after 5s on hero (Home included)
+  useAutoScrollFromHero({
+    enabled: true,
+    targetRef: productSectionRef,
+    delayMs: 5000,
+  });
 
   useEffect(() => {
     const updateArrows = () => {
@@ -91,102 +87,7 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
 
         {/* Content Overlay */}
         <div className="absolute inset-0 flex flex-col items-center">
-          {/* Header/Nav Top Bar (page-specific) */}
-          <div className="w-full max-w-[1280px] px-4 pt-4 flex flex-col gap-2">
-            {/* Top Bar */}
-            <div className="flex flex-col md:flex-row items-center text-white text-xs w-full">
-              {/* Mobile: centered offer only */}
-              <div className="flex w-full justify-center items-center font-semibold sm:hidden">
-                offer on 25th december for christmas collection
-              </div>
-              {/* Desktop: full bar */}
-              <div className="hidden sm:flex w-full items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <img src={mailRounded} alt="Email" className="w-6 h-6" />
-                  <span>cozycreationscorner13@gmail.com</span>
-                </div>
-                <div className="font-semibold text-center flex-1">
-                  offer on 25th december for christmas collection
-                </div>
-                <div className="flex items-center gap-2">
-                  <img src={call} alt="Call" className="w-6 h-6" />
-                  <span>+91 80194 01322</span>
-                </div>
-              </div>
-            </div>
-            <div className="w-full h-[1px] bg-white/20 my-2"></div>
-
-            <div
-              className="flex justify-between items-center relative"
-              ref={heroNavRef}
-            >
-              {/* Logo: centered on small screens, left on md+ */}
-              <div className="h-12 w-32 relative mx-auto md:mx-0 md:order-1">
-                <img
-                  src={logo}
-                  alt="Logo"
-                  className="absolute w-[100%] h-[100%] object-contain"
-                />
-              </div>
-
-              <div className="hidden md:flex gap-10 text-xs text-white uppercase md:order-2">
-                <NavLink
-                  to="/"
-                  className={({ isActive }) =>
-                    `hover:text-yellow-accent transition-colors ${
-                      isActive ? "text-yellow-accent" : ""
-                    }`
-                  }
-                >
-                  Home
-                </NavLink>
-
-                <NavLink
-                  to="/about"
-                  className={({ isActive }) =>
-                    `hover:text-yellow-accent transition-colors ${
-                      isActive ? "text-yellow-accent" : ""
-                    }`
-                  }
-                >
-                  About Us
-                </NavLink>
-
-                <NavLink
-                  to="/products"
-                  className={({ isActive }) =>
-                    `hover:text-yellow-accent transition-colors ${
-                      isActive ? "text-yellow-accent" : ""
-                    }`
-                  }
-                >
-                  Products
-                </NavLink>
-
-                <NavLink
-                  to="/custom"
-                  className={({ isActive }) =>
-                    `hover:text-yellow-accent transition-colors ${
-                      isActive ? "text-yellow-accent" : ""
-                    }`
-                  }
-                >
-                  Custom
-                </NavLink>
-              </div>
-
-              <div className="flex items-center gap-3 md:order-3">
-                <NavLink
-                  to="/contact"
-                  className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black capitalize hover:bg-yellow-500 transition-colors"
-                >
-                  Contact Us
-                </NavLink>
-
-                {/* removed hamburger button for small screens as requested */}
-              </div>
-            </div>
-          </div>
+          {/* Main navbar is the global `Navbar` (single navbar on Home) */}
 
           {/* Hero Text */}
           <div className="flex-1 flex flex-col justify-center items-center text-center gap-5 mt-10 text-white">
@@ -213,11 +114,9 @@ export default function Home({ heroRef, heroNavRef, productSectionRef, menuOpen,
             </button>
           </div>
 
-          {/* Scroll Down */}
-          <div className="pb-8 flex flex-col items-center gap-2 text-white">
-            <PajamasScrollDown className="animate-bounce w-6 h-6" />
-            <span className="text-xs font-semibold uppercase">Scroll Down</span>
-          </div>
+          <ScrollDownIndicator
+            onClick={() => productSectionRef?.current?.scrollIntoView({ behavior: "smooth" })}
+          />
         </div>
       </div>
 

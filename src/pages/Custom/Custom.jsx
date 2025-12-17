@@ -1,14 +1,20 @@
 import React, { useState, useRef } from 'react';
+import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 // Hero images - will be downloaded from Figma
 // Uncomment these when images are available:
 import customHeroBg from '../../assets/images/custom-hero-bg.png';
 // import customHeroOverlay from '../../assets/images/custom-hero-overlay.png';
+import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 
 export default function Custom() {
   const [menuOpen, setMenuOpen] = useState(false);
   const stickyNavRef = useRef(null);
+  const afterHeroRef = useRef(null);
+
+  // Auto-scroll after 5s on hero (exclude Contact only; Custom included)
+  useAutoScrollFromHero({ enabled: true, targetRef: afterHeroRef, delayMs: 5000 });
 
   // Customization state
   const [step, setStep] = useState(1);
@@ -125,10 +131,17 @@ export default function Custom() {
             Design a candle that speaks to your soul. Choose your shape, scent, and style.
             </p>
           </div>
+
+          {/* Pajama scroll (all pages except Contact) */}
+          <ScrollDownIndicator
+            onClick={() =>
+              afterHeroRef?.current?.scrollIntoView({ behavior: "smooth" })
+            }
+          />
         </section>
 
         {/* Customization Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12">
+        <div ref={afterHeroRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12">
           <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-12">
             {/* Left Panel - Customization Options */}
             <div className="w-full lg:w-1/2 space-y-8">

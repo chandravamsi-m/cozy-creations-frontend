@@ -1,12 +1,38 @@
-// Convert raw base64 string into a valid <img> src
-export function toImageSrc(base64String, mimeType = "image/png") {
-  if (!base64String) return "";
-  
-  // Already a valid data URL? (starts with data:image)
-  if (base64String.startsWith("data:image")) {
-    return base64String;
+const PLACEHOLDER = "https://via.placeholder.com/600x400?text=No+image";
+ 
+function looksLikeBase64(s) {
+  if (!s || typeof s !== "string") return false;
+  const cleaned = s.replace(/\s+/g, "");
+  if (cleaned.length < 100) return false;
+  return /^[A-Za-z0-9+/=]+$/.test(cleaned);
+}
+ 
+export function getImageSrc(value, mimeType = "image/png") {
+  if (!value) return PLACEHOLDER;
+ 
+  if (typeof value === "string" && value.startsWith("data:image")) {
+    return value;
   }
-
-  // Build proper data URL
-  return `data:${mimeType};base64,${base64String}`;
+ 
+  if (typeof value === "string" && /^https?:\/\//i.test(value)) {
+    return value;
+  }
+ 
+  if (typeof value === "string" && value.startsWith("//")) {
+    return window.location.protocol + value;
+  }
+ 
+  if (looksLikeBase64(value)) {
+    return `data:${mimeType};base64,${value}`;
+  }
+ 
+  if (typeof value === "object" && value !== null) {
+    if (value.url && /^https?:\/\//i.test(value.url)) return value.url;
+    if (value.base64) {
+      const mt = value.mimeType || mimeType;
+      return `data:${mt};base64,${value.base64}`;
+    }
+  }
+ 
+  return PLACEHOLDER;
 }

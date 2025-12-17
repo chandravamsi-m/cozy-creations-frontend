@@ -98,7 +98,7 @@ export default function ProductCard({ product, onEnquire, onViewDetails }) {
       {/* PRODUCT IMAGE */}
       <div
         onClick={onViewDetails}
-        className="cursor-pointer h-64 bg-[#F5F5F0] overflow-hidden"
+        className="cursor-pointer h-52 sm:h-60 lg:h-52 xl:h-44 bg-[#F5F5F0] overflow-hidden"
       >
         <img
           src={getImageSrc(product.imageUrl || product.image, product.mimeType)}
@@ -113,13 +113,13 @@ export default function ProductCard({ product, onEnquire, onViewDetails }) {
       </div>
 
       {/* PRODUCT DETAILS */}
-      <div className="p-4 space-y-2">
+      <div className="p-3 sm:p-4 xl:p-3 space-y-2">
         {/* NAME + PRICE */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-base text-gray-900 flex-1">
+          <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 flex-1">
             {product.name}
           </h3>
-          <span className="text-base font-medium text-[#8B7355] whitespace-nowrap">
+          <span className="text-sm sm:text-base xl:text-sm font-medium text-[#8B7355] whitespace-nowrap">
             {formatPrice(product.price)}
           </span>
         </div>

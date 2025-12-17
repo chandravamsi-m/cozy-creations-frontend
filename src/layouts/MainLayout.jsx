@@ -21,10 +21,10 @@ export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen, setLog
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      // If on home page, hide the sticky navbar initially (GSAP will handle it)
+      // If on home page, GSAP controls position + styles (we just ensure it's not forcibly visible/hidden)
       if (location.pathname === '/') {
         try {
-          gsap.set(navEl, { autoAlpha: 0, y: -20 });
+          gsap.set(navEl, { autoAlpha: 1 });
           // Trigger ScrollTrigger refresh after a moment to ensure it recalculates
           setTimeout(() => {
             if (typeof ScrollTrigger !== 'undefined') {
@@ -48,6 +48,10 @@ export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen, setLog
         } catch (e) {
           // GSAP might not be available
         }
+        // Ensure non-home pages never use "hero" or animated navbar styles
+        navEl.classList.remove('cc-nav-hero');
+        navEl.classList.remove('cc-nav-animate');
+        navEl.classList.add('cc-nav-solid');
         // Always set inline styles as fallback with !important to override GSAP
         navEl.style.setProperty('opacity', '1', 'important');
         navEl.style.setProperty('visibility', 'visible', 'important');

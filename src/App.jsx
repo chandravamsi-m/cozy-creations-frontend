@@ -32,7 +32,6 @@ const AdminOrderDetails = lazy(() => import("./pages/admin/AdminOrderDetails"));
 // Component with routing
 function AppContent({
   heroRef,
-  heroNavRef,
   productSectionRef,
   stickyNavRef,
   menuOpen,
@@ -64,22 +63,33 @@ function AppContent({
       const heroEl = heroRef.current;
       const navEl = stickyNavRef.current;
       const productEl = productSectionRef.current;
-      const heroNavEl = heroNavRef.current;
 
-      if (heroEl && navEl && productEl && heroNavEl) {
+      if (heroEl && navEl && productEl) {
         try {
           gsap.registerPlugin(ScrollTrigger);
 
           ScrollTrigger.getAll().forEach((trigger) => {
             const trigEl = trigger.trigger || trigger.vars?.trigger;
-            if ([productEl, heroEl, navEl, heroNavEl].includes(trigEl)) {
+            if ([productEl, heroEl, navEl].includes(trigEl)) {
               trigger.kill();
             }
           });
 
           ctx = gsap.context(() => {
-            gsap.set(navEl, { autoAlpha: 0, y: -20 });
-            gsap.set(heroNavEl, { autoAlpha: 1 });
+            const setHeroMode = () => {
+              navEl.classList.add("cc-nav-hero");
+              navEl.classList.remove("cc-nav-solid");
+              navEl.classList.add("cc-nav-animate");
+            };
+            const setSolidMode = () => {
+              navEl.classList.add("cc-nav-solid");
+              navEl.classList.remove("cc-nav-hero");
+              navEl.classList.add("cc-nav-animate");
+            };
+
+            // Start: navbar fixed at top (no vertical translation), but "hero" appearance
+            gsap.set(navEl, { autoAlpha: 1, y: 0 });
+            setHeroMode();
 
             gsap.to(heroEl, {
               y: -NAV_HEIGHT,
@@ -92,27 +102,13 @@ function AppContent({
               },
             });
 
-            gsap.to(navEl, {
-              autoAlpha: 1,
-              y: 0,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: productEl,
-                start: `top top+=${NAV_HEIGHT}`,
-                end: `top top+=${NAV_HEIGHT + 10}`,
-                toggleActions: "play none none reverse",
-              },
-            });
-
-            gsap.to(heroNavEl, {
-              autoAlpha: 0,
-              ease: "power1.out",
-              scrollTrigger: {
-                trigger: productEl,
-                start: `top top+=${NAV_HEIGHT}`,
-                end: `top top+=${NAV_HEIGHT + 40}`,
-                toggleActions: "play none none reverse",
-              },
+            // Only change navbar appearance as you scroll (position stays fixed at top)
+            ScrollTrigger.create({
+              trigger: productEl,
+              start: `top top+=${NAV_HEIGHT}`,
+              end: `top top+=${NAV_HEIGHT + 1}`,
+              onEnter: setSolidMode,
+              onLeaveBack: setHeroMode,
             });
 
             setTimeout(() => ScrollTrigger.refresh(), 150);
@@ -160,7 +156,6 @@ function AppContent({
               element={
                 <Home
                   heroRef={heroRef}
-                  heroNavRef={heroNavRef}
                   productSectionRef={productSectionRef}
                   menuOpen={menuOpen}
                   setMenuOpen={setMenuOpen}
@@ -191,7 +186,6 @@ function AppContent({
 
 export default function App() {
   const heroRef = useRef(null);
-  const heroNavRef = useRef(null);
   const productSectionRef = useRef(null);
   const stickyNavRef = useRef(null);
 
@@ -207,7 +201,6 @@ export default function App() {
           <BrowserRouter>
             <AppContent
               heroRef={heroRef}
-              heroNavRef={heroNavRef}
               productSectionRef={productSectionRef}
               stickyNavRef={stickyNavRef}
               menuOpen={menuOpen}

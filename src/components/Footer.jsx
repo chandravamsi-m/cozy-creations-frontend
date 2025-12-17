@@ -15,8 +15,8 @@ return (
 
 <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-8 relative z-10">
 <div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-20 items-center md:items-start">
-<div className="w-full sm:w-[300px] h-[150px] sm:h-[200px] rounded-2xl overflow-hidden relative flex-shrink-0">
-<img src={whatsapp3} alt="Footer Candle" className="w-full h-full object-cover" />
+<div className="w-full sm:w-[300px] h-[150px] sm:h-[200px] rounded-2xl overflow-hidden relative flex-shrink-0 bg-[#191816]">
+<img src={whatsapp3} alt="Footer Candle" className="w-full h-full object-contain" />
 </div>
 
 

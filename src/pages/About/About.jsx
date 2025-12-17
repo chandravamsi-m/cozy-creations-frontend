@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import aboutHeroBg from '../../assets/images/about-hero-bg.png';
@@ -14,10 +15,15 @@ import collection2 from '../../assets/images/collection-2.png';
 import collection3 from '../../assets/images/collection-3.png';
 import collection4 from '../../assets/images/collection-4.png';
 import collection5 from '../../assets/images/collection-5.png';
+import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 
 export default function About() {
   const [menuOpen, setMenuOpen] = useState(false);
   const stickyNavRef = useRef(null);
+  const afterHeroRef = useRef(null);
+
+  // Auto-scroll after 5s on hero (exclude Contact only; About included)
+  useAutoScrollFromHero({ enabled: true, targetRef: afterHeroRef, delayMs: 5000 });
 
   return (
     <div className="w-full bg-white font-montserrat">
@@ -55,10 +61,17 @@ export default function About() {
             Cozy Creations is a handcrafted candle brand dedicated to creating premium soy candles, aroma-rich gift candles, and custom candle designs that bring warmth, beauty, and comfort into everyday spaces. Our mission is to offer candles that not only look stunning but also fill your home with soothing fragrances and peaceful energy.
           </p>
         </div>
+
+        {/* Pajama scroll (all pages except Contact) */}
+        <ScrollDownIndicator
+          onClick={() =>
+            afterHeroRef?.current?.scrollIntoView({ behavior: "smooth" })
+          }
+        />
       </section>
 
       {/* Our Journey Section */}
-      <section className="relative w-full min-h-screen bg-white flex flex-col md:flex-row items-start px-4 md:px-[100px] pb-16">
+      <section ref={afterHeroRef} className="relative w-full min-h-screen bg-white flex flex-col md:flex-row items-start px-4 md:px-[100px] pb-16">
         <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pr-8 pt-44">
           <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
             Our Journey

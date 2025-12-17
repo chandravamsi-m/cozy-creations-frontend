@@ -17,3 +17,22 @@ html {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Cozy Creations: Navbar state classes (used by GSAP on Home) */
+.cc-nav-hero {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.cc-nav-solid {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.25), 0 4px 6px -4px rgba(0,0,0,0.25) !important;
+}
+
+/* Only enable navbar transitions when explicitly requested (Home hero) */
+.cc-nav-animate {
+  transition-property: background, backdrop-filter, box-shadow, transform, opacity;
+  transition-duration: 300ms;
+}
