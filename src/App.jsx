@@ -27,7 +27,6 @@ const AdminCreateProduct = lazy(() =>
 );
 const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
-const AdminOrderDetails = lazy(() => import("./pages/admin/AdminOrderDetails"));
 
 // Component with routing
 function AppContent({
@@ -176,7 +175,6 @@ function AppContent({
             <Route path="create" element={<AdminCreateProduct />} />
             <Route path="products/:id/edit" element={<AdminEditProduct />} />
             <Route path="orders" element={<AdminOrders />} />
-            <Route path="orders/:id" element={<AdminOrderDetails />} />
           </Route>
         </Routes>
       </Suspense>
