@@ -19,29 +19,22 @@ const PHONE_REGEX = /^[0-9]{10,15}$/;
 
 function ContactCard({ icon, title, value, children }) {
   return (
-    <div
-      className="bg-white rounded-lg w-full sm:w-[260px] h-[140px] sm:h-[160px] flex flex-col items-center justify-between mt-20 sm:mt-32 md:mt-40 overflow-hidden"
-      style={{
-        boxShadow:
-          "0px 4px 9px 0px rgba(0,0,0,0.1), 1px 17px 17px 0px rgba(0,0,0,0.09), 3px 38px 23px 0px rgba(0,0,0,0.05), 5px 67px 27px 0px rgba(0,0,0,0.01), 8px 104px 29px 0px rgba(0,0,0,0)",
-      }}
-    >
-      {/* True half circle — easier & scalable */}
-      <div className="w-[130px] flex items-start justify-center overflow-hidden">
-        <div className="w-[130px] h-[70px] bg-[#ccb08b] rounded-b-full flex items-center justify-center">
+    <div className="w-full rounded-2xl border border-white/30 bg-white/80 backdrop-blur-xl shadow-[0_18px_55px_-35px_rgba(0,0,0,0.7)] px-4 py-4 sm:px-5 sm:py-5">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-yellow-accent/80 border border-black/10 grid place-items-center shrink-0">
           {icon ? (
-            <img src={icon} alt={`${title} icon`} className="w-10 h-10" />
+            <img src={icon} alt={`${title} icon`} className="w-6 h-6" />
           ) : (
             children
           )}
         </div>
-      </div>
 
-      <div className="text-center pb-6">
-        <h3 className="font-semibold text-lg text-black mb-1 capitalize">
-          {title}
-        </h3>
-        <p className="font-normal text-sm text-black">{value}</p>
+        <div className="min-w-0">
+          <h3 className="font-semibold text-base sm:text-lg text-black capitalize tracking-tight leading-tight">
+            {title}
+          </h3>
+          <p className="mt-1 text-sm text-black/70 break-words">{value}</p>
+        </div>
       </div>
     </div>
   );
@@ -281,25 +274,35 @@ export default function ContactUs() {
 
   return (
     <div className="relative w-full min-h-screen bg-white font-montserrat">
-      {/* Hero + Cards */}
-      <div className="relative w-full h-screen overflow-visible">
-        <div className="absolute inset-0 overflow-visible">
-          <img
-            src={contactHeroBg}
-            alt="Contact Background"
-            className="w-full h-full object-cover"
-            onError={(e) => (e.currentTarget.style.display = "none")}
-          />
-        </div>
+      {/* HERO */}
+      <section className="relative w-full h-screen min-h-[520px] sm:min-h-[560px] overflow-hidden">
+        <img
+          src={contactHeroBg}
+          alt="Contact Background"
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+        <div className="absolute inset-0 bg-black/55" />
 
-        <div className="relative w-full pt-20 sm:pt-32 md:pt-40">
-          <h1 className="text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal tracking-wide px-4">
-            Contact Us
-          </h1>
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-14 sm:pb-20">
+          <div className="max-w-2xl">
+            {/* <p className="text-yellow-accent font-semibold text-xs tracking-widest uppercase">
+              Cozy Creations
+            </p> */}
+            <h1 className="mt-3 text-white text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide">
+              Contact Us
+            </h1>
+            <p className="mt-4 text-white/85 text-sm sm:text-base leading-relaxed">
+              Have a bulk order, custom request, or a question? Share the details below and we’ll get back to you.
+            </p>
+          </div>
         </div>
+      </section>
 
-        <div className="relative w-full max-w-[1280px] mx-auto px-4 sm:px-6 pb-8 -mt-8">
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+      {/* CONTACT CARDS (floating on hero) */}
+      <section className="relative -mt-12 sm:-mt-14 md:-mt-48 z-20">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <ContactCard
               icon={mailRounded}
               title="Email"
@@ -310,24 +313,24 @@ export default function ContactUs() {
               icon={pin}
               title="Address"
               value="Hyderabad, Gajularamaram"
-            ></ContactCard>
+            />
             <ContactCard
               icon={instagram}
               title="Instagram"
               value="@cozycreationscandle"
-            ></ContactCard>
+            />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Form */}
-      <div className="w-full flex justify-center py-6 sm:py-10 px-4 sm:px-6">
-        <div className="bg-white border-2 border-[#3d3021] rounded-2xl sm:rounded-[32px] w-full max-w-[820px] p-4 sm:p-6 md:p-8">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-normal text-black uppercase mb-2">
+      <section className="w-full flex justify-center py-10 sm:py-14 px-4 sm:px-6">
+        <div className="bg-white border border-black/15 rounded-2xl sm:rounded-[28px] w-full max-w-[860px] p-5 sm:p-7 md:p-9 shadow-[0_18px_50px_-35px_rgba(0,0,0,0.35)]">
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-2xl sm:text-3xl font-normal text-black uppercase mb-2 tracking-wide">
               Bulk order request
             </h2>
-            <p className="text-sm sm:text-base font-normal text-black uppercase">
+            <p className="text-xs sm:text-sm font-medium text-black/70 uppercase tracking-widest">
               Let's connect and create something beautiful
             </p>
           </div>
@@ -350,7 +353,7 @@ export default function ContactUs() {
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
+              <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                 Name
               </label>
               <input
@@ -360,17 +363,16 @@ export default function ContactUs() {
                 onChange={handleChange}
                 placeholder="enter your name"
                 autoComplete="name"
-                className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl 
-             text-sm sm:text-base text-black placeholder:text-black/80 capitalize
-             focus:outline-none focus:ring-2 focus:ring-yellow-accent 
-             focus:border-transparent"
+                className="w-full h-[48px] sm:h-[52px] px-3 sm:px-4 border border-black/20 rounded-xl 
+             text-sm sm:text-base text-black placeholder:text-black/60 capitalize
+             focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 focus:border-transparent bg-white"
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                   Email
                 </label>
                 <input
@@ -380,12 +382,12 @@ export default function ContactUs() {
                   onChange={handleChange}
                   placeholder="enter your Email"
                   autoComplete="email"
-                  className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                  className="w-full h-[48px] sm:h-[52px] px-3 sm:px-4 border border-black/20 rounded-xl text-sm sm:text-base text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 bg-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                   Phone
                 </label>
                 <input
@@ -396,7 +398,7 @@ export default function ContactUs() {
                   placeholder="enter your phone"
                   autoComplete="tel"
                   inputMode="tel"
-                  className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                  className="w-full h-[48px] sm:h-[52px] px-3 sm:px-4 border border-black/20 rounded-xl text-sm sm:text-base text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 bg-white"
                   required
                 />
               </div>
@@ -404,7 +406,7 @@ export default function ContactUs() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                   Collections
                 </label>
                 <div className="relative">
@@ -412,7 +414,7 @@ export default function ContactUs() {
                     name="collection"
                     value={formData.collection}
                     onChange={handleChange}
-                    className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 pr-8 sm:pr-10 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
+                    className="w-full h-[48px] sm:h-[52px] px-3 sm:px-4 pr-10 border border-black/20 rounded-xl text-sm sm:text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 bg-white"
                     required
                   >
                     <option value="">select collections</option>
@@ -441,7 +443,7 @@ export default function ContactUs() {
               </div>
 
               <div>
-                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                   Product
                 </label>
                 <div className="relative">
@@ -449,7 +451,7 @@ export default function ContactUs() {
                     name="product"
                     value={formData.product}
                     onChange={handleChange}
-                    className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 pr-8 sm:pr-10 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
+                    className="w-full h-[48px] sm:h-[52px] px-3 sm:px-4 pr-10 border border-black/20 rounded-xl text-sm sm:text-base text-black appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 bg-white"
                     required
                     disabled={!formData.collection || loadingProducts}
                     aria-busy={loadingProducts}
@@ -488,7 +490,7 @@ export default function ContactUs() {
               </div>
 
               <div>
-                <label className="block text-lg sm:text-xl font-medium text-black capitalize mb-2">
+                <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                   Quantity
                 </label>
                 <input
@@ -498,14 +500,14 @@ export default function ContactUs() {
                   onChange={handleChange}
                   placeholder="enter quantity"
                   min="1"
-                  className="w-full h-[48px] sm:h-[50px] px-3 sm:px-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                  className="w-full h-[48px] sm:h-[52px] px-3 sm:px-4 border border-black/20 rounded-xl text-sm sm:text-base text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 bg-white"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xl font-medium text-black capitalize mb-2">
+              <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                 Customization
               </label>
               <textarea
@@ -514,12 +516,12 @@ export default function ContactUs() {
                 onChange={handleChange}
                 placeholder="any custom request"
                 rows="4"
-                className="w-full min-h-[100px] px-3 sm:px-4 py-3 sm:py-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent resize-none"
+                className="w-full min-h-[110px] px-3 sm:px-4 py-3 sm:py-4 border border-black/20 rounded-xl text-sm sm:text-base text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 resize-none bg-white"
               />
             </div>
 
             <div>
-              <label className="block text-xl font-medium text-black capitalize mb-2">
+              <label className="block text-sm sm:text-base font-semibold text-black capitalize mb-2">
                 Location
               </label>
               <textarea
@@ -529,7 +531,7 @@ export default function ContactUs() {
                 placeholder="enter your delivery location"
                 rows="4"
                 autoComplete="street-address"
-                className="w-full min-h-[100px] px-3 sm:px-4 py-3 sm:py-4 border border-black rounded-lg sm:rounded-xl text-sm sm:text-base text-black placeholder:text-black/80 focus:outline-none focus:ring-2 focus:ring-yellow-accent resize-none"
+                className="w-full min-h-[110px] px-3 sm:px-4 py-3 sm:py-4 border border-black/20 rounded-xl text-sm sm:text-base text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-yellow-accent/70 resize-none bg-white"
                 required
               />
             </div>
@@ -538,10 +540,10 @@ export default function ContactUs() {
               <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full h-[50px] rounded-xl text-xl font-bold text-black capitalize bg-yellow-500 transition-colors ${
+                className={`w-full h-[50px] rounded-xl text-base sm:text-lg font-bold text-black capitalize bg-yellow-accent transition-colors ${
                   submitting
                     ? "opacity-70 pointer-events-none"
-                    : "hover:bg-yellow-600"
+                    : "hover:bg-yellow-accent/90"
                 }`}
                 aria-busy={submitting}
               >
@@ -550,7 +552,7 @@ export default function ContactUs() {
             </div>
           </form>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
