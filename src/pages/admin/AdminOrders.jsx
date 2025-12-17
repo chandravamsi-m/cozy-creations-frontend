@@ -2,33 +2,50 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { updateAdminOrderStatus } from "../../api/adminOrders";
 
 export default function AdminOrders() {
+  const { idToken } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+  const [savingId, setSavingId] = useState(null);
+  const [statusDraft, setStatusDraft] = useState({});
 
-  const navigate = useNavigate();
+  const parseTimestamp = (ts) => {
+    if (!ts) return null;
+    if (typeof ts?.toDate === "function") return ts.toDate();
+    if (typeof ts?.seconds === "number") return new Date(ts.seconds * 1000);
+    if (typeof ts?._seconds === "number") return new Date(ts._seconds * 1000);
+    if (typeof ts === "string" || typeof ts === "number") {
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  };
 
   const loadOrders = async () => {
     setLoading(true);
+    setMsg("");
     try {
-      const q = query(
-        collection(db, "orders"),
-        orderBy("createdAt", "desc")
-      );
-
+      // Load directly from Firestore so the list renders immediately (no backend dependency).
+      const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
-
-      const list = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        createdAt: d.data().createdAt?.toDate() || null,
-      }));
-
+      const list = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          createdAt: parseTimestamp(data.createdAt),
+          updatedAt: parseTimestamp(data.updatedAt),
+        };
+      });
       setOrders(list);
     } catch (err) {
       console.error("Error loading orders:", err);
+      setMsg("Failed to load orders.");
     }
     setLoading(false);
   };
@@ -36,6 +53,38 @@ export default function AdminOrders() {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  const statusOptions = [
+    "pending",
+    "confirmed",
+    "packed",
+    "shipped",
+    "delivered",
+    "cancelled",
+  ];
+
+  const handleSaveStatus = async (orderId) => {
+    const nextStatus = statusDraft[orderId];
+    if (!nextStatus) return;
+    if (!idToken) {
+      setMsg("Not authenticated. Please login again to update status.");
+      return;
+    }
+
+    setSavingId(orderId);
+    setMsg("");
+    try {
+      await updateAdminOrderStatus(orderId, nextStatus, idToken);
+      // Refresh list (keeps UI consistent)
+      await loadOrders();
+      setMsg("Status updated ✔");
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      setMsg("Failed to update status.");
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const statusColors = {
     pending: "bg-yellow-200 text-yellow-800",
@@ -50,6 +99,8 @@ export default function AdminOrders() {
     <div className="p-4">
 
       <h2 className="text-xl font-semibold mb-4">All Orders</h2>
+
+      {msg && <p className="mb-2 text-sm text-red-600">{msg}</p>}
 
       {loading && <p>Loading orders...</p>}
 
@@ -88,12 +139,85 @@ export default function AdminOrders() {
               Total Amount: ₹{order.total}
             </p>
 
-            <button
-              onClick={() => navigate(`/admin/orders/${order.id}`)}
-              className="mt-3 px-3 py-1 bg-black text-white rounded"
-            >
-              View Details
-            </button>
+            <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
+              <button
+                onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
+                className="px-3 py-2 bg-black text-white rounded w-full sm:w-auto"
+              >
+                {expandedId === order.id ? "Hide Details" : "View Details"}
+              </button>
+            </div>
+
+            {expandedId === order.id && (
+              <div className="mt-4 border-t pt-4 space-y-4 bg-gray-50 rounded-lg p-4">
+                {/* STATUS UPDATE */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                  <div className="w-full sm:w-72">
+                    <label className="block text-sm font-medium text-gray-800 mb-1">
+                      Update Status
+                    </label>
+                    <select
+                      value={statusDraft[order.id] ?? order.status ?? "pending"}
+                      onChange={(e) =>
+                        setStatusDraft((prev) => ({ ...prev, [order.id]: e.target.value }))
+                      }
+                      className="border p-2 rounded w-full bg-white"
+                    >
+                      {statusOptions.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={() => handleSaveStatus(order.id)}
+                    disabled={savingId === order.id}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded disabled:opacity-50 w-full sm:w-auto"
+                  >
+                    {savingId === order.id ? "Saving..." : "Save"}
+                  </button>
+                </div>
+
+                {/* ITEMS */}
+                <div>
+                  <h3 className="font-semibold mb-2 text-gray-900">Items</h3>
+                  {order.items?.length ? (
+                    <div className="space-y-2">
+                      {order.items.map((item, idx) => (
+                        <div
+                          key={item.productId || idx}
+                          className="border p-3 rounded bg-white flex items-start justify-between gap-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                            <p className="text-sm text-gray-600">
+                              Qty: <span className="font-medium text-gray-800">{item.quantity}</span>
+                            </p>
+                          </div>
+                          <div className="text-sm text-gray-800 font-semibold whitespace-nowrap">
+                            ₹{item.price}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">No items.</p>
+                  )}
+                </div>
+
+                {/* BILLING */}
+                {order.billing && (
+                  <div>
+                    <h3 className="font-semibold mb-2 text-gray-900">Billing Info</h3>
+                    <pre className="bg-white border p-3 rounded text-sm overflow-x-auto">
+                      {JSON.stringify(order.billing, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

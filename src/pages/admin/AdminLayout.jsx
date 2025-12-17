@@ -18,10 +18,10 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
 
       {/* SIDEBAR */}
-      <aside className="w-60 bg-gray-900 text-white p-5 space-y-4">
+      <aside className="w-60 bg-gray-900 text-white p-5 space-y-4 h-full overflow-y-auto shrink-0">
         <h1 className="text-xl font-bold mb-6">Admin Panel</h1>
 
         <nav className="flex flex-col gap-3">
@@ -47,7 +47,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-6 bg-gray-50">
+      <main className="flex-1 p-6 bg-gray-50 h-full overflow-y-auto">
         <Outlet />
       </main>
     </div>
