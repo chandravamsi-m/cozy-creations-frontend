@@ -128,8 +128,8 @@ export default function Custom() {
         </section>
 
         {/* Customization Section */}
-        <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12">
+          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-12">
             {/* Left Panel - Customization Options */}
             <div className="w-full lg:w-1/2 space-y-8">
               {/* Header */}
@@ -151,7 +151,7 @@ export default function Custom() {
                   </div>
                   <h2 className="text-lg font-semibold text-black">Select Shape</h2>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   {shapes.map((shape) => (
                     <button
                       key={shape.id}
@@ -159,13 +159,13 @@ export default function Custom() {
                         setSelectedShape(shape.id);
                         setStep(1);
                       }}
-                      className={`p-4 border-2 rounded-lg transition-all ${
+                      className={`p-3 sm:p-4 border-2 rounded-lg transition-all ${
                         selectedShape === shape.id
                           ? 'border-yellow-400 bg-yellow-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <div className="text-4xl mb-2">{shape.image}</div>
+                      <div className="text-3xl sm:text-4xl mb-2">{shape.image}</div>
                       <p className="text-xs text-center text-black">{shape.name}</p>
                     </button>
                   ))}
@@ -253,7 +253,7 @@ export default function Custom() {
                   </div>
                   <h2 className="text-lg font-semibold text-black">Packaging Style</h2>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {packagingOptions.map((packaging) => (
                     <button
                       key={packaging.id}
@@ -310,7 +310,7 @@ export default function Custom() {
               {/* Special Occasion */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-black">Special Occasion?</h2>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {occasions.map((occasion) => (
                     <button
                       key={occasion.id}
@@ -326,7 +326,7 @@ export default function Custom() {
 
             {/* Right Panel - Preview & Summary */}
             <div className="w-full lg:w-1/2">
-              <div className="sticky top-24 space-y-6">
+              <div className="lg:sticky lg:top-24 space-y-6">
                 {/* Product Preview */}
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div className="w-full h-64 md:h-80 bg-white rounded-lg mb-4 flex items-center justify-center overflow-hidden">
