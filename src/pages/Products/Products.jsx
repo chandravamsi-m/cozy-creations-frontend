@@ -1,10 +1,11 @@
 // src/pages/Products/Products.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import productsHeroBg from "../../assets/images/products-hero-bg.png";
 import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
+import { useLocation } from "react-router-dom";
 
 // COLLECTIONS LIST
 const COLLECTIONS = {
@@ -25,6 +26,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProductsPage() {
+  const location = useLocation();
   const {
     products: contextProducts,
     loading: contextLoading,
@@ -38,6 +40,8 @@ export default function ProductsPage() {
 
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
+  const appliedInitialCategoryRef = useRef(false);
+  const appliedInitialScrollRef = useRef(false);
 
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sortBy, setSortBy] = useState("featured");
@@ -114,6 +118,29 @@ export default function ProductsPage() {
     refreshProducts(category || "");
     setSearch("");
   }, [category]);
+
+  // If we navigated here from Home "Explore <collection>", pre-select that category once.
+  useEffect(() => {
+    if (appliedInitialCategoryRef.current) return;
+    const incoming = location.state?.category;
+    if (incoming) {
+      appliedInitialCategoryRef.current = true;
+      setCategory(incoming);
+    }
+  }, [location.state]);
+
+  // If we navigated here from Home, jump straight to the products grid (skip hero).
+  useEffect(() => {
+    if (appliedInitialScrollRef.current) return;
+    if (location.state?.scrollTo !== "products") return;
+    appliedInitialScrollRef.current = true;
+
+    // Wait a tick for layout so scroll is reliable.
+    requestAnimationFrame(() => {
+      const el = document.getElementById("products");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [location.state]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / productsPerPage));
   const pageItems = (() => {
