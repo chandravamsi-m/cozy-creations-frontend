@@ -5,6 +5,9 @@ import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
 import { getProductByIdFirestore } from "../../hooks/useProductsFirestore";
 import { getImageSrc } from "../../utils/image";
+import { fetchData, endpoints } from "../../services/api";
+import { toImageSrc } from "../../utils/image";
+
 
 // COLLECTIONS LIST
 const COLLECTIONS = {
@@ -78,6 +81,8 @@ export default function ProductsPage() {
     const s = search.trim().toLowerCase();
 
     let list = products.filter((p) => {
+    const s = String(search || "").trim().toLowerCase();
+    const filteredList = products.filter((p) => {
       const matchesCategory = category ? p.category === category : true;
       const matchesSearch =
         s
@@ -173,6 +178,34 @@ export default function ProductsPage() {
 
       setEnqSuccess("Enquiry submitted successfully!");
       setTimeout(() => setModalOpen(false), 1500);
+      const resp = await fetch(enquiriesUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`Server Error: ${resp.status} ${resp.statusText} - ${txt}`);
+      }
+
+      const json = await resp.json();
+      // backend returns { success: true, id: '...' }
+      const createdId = json?.id ?? (json?.data && json.data.id) ?? null;
+
+      setEnqSuccess("Enquiry submitted successfully. We will contact you soon!");
+      // reset form fields
+      setEnqName("");
+      setEnqPhone("");
+      setEnqQuantity(1);
+      setEnqCustomization("");
+      // Optionally close modal after a delay
+      setTimeout(() => {
+        setEnqSuccess(null);
+        setModalOpen(false);
+      }, 1500);
     } catch (err) {
       setEnqError("Failed to submit enquiry");
     } finally {
@@ -181,105 +214,86 @@ export default function ProductsPage() {
   };
 
   return (
-    <main className="w-full bg-[#FBFAF9] font-montserrat">
+    <main className="p-6 max-w-[1200px] mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Products</h1>
 
-      {/* HERO SECTION — unchanged UI */}
-      <section className="relative w-full h-screen overflow-hidden">
-        <img src={productsHeroBg} className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-[150px]">
-          <div className="max-w-[461px] flex flex-col gap-6">
-            <h1 className="text-white text-5xl font-normal leading-tight">
-              Lighting Moments, One Candle at a Time
-            </h1>
-            <p className="text-white text-lg">
-              Browse our lovingly made collections designed to uplift your space, calm your senses, and make gifting truly special.
-            </p>
-            <a
-              href="#products"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="bg-yellow-accent hover:bg-yellow-accent/90 text-black px-6 py-3 rounded-md w-fit"
-            >
-              Shop Now
-            </a>
-          </div>
-        </div>
-      </section>
+      {/* Filters */}
+      <div className="flex gap-3 mb-4 items-center">
+        <label className="text-sm font-medium">Category:</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="p-2 border rounded"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
 
-      {/* PRODUCTS SECTION — full old UI restored */}
-      <section id="products" className="min-h-screen bg-[#FBFAF9]">
-        <div className="flex flex-col lg:flex-row">
+        <label className="text-sm font-medium ml-4">Search:</label>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name..."
+          className="p-2 border rounded flex-1"
+        />
 
-          {/* SIDEBAR — unchanged */}
-          <aside className="hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 sticky top-0">
-            <h2 className="text-xl font-semibold mb-6">Collections</h2>
+        <button
+          onClick={() => {
+            setCategory("");
+            setSearch("");
+            loadProducts("");
+          }}
+          className="ml-2 p-2 border rounded bg-gray-100"
+        >
+          Reset
+        </button>
+      </div>
 
-            <button
-              onClick={() => setCategory("")}
-              className={`w-full p-3 rounded-lg text-left ${!category ? "bg-gray-100" : ""}`}
-            >
-              All Products
-            </button>
+      {/* Loading / Error */}
+      {loading && (
+        <div className="py-12 text-center text-gray-600">Loading products…</div>
+      )}
+      {error && <div className="py-6 text-red-600">Error: {error}</div>}
 
-            {Object.entries(COLLECTIONS).map(([key, c]) => (
-              <button
-                key={key}
-                onClick={() => setCategory(key)}
-                className={`w-full flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 ${
-                  category === key ? "bg-gray-100" : ""
-                }`}
-              >
-                <span>{c.icon}</span> {c.label}
-              </button>
-            ))}
-          </aside>
-
-          {/* MAIN CONTENT — layout preserved */}
-          <div className="flex-1 p-4 lg:p-6">
-
-            {/* SORT ROW — unchanged UI */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <p className="text-sm text-gray-600">
-                Showing {filtered.length} products
-              </p>
-
-              <div className="relative">
-                <button
-                  onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg bg-white flex items-center gap-2"
+      {/* Grid */}
+      {!loading && !error && (
+        <>
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center text-gray-700">No products found.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((p) => (
+                <article
+                  key={p.id}
+                  className="border rounded-lg p-3 flex flex-col"
+                  role="article"
                 >
-                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
-                </button>
-
-                {showSortMenu && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-10 py-1">
-                    {SORT_OPTIONS.map((o) => (
-                      <button
-                        key={o.value}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          setSortBy(o.value);
-                          setShowSortMenu(false);
-                        }}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
+                  <div className="h-48 bg-gray-100 mb-3 overflow-hidden">
+                    <img
+                      src={toImageSrc(p.imageUrl || p.image)}
+                      alt={p.altText || p.name || "product"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "https://via.placeholder.com/400x300?text=No+image";
+                      }}
+                    />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* LOADING + ERROR */}
-            {contextLoading && (
-              <div className="py-12 text-center text-gray-600">Loading products…</div>
-            )}
-            {contextError && (
-              <div className="py-6 text-red-600 text-center">{contextError}</div>
-            )}
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold">{p.name}</h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {p.category && <span className="capitalize">{p.category} • </span>}
+                      {p.waxType && <span>{p.waxType} wax • </span>}
+                      {p.weightGrams && <span>{p.weightGrams}g • </span>}
+                      {p.burnTimeHours && <span>{p.burnTimeHours}h burn</span>}
+                    </p>
 
             {/* GRID — exactly old UI */}
             {!contextLoading && !contextError && (
@@ -358,25 +372,21 @@ export default function ProductsPage() {
                   {/* IMAGE */}
                   <div className="h-64 bg-gray-100 rounded overflow-hidden">
                     <img
-                      src={getImageSrc(
-                        selectedProduct.imageUrl,
-                        selectedProduct.mimeType
-                      )}
+                      src={toImageSrc(selectedProduct?.imageUrl || selectedProduct?.image)}
+                      alt={selectedProduct?.altText || selectedProduct?.name || "product"}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src =
-                          "https://via.placeholder.com/600x400?text=No+Image";
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "https://via.placeholder.com/600x400?text=No+image";
                       }}
                     />
                   </div>
 
                   {/* INFO */}
                   <div>
-                    <h3 className="text-2xl font-bold">{selectedProduct.name}</h3>
-
-                    <p className="text-sm text-gray-600 mt-2">
-                      {selectedProduct.description}
-                    </p>
+                    <h3 className="text-2xl font-bold">{selectedProduct?.name}</h3>
+                    <p className="text-sm text-gray-600 mt-2">{selectedProduct?.description || selectedProduct?.shortDesc || ""}</p>
+                    <div className="mt-4 text-xl font-bold">₹{selectedProduct?.price}</div>
 
                     <p className="mt-4 text-xl font-bold">₹{selectedProduct.price}</p>
 
@@ -384,49 +394,34 @@ export default function ProductsPage() {
                     <div className="mt-6">
                       <h4 className="font-medium mb-2">Quick Enquiry</h4>
 
-                      {enqSuccess && (
-                        <div className="text-green-600 mb-2">{enqSuccess}</div>
-                      )}
-                      {enqError && (
-                        <div className="text-red-600 mb-2">{enqError}</div>
-                      )}
+                      {enqSuccess && <div className="text-green-600 mb-2">{enqSuccess}</div>}
+                      {enqError && <div className="text-red-600 mb-2">{enqError}</div>}
 
-                      <input
-                        className="w-full p-2 border rounded mb-2"
-                        placeholder="Your Name"
-                        value={enqName}
-                        onChange={(e) => setEnqName(e.target.value)}
-                      />
+                      <label className="block text-sm">Name</label>
+                      <input className="w-full p-2 border rounded mb-2" value={enqName} onChange={(e)=>setEnqName(e.target.value)} />
 
-                      <input
-                        className="w-full p-2 border rounded mb-2"
-                        placeholder="Phone"
-                        value={enqPhone}
-                        onChange={(e) => setEnqPhone(e.target.value)}
-                      />
+                      <label className="block text-sm">Phone</label>
+                      <input className="w-full p-2 border rounded mb-2" value={enqPhone} onChange={(e)=>setEnqPhone(e.target.value)} />
 
-                      <input
-                        type="number"
-                        className="w-full p-2 border rounded mb-2"
-                        min="1"
-                        value={enqQuantity}
-                        onChange={(e) => setEnqQuantity(e.target.value)}
-                      />
+                      <label className="block text-sm">Quantity</label>
+                      <input type="number" min={1} className="w-24 p-2 border rounded mb-2" value={enqQuantity} onChange={(e)=>setEnqQuantity(e.target.value)} />
 
-                      <textarea
-                        className="w-full p-2 border rounded mb-3"
-                        placeholder="Customization (optional)"
-                        value={enqCustomization}
-                        onChange={(e) => setEnqCustomization(e.target.value)}
-                      />
+                      <label className="block text-sm">Customization / Notes (optional)</label>
+                      <textarea className="w-full p-2 border rounded mb-3" value={enqCustomization} onChange={(e)=>setEnqCustomization(e.target.value)} />
 
-                      <button
-                        className="px-4 py-2 bg-yellow-accent rounded mt-1"
-                        disabled={enqSubmitting}
-                        onClick={submitEnquiry}
-                      >
-                        {enqSubmitting ? "Submitting…" : "Submit Enquiry"}
-                      </button>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={submitEnquiry}
+                          disabled={enqSubmitting}
+                          className="px-4 py-2 bg-yellow-accent text-black rounded"
+                        >
+                          {enqSubmitting ? "Submitting…" : "Submit Enquiry"}
+                        </button>
+
+                        <button onClick={() => setModalOpen(false)} className="px-4 py-2 border rounded">
+                          Close
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
