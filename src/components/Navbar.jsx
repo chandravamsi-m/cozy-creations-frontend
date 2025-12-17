@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo image.png";
 
 import { useAuth } from "../contexts/AuthContext";
@@ -13,6 +13,7 @@ export default function Navbar({
   setLoginModalOpen,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logoutUser } = useAuth();
   const { cart } = useCart();
 
@@ -39,10 +40,26 @@ export default function Navbar({
   // Total quantity badge
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const firstName = React.useMemo(() => {
+    if (!user) return "";
+    const raw = (user.displayName || user.email || "").trim();
+    if (!raw) return "";
+    const base = raw.includes("@") ? raw.split("@")[0] : raw;
+    const first = base.split(/\s+/).filter(Boolean)[0] || base;
+    return first.length ? first.charAt(0).toUpperCase() + first.slice(1) : "";
+  }, [user]);
+
+  const navLinkClass = ({ isActive }) =>
+    `hover:text-yellow-accent transition-colors ${
+      isActive ? "text-yellow-accent drop-shadow-[0_0_10px_rgba(250,204,21,0.45)]" : ""
+    }`;
+
   return (
     <nav
       ref={stickyNavRef}
-      className="fixed top-0 left-0 w-full z-50 cc-nav-solid"
+      className={`fixed top-0 left-0 w-full z-50 ${
+        location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
+      }`}
     >
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">
@@ -62,59 +79,35 @@ export default function Navbar({
           <div className="hidden md:flex gap-10 text-xs text-white uppercase">
             <NavLink
               to="/"
-              className={({ isActive }) =>
-                `hover:text-yellow-accent transition-colors ${
-                  isActive ? "text-yellow-accent" : ""
-                }`
-              }
+              className={navLinkClass}
             >
               Home
             </NavLink>
 
             <NavLink
               to="/about"
-              className={({ isActive }) =>
-                `hover:text-yellow-accent transition-colors ${
-                  isActive ? "text-yellow-accent" : ""
-                }`
-              }
+              className={navLinkClass}
             >
               About Us
             </NavLink>
 
             <NavLink
               to="/products"
-              className={({ isActive }) =>
-                `hover:text-yellow-accent transition-colors ${
-                  isActive ? "text-yellow-accent" : ""
-                }`
-              }
+              className={navLinkClass}
             >
               Products
             </NavLink>
 
             <NavLink
-              to="/custom"
-              className={({ isActive }) =>
-                `hover:text-yellow-accent transition-colors ${
-                  isActive ? "text-yellow-accent" : ""
-                }`
-              }
+              to="/contact"
+              className={navLinkClass}
             >
-              Custom
+              Contact Us
             </NavLink>
           </div>
 
           {/* RIGHT SIDE BUTTONS */}
           <div className="flex items-center gap-4">
-            {/* CONTACT */}
-            <NavLink
-              to="/contact"
-              className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs text-black hover:bg-yellow-500 transition-colors"
-            >
-              Contact Us
-            </NavLink>
-
             {/* DESKTOP PROFILE DROPDOWN */}
             {user ? (
               <div className="relative hidden md:block" ref={desktopDropdownRef}>
@@ -125,7 +118,7 @@ export default function Navbar({
                   <div className="w-7 h-7 rounded-full bg-yellow-accent flex items-center justify-center text-black font-semibold">
                     {(user.displayName || user.email).charAt(0).toUpperCase()}
                   </div>
-                  <span>Account</span>
+                  <span className="max-w-[90px] truncate">{firstName || "Account"}</span>
                   <span className="text-[10px]">▼</span>
                 </button>
 
@@ -163,7 +156,7 @@ export default function Navbar({
             ) : (
               <button
                 onClick={() => setLoginModalOpen(true)}
-                className="hidden md:inline-flex text-white text-xs hover:text-yellow-accent"
+                className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs font-semibold text-black hover:bg-yellow-500 transition-colors"
               >
                 Login
               </button>
@@ -225,11 +218,11 @@ export default function Navbar({
           </NavLink>
 
           <NavLink
-            to="/custom"
+            to="/contact"
             onClick={() => setMenuOpen(false)}
             className="block hover:text-yellow-accent"
           >
-            Custom
+            Contact Us
           </NavLink>
 
           {/* MOBILE PROFILE DROPDOWN */}
@@ -243,7 +236,7 @@ export default function Navbar({
                   <div className="w-7 h-7 rounded-full bg-yellow-accent flex items-center justify-center text-black font-semibold">
                     {(user.displayName || user.email).charAt(0).toUpperCase()}
                   </div>
-                  <span>Account</span>
+                  <span className="max-w-[140px] truncate">{firstName || "Account"}</span>
                 </div>
                 <span className="text-xs">
                   {mobileProfileOpen ? "▲" : "▼"}
@@ -314,14 +307,6 @@ export default function Navbar({
             )}
           </button>
 
-          {/* CONTACT BUTTON */}
-          <NavLink
-            to="/contact"
-            onClick={() => setMenuOpen(false)}
-            className="w-full block bg-yellow-accent text-black rounded-md py-2 text-xs font-semibold text-center hover:bg-yellow-500 transition-colors"
-          >
-            Contact Us
-          </NavLink>
         </div>
       </div>
     </nav>
