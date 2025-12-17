@@ -77,7 +77,7 @@ export default function ProductsPage() {
       const matchesSearch =
         s
           ? p.name?.toLowerCase().includes(s) ||
-            p.productName?.toLowerCase().includes(s)
+          p.productName?.toLowerCase().includes(s)
           : true;
 
       const matchesPrice =
@@ -187,9 +187,8 @@ export default function ProductsPage() {
               <button
                 key={key}
                 onClick={() => setCategory(key)}
-                className={`w-full flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 ${
-                  category === key ? "bg-gray-100" : ""
-                }`}
+                className={`w-full flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""
+                  }`}
               >
                 <span>{c.icon}</span> {c.label}
               </button>
@@ -197,7 +196,7 @@ export default function ProductsPage() {
           </aside>
 
           {/* MAIN CONTENT — layout preserved */}
-          <div className="flex-1 p-4 lg:p-6 pb-24">
+          <div className="flex-1 p-4 lg:p-6 pb-6">
 
             {/* SORT ROW */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -243,9 +242,8 @@ export default function ProductsPage() {
                       return (
                         <button
                           key={o.value}
-                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                            active ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"
-                          }`}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${active ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"
+                            }`}
                           onClick={() => {
                             setSortBy(o.value);
                             setShowSortMenu(false);
@@ -290,19 +288,12 @@ export default function ProductsPage() {
 
             {/* PAGINATION */}
             {filtered.length > productsPerPage && (
-              <div className="flex flex-col items-center gap-3 mt-10 pb-24">
-                <div className="inline-flex items-center gap-2 text-xs text-gray-600 bg-white border border-gray-200 rounded-full px-3 py-1 shadow-sm">
-                  <span>Page</span>
-                  <span className="font-semibold text-gray-900">{currentPage}</span>
-                  <span className="text-gray-400">/</span>
-                  <span className="font-semibold text-gray-900">{totalPages}</span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-2 py-2 shadow-sm">
+              <div className="flex flex-col items-center gap-3 mt-6 pb-6">
+                <div className="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-full px-1.5 py-1.5 shadow-sm">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="w-10 h-10 rounded-full grid place-items-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-9 h-9 rounded-full grid place-items-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label="Previous page"
                   >
                     <span className="text-lg leading-none">‹</span>
@@ -312,7 +303,7 @@ export default function ProductsPage() {
                     it === "…" ? (
                       <span
                         key={`dots-${idx}`}
-                        className="w-10 h-10 rounded-full grid place-items-center text-gray-400 select-none"
+                        className="w-9 h-9 rounded-full grid place-items-center text-gray-400 select-none"
                       >
                         …
                       </span>
@@ -320,11 +311,10 @@ export default function ProductsPage() {
                       <button
                         key={it}
                         onClick={() => setCurrentPage(it)}
-                        className={`w-10 h-10 rounded-full text-sm font-medium transition ${
-                          it === currentPage
+                        className={`w-9 h-9 rounded-full text-[13px] font-medium transition ${it === currentPage
                             ? "bg-[#8B7355] text-white shadow-sm"
                             : "text-gray-700 hover:bg-gray-50"
-                        }`}
+                          }`}
                         aria-current={it === currentPage ? "page" : undefined}
                       >
                         {it}
@@ -335,7 +325,7 @@ export default function ProductsPage() {
                   <button
                     disabled={currentPage >= totalPages}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="w-10 h-10 rounded-full grid place-items-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-9 h-9 rounded-full grid place-items-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label="Next page"
                   >
                     <span className="text-lg leading-none">›</span>

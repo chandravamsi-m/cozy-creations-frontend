@@ -52,6 +52,16 @@ export default function ProductCard({ product }) {
     return chips;
   };
 
+  const toCloudinaryThumb = (url) => {
+    if (!url || typeof url !== "string") return url;
+    if (!url.includes("res.cloudinary.com")) return url;
+    if (!url.includes("/image/upload/")) return url;
+    const parts = url.split("/image/upload/");
+    if (parts.length !== 2) return url;
+    // Optimized thumbnail for grid performance
+    return `${parts[0]}/image/upload/w_520,h_390,c_fill,q_auto,f_auto/${parts[1]}`;
+  };
+
   // Sync UI quantity with cart quantity
   useEffect(() => {
     const item = cart.find((i) => i.productId === product.id);
@@ -100,9 +110,13 @@ export default function ProductCard({ product }) {
         className="aspect-[4/3] bg-[#F5F5F0] overflow-hidden"
       >
         <img
-          src={getImageSrc(product.imageUrl || product.image, product.mimeType)}
+          src={toCloudinaryThumb(
+            getImageSrc(product.imageUrl || product.image, product.mimeType)
+          )}
           alt={product.altText || product.name || "product"}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src =
@@ -118,7 +132,7 @@ export default function ProductCard({ product }) {
           <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 flex-1">
             {product.name}
           </h3>
-          <span className="text-sm sm:text-base xl:text-sm font-medium text-[#8B7355] whitespace-nowrap">
+          <span className="text-sm sm:text-base xl:text-sm font-bold text-[#6F573D] whitespace-nowrap bg-yellow-accent/60 border border-yellow-accent/70 px-3 py-1 rounded-full leading-none shadow-sm">
             {formatPrice(product.price)}
           </span>
         </div>
