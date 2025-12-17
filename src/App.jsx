@@ -9,6 +9,8 @@ import { ProductsProvider } from "./contexts/ProductsContext";
 import { AuthProvider } from "./contexts/AuthContext"; // ⭐ REQUIRED
 import LoginModal from "./components/LoginModal";
 import { CartProvider } from "./hooks/useCart";
+import { useAuth } from "./contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 // Lazy pages
 const Home = lazy(() => import("./pages/Home/Home"));
@@ -18,6 +20,14 @@ const Custom = lazy(() => import("./pages/Custom/Custom"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const CartPage = lazy(() => import("./pages/Cart/Cart"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminCreateProduct = lazy(() =>
+  import("./pages/admin/AdminCreateProduct")
+);
+const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminOrderDetails = lazy(() => import("./pages/admin/AdminOrderDetails"));
 
 // Component with routing
 function AppContent({
@@ -31,7 +41,14 @@ function AppContent({
   setLoginModalOpen,
 }) {
   const location = useLocation();
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const NAV_HEIGHT = 72;
+  useEffect(() => {
+    if (user && isAdmin) {
+      navigate("/admin");
+    }
+  }, [user, isAdmin]);
 
   // GSAP logic (unchanged)
   useEffect(() => {
@@ -156,6 +173,15 @@ function AppContent({
             <Route path="contact" element={<Contact />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="*" element={<NotFound />} />
+          </Route>
+
+          {/* ADMIN ROUTES */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminProducts />} />
+            <Route path="create" element={<AdminCreateProduct />} />
+            <Route path="products/:id/edit" element={<AdminEditProduct />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetails />} />
           </Route>
         </Routes>
       </Suspense>

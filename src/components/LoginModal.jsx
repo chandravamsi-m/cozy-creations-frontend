@@ -1,22 +1,37 @@
 // src/components/LoginModal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginModal({ closeModal }) {
-  const { signInWithGoogle, loginWithEmail, signupWithEmail } = useAuth();
+  const navigate = useNavigate();
 
-  // Tabs: "login" | "signup"
+  const {
+    signInWithGoogle,
+    loginWithEmail,
+    signupWithEmail,
+    isAdmin,
+    loading: authLoading,
+  } = useAuth();
+
   const [mode, setMode] = useState("login");
 
-  // Form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
+  const handlePostLogin = () => {
+    closeModal();
+  };
+
+  // -------------------------
+  // EMAIL LOGIN / SIGNUP
+  // -------------------------
   const submitEmailForm = async () => {
     setErrMsg("");
+
     if (!email.trim() || !password.trim()) {
       setErrMsg("Please enter both email and password.");
       return;
@@ -31,7 +46,8 @@ export default function LoginModal({ closeModal }) {
         await signupWithEmail(email, password);
       }
 
-      closeModal();
+      handlePostLogin();
+
     } catch (err) {
       setErrMsg(err.message || "Something went wrong.");
     } finally {
@@ -39,12 +55,18 @@ export default function LoginModal({ closeModal }) {
     }
   };
 
+  // -------------------------
+  // GOOGLE LOGIN
+  // -------------------------
   const googleLogin = async () => {
     try {
       setErrMsg("");
       setLoading(true);
+
       await signInWithGoogle();
-      closeModal();
+
+      handlePostLogin();
+
     } catch (err) {
       setErrMsg("Google Sign-In failed.");
     } finally {
@@ -54,15 +76,14 @@ export default function LoginModal({ closeModal }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-      {/* Click background to close */}
-      <div
-        className="absolute inset-0"
-        onClick={closeModal}
-      ></div>
 
-      {/* Modal */}
+      {/* CLICK OUTSIDE TO CLOSE */}
+      <div className="absolute inset-0" onClick={closeModal}></div>
+
+      {/* MODAL */}
       <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-fadeIn">
-        {/* Header */}
+        
+        {/* HEADER */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-xl font-semibold text-gray-800">
             {mode === "login" ? "Welcome Back" : "Create Account"}
@@ -72,10 +93,10 @@ export default function LoginModal({ closeModal }) {
           </button>
         </div>
 
-        {/* Tabs */}
+        {/* TABS */}
         <div className="flex">
           <button
-            className={`flex-1 py-3 text-center font-medium transition-colors ${
+            className={`flex-1 py-3 text-center font-medium ${
               mode === "login"
                 ? "text-gray-900 border-b-2 border-yellow-accent"
                 : "text-gray-500"
@@ -84,8 +105,9 @@ export default function LoginModal({ closeModal }) {
           >
             Login
           </button>
+
           <button
-            className={`flex-1 py-3 text-center font-medium transition-colors ${
+            className={`flex-1 py-3 text-center font-medium ${
               mode === "signup"
                 ? "text-gray-900 border-b-2 border-yellow-accent"
                 : "text-gray-500"
@@ -96,9 +118,8 @@ export default function LoginModal({ closeModal }) {
           </button>
         </div>
 
-        {/* Form */}
+        {/* BODY */}
         <div className="px-6 py-6">
-
           {errMsg && (
             <div className="mb-3 text-sm text-red-600 bg-red-50 p-2 rounded">
               {errMsg}
@@ -106,6 +127,7 @@ export default function LoginModal({ closeModal }) {
           )}
 
           <div className="flex flex-col gap-4">
+            {/* EMAIL */}
             <div>
               <label className="block text-sm text-gray-700 mb-1">Email</label>
               <input
@@ -117,10 +139,9 @@ export default function LoginModal({ closeModal }) {
               />
             </div>
 
+            {/* PASSWORD */}
             <div>
-              <label className="block text-sm text-gray-700 mb-1">
-                Password
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent"
@@ -128,32 +149,30 @@ export default function LoginModal({ closeModal }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="text-[11px] text-gray-500 mt-1">
-                {mode === "signup"
-                  ? "Password must be at least 6 characters."
-                  : ""}
-              </p>
+              {mode === "signup" && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Password must be at least 6 characters.
+                </p>
+              )}
             </div>
 
+            {/* SUBMIT BUTTON */}
             <button
               onClick={submitEmailForm}
               disabled={loading}
               className="w-full py-2 bg-yellow-accent text-black rounded-lg font-semibold hover:bg-yellow-500 transition-colors disabled:opacity-50"
             >
-              {loading
-                ? "Please wait…"
-                : mode === "login"
-                ? "Login"
-                : "Create Account"}
+              {loading ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
             </button>
 
+            {/* DIVIDER */}
             <div className="flex items-center gap-3 my-2">
               <div className="flex-1 h-[1px] bg-gray-300"></div>
               <span className="text-gray-500 text-xs">OR</span>
               <div className="flex-1 h-[1px] bg-gray-300"></div>
             </div>
 
-            {/* Google button */}
+            {/* GOOGLE LOGIN */}
             <button
               onClick={googleLogin}
               disabled={loading}
@@ -171,7 +190,7 @@ export default function LoginModal({ closeModal }) {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* FOOTER */}
         <div className="px-6 py-4 bg-gray-50 text-center text-sm text-gray-700">
           {mode === "login" ? (
             <>
@@ -197,7 +216,7 @@ export default function LoginModal({ closeModal }) {
         </div>
       </div>
 
-      {/* ANIMATIONS */}
+      {/* ANIMATION */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.95); }
