@@ -26,7 +26,6 @@ export default function Footer() {
                             <a href="#" className="hover:text-yellow-accent transition-colors">Home</a>
                             <a href="#" className="hover:text-yellow-accent transition-colors">About Us</a>
                             <a href="#" className="hover:text-yellow-accent transition-colors">Products</a>
-                            <a href="#" className="hover:text-yellow-accent transition-colors">Customize</a>
                             <a href="#" className="hover:text-yellow-accent transition-colors">Contact Us</a>
                         </div>
 

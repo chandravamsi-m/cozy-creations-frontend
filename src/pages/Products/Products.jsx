@@ -220,6 +220,19 @@ export default function ProductsPage() {
                 <span>{c.icon}</span> {c.label}
               </button>
             ))}
+
+            {/* Customization Info Banner */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg flex-shrink-0">✨</span>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <span className="font-semibold text-gray-900">Customize your order</span>{" "}
+                    with fragrance & color options in your cart.
+                  </p>
+                </div>
+              </div>
+            </div>
           </aside>
 
           {/* MAIN CONTENT — layout preserved */}
