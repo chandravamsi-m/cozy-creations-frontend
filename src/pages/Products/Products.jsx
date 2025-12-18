@@ -79,6 +79,22 @@ export default function ProductsPage() {
     setIsVisible((prev) => ({ ...prev, hero: true }));
   }, []);
 
+  // Scroll to top of products section when page changes
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    // Skip scroll on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    // Scroll to products section when page changes
+    const productsElement = document.getElementById("products");
+    if (productsElement) {
+      productsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [currentPage]);
+
   // Intersection Observer for scroll animations
   useEffect(() => {
     const observer = new IntersectionObserver(
