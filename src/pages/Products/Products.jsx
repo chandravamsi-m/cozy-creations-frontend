@@ -1,12 +1,11 @@
 // src/pages/Products/Products.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import productsHeroBg from "../../assets/images/products-hero-bg.png";
 import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
-import { getProductByIdFirestore } from "../../hooks/useProductsFirestore";
-import { getImageSrc } from "../../utils/image";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
+import { useLocation } from "react-router-dom";
 
 // COLLECTIONS LIST
 const COLLECTIONS = {
@@ -27,6 +26,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProductsPage() {
+  const location = useLocation();
   const {
     products: contextProducts,
     loading: contextLoading,
@@ -40,27 +40,17 @@ export default function ProductsPage() {
 
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
+  const appliedInitialCategoryRef = useRef(false);
+  const appliedInitialScrollRef = useRef(false);
 
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sortBy, setSortBy] = useState("featured");
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
+  // Keep page size aligned with the desktop grid so rows fill cleanly.
+  // With xl:grid-cols-4, 8 items = 2 full rows.
   const productsPerPage = 8;
-
-  // Modal + Enquiry
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState(null);
-
-  const [enqSubmitting, setEnqSubmitting] = useState(false);
-  const [enqSuccess, setEnqSuccess] = useState(null);
-  const [enqError, setEnqError] = useState(null);
-  const [enqName, setEnqName] = useState("");
-  const [enqPhone, setEnqPhone] = useState("");
-  const [enqQuantity, setEnqQuantity] = useState(1);
-  const [enqCustomization, setEnqCustomization] = useState("");
 
   // Auto-scroll after 5s on hero (exclude Contact only; Products included)
   useAutoScrollFromHero({
@@ -91,7 +81,7 @@ export default function ProductsPage() {
       const matchesSearch =
         s
           ? p.name?.toLowerCase().includes(s) ||
-            p.productName?.toLowerCase().includes(s)
+          p.productName?.toLowerCase().includes(s)
           : true;
 
       const matchesPrice =
@@ -129,65 +119,45 @@ export default function ProductsPage() {
     setSearch("");
   }, [category]);
 
-  // Load product detail from Firestore
-  const openProductDetail = async (id) => {
-    setModalOpen(true);
-    setDetailLoading(true);
-    setSelectedProduct(null);
-    setDetailError(null);
-
-    try {
-      const data = await getProductByIdFirestore(id);
-      if (!data) throw new Error("Not found");
-      setSelectedProduct(data);
-    } catch (err) {
-      setDetailError("Failed to load product details");
-    } finally {
-      setDetailLoading(false);
+  // If we navigated here from Home "Explore <collection>", pre-select that category once.
+  useEffect(() => {
+    if (appliedInitialCategoryRef.current) return;
+    const incoming = location.state?.category;
+    if (incoming) {
+      appliedInitialCategoryRef.current = true;
+      setCategory(incoming);
     }
-  };
+  }, [location.state]);
 
-  // Submit enquiry
-  const submitEnquiry = async () => {
-    setEnqError(null);
-    setEnqSuccess(null);
+  // If we navigated here from Home, jump straight to the products grid (skip hero).
+  useEffect(() => {
+    if (appliedInitialScrollRef.current) return;
+    if (location.state?.scrollTo !== "products") return;
+    appliedInitialScrollRef.current = true;
 
-    if (!enqName.trim()) return setEnqError("Please enter your name");
-    if (!enqPhone.trim()) return setEnqError("Please enter your phone");
+    // Wait a tick for layout so scroll is reliable.
+    requestAnimationFrame(() => {
+      const el = document.getElementById("products");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [location.state]);
 
-    const payload = {
-      name: enqName.trim(),
-      phone: enqPhone.trim(),
-      quantity: Number(enqQuantity),
-      productId: selectedProduct?.id,
-      productName: selectedProduct?.name,
-      productCategory: selectedProduct?.category,
-      customizationRequest: enqCustomization,
-      source: "website",
-    };
+  const totalPages = Math.max(1, Math.ceil(filtered.length / productsPerPage));
+  const pageItems = (() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
 
-    try {
-      setEnqSubmitting(true);
-
-      const resp = await fetch(
-        import.meta.env.VITE_BACKEND_URL + "/enquiries",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!resp.ok) throw new Error("Server error");
-
-      setEnqSuccess("Enquiry submitted successfully!");
-      setTimeout(() => setModalOpen(false), 1500);
-    } catch (err) {
-      setEnqError("Failed to submit enquiry");
-    } finally {
-      setEnqSubmitting(false);
+    const items = new Set([1, totalPages]);
+    for (let p = currentPage - 1; p <= currentPage + 1; p++) {
+      if (p > 1 && p < totalPages) items.add(p);
     }
-  };
+    const arr = Array.from(items).sort((a, b) => a - b);
+    const withDots = [];
+    for (let i = 0; i < arr.length; i++) {
+      withDots.push(arr[i]);
+      if (i < arr.length - 1 && arr[i + 1] - arr[i] > 1) withDots.push("…");
+    }
+    return withDots;
+  })();
 
   return (
     <main className="w-full bg-[#FBFAF9] font-montserrat">
@@ -230,7 +200,7 @@ export default function ProductsPage() {
         <div className="flex flex-col lg:flex-row">
 
           {/* SIDEBAR — unchanged */}
-          <aside className="hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 sticky top-0">
+          <aside className="hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 sticky top-6 self-start max-h-[calc(100vh-24px)] overflow-y-auto rounded-xl">
             <h2 className="text-xl font-semibold mb-6">Collections</h2>
 
             <button
@@ -244,46 +214,85 @@ export default function ProductsPage() {
               <button
                 key={key}
                 onClick={() => setCategory(key)}
-                className={`w-full flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 ${
-                  category === key ? "bg-gray-100" : ""
-                }`}
+                className={`w-full flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""
+                  }`}
               >
                 <span>{c.icon}</span> {c.label}
               </button>
             ))}
+
+            {/* Customization Info Banner */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg flex-shrink-0">✨</span>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    <span className="font-semibold text-gray-900">Customize your order</span>{" "}
+                    with fragrance & color options in your cart.
+                  </p>
+                </div>
+              </div>
+            </div>
           </aside>
 
           {/* MAIN CONTENT — layout preserved */}
-          <div className="flex-1 p-4 lg:p-6">
+          <div className="flex-1 p-4 lg:p-6 pb-6">
 
-            {/* SORT ROW — unchanged UI */}
+            {/* SORT ROW */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <p className="text-sm text-gray-600">
-                Showing {filtered.length} products
-              </p>
+              <div className="text-sm text-gray-600">
+                <span className="font-medium text-gray-900">{filtered.length}</span>{" "}
+                {filtered.length === 1 ? "product" : "products"} found
+                {category && (
+                  <span className="text-gray-500">
+                    {" "}
+                    in <span className="font-medium text-gray-700">{COLLECTIONS[category]?.label || category}</span>
+                  </span>
+                )}
+              </div>
 
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <button
                   onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg bg-white flex items-center gap-2"
+                  className="w-full sm:w-auto px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition"
                 >
-                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
+                  <span className="text-sm font-medium text-gray-800">
+                    Sort:{" "}
+                    <span className="font-semibold">
+                      {SORT_OPTIONS.find((o) => o.value === sortBy)?.label}
+                    </span>
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-gray-500 transition-transform ${showSortMenu ? "rotate-180" : ""}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </button>
 
                 {showSortMenu && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-10 py-1">
-                    {SORT_OPTIONS.map((o) => (
-                      <button
-                        key={o.value}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          setSortBy(o.value);
-                          setShowSortMenu(false);
-                        }}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
+                  <div className="absolute right-0 mt-2 w-full sm:w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-10 py-1 overflow-hidden">
+                    {SORT_OPTIONS.map((o) => {
+                      const active = o.value === sortBy;
+                      return (
+                        <button
+                          key={o.value}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${active ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"
+                            }`}
+                          onClick={() => {
+                            setSortBy(o.value);
+                            setShowSortMenu(false);
+                          }}
+                        >
+                          {o.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -303,153 +312,69 @@ export default function ProductsPage() {
                 {filtered.length === 0 ? (
                   <div className="py-12 text-center text-gray-700">No products found.</div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                     {filtered
                       .slice(
                         (currentPage - 1) * productsPerPage,
                         currentPage * productsPerPage
                       )
                       .map((p) => (
-                        <ProductCard
-                          key={p.id}
-                          product={p}
-                          onEnquire={() => {
-                            setSelectedProduct(p);
-                            setModalOpen(true);
-                          }}
-                          onViewDetails={() => openProductDetail(p.id)}
-                        />
+                        <ProductCard key={p.id} product={p} />
                       ))}
                   </div>
                 )}
               </>
             )}
 
-            {/* PAGINATION — same UI */}
+            {/* PAGINATION */}
             {filtered.length > productsPerPage && (
-              <div className="flex justify-center items-center gap-3 mt-10">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="px-4 py-2 border rounded disabled:opacity-50"
-                >
-                  Prev
-                </button>
+              <div className="flex flex-col items-center gap-3 mt-6 pb-6">
+                <div className="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-full px-1.5 py-1.5 shadow-sm">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="w-9 h-9 rounded-full grid place-items-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Previous page"
+                  >
+                    <span className="text-lg leading-none">‹</span>
+                  </button>
 
-                <button
-                  disabled={currentPage * productsPerPage >= filtered.length}
-                  onClick={() =>
-                    setCurrentPage((p) =>
-                      Math.min(Math.ceil(filtered.length / productsPerPage), p + 1)
+                  {pageItems.map((it, idx) =>
+                    it === "…" ? (
+                      <span
+                        key={`dots-${idx}`}
+                        className="w-9 h-9 rounded-full grid place-items-center text-gray-400 select-none"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={it}
+                        onClick={() => setCurrentPage(it)}
+                        className={`w-9 h-9 rounded-full text-[13px] font-medium transition ${it === currentPage
+                            ? "bg-[#8B7355] text-white shadow-sm"
+                            : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        aria-current={it === currentPage ? "page" : undefined}
+                      >
+                        {it}
+                      </button>
                     )
-                  }
-                  className="px-4 py-2 border rounded disabled:opacity-50"
-                >
-                  Next
-                </button>
+                  )}
+
+                  <button
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="w-9 h-9 rounded-full grid place-items-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Next page"
+                  >
+                    <span className="text-lg leading-none">›</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
-
-        {/* PRODUCT DETAIL MODAL — restored exactly */}
-        {modalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full p-6 relative">
-
-              <button
-                className="absolute top-3 right-3 text-gray-600"
-                onClick={() => setModalOpen(false)}
-              >
-                ✕
-              </button>
-
-              {detailLoading ? (
-                <div className="py-10 text-center">Loading product…</div>
-              ) : detailError ? (
-                <div className="py-10 text-center text-red-600">{detailError}</div>
-              ) : selectedProduct ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                  {/* IMAGE */}
-                  <div className="h-64 bg-gray-100 rounded overflow-hidden">
-                    <img
-                      src={getImageSrc(
-                        selectedProduct.imageUrl,
-                        selectedProduct.mimeType
-                      )}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          "https://via.placeholder.com/600x400?text=No+Image";
-                      }}
-                    />
-                  </div>
-
-                  {/* INFO */}
-                  <div>
-                    <h3 className="text-2xl font-bold">{selectedProduct.name}</h3>
-
-                    <p className="text-sm text-gray-600 mt-2">
-                      {selectedProduct.description}
-                    </p>
-
-                    <p className="mt-4 text-xl font-bold">₹{selectedProduct.price}</p>
-
-                    {/* ENQUIRY FORM */}
-                    <div className="mt-6">
-                      <h4 className="font-medium mb-2">Quick Enquiry</h4>
-
-                      {enqSuccess && (
-                        <div className="text-green-600 mb-2">{enqSuccess}</div>
-                      )}
-                      {enqError && (
-                        <div className="text-red-600 mb-2">{enqError}</div>
-                      )}
-
-                      <input
-                        className="w-full p-2 border rounded mb-2"
-                        placeholder="Your Name"
-                        value={enqName}
-                        onChange={(e) => setEnqName(e.target.value)}
-                      />
-
-                      <input
-                        className="w-full p-2 border rounded mb-2"
-                        placeholder="Phone"
-                        value={enqPhone}
-                        onChange={(e) => setEnqPhone(e.target.value)}
-                      />
-
-                      <input
-                        type="number"
-                        className="w-full p-2 border rounded mb-2"
-                        min="1"
-                        value={enqQuantity}
-                        onChange={(e) => setEnqQuantity(e.target.value)}
-                      />
-
-                      <textarea
-                        className="w-full p-2 border rounded mb-3"
-                        placeholder="Customization (optional)"
-                        value={enqCustomization}
-                        onChange={(e) => setEnqCustomization(e.target.value)}
-                      />
-
-                      <button
-                        className="px-4 py-2 bg-yellow-accent rounded mt-1"
-                        disabled={enqSubmitting}
-                        onClick={submitEnquiry}
-                      >
-                        {enqSubmitting ? "Submitting…" : "Submit Enquiry"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        )}
       </section>
     </main>
   );

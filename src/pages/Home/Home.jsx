@@ -1,5 +1,6 @@
 // src/pages/Home/Home.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import rectangle60 from "../../assets/images/rectangle-60.png";
 import unnamed7 from "../../assets/images/unnamed-7.png";
@@ -17,6 +18,12 @@ import {
 
 export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen }) {
 
+  const navigate = useNavigate();
+  // Home collections IDs aren't 1:1 with product category values in Firestore.
+  // Map where needed so filtering works correctly on the Products page.
+  const categoryRouteMap = {
+    glassjar: "glassJar",
+  };
   const collectionsRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -108,6 +115,11 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             <button
               className="bg-yellow-accent flex items-center gap-2 px-6 py-3 rounded-md mt-4 text-black font-medium"
               type="button"
+              onClick={() => {
+                const el = document.getElementById("collections");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+                else navigate("/products");
+              }}
             >
               <img src={searchBold} alt="Search" className="w-6 h-6" />
               <span>Shop Collections</span>
@@ -155,7 +167,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
       </div>
 
       {/* Collections */}
-      <div className="relative w-full bg-white py-16 z-10">
+      <div id="collections" className="relative w-full bg-white py-16 z-10">
         <div className="max-w-[1280px] mx-auto px-4 relative">
           <h2 className="font-['Montserrat:Regular',sans-serif] font-normal text-4xl md:text-5xl text-black uppercase mb-8 text-center">
             Our Collections
@@ -227,7 +239,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
                   className="flex-shrink-0 w-56 md:flex-1 md:w-auto"
                 >
                   <div className="flex flex-col items-center text-center cursor-pointer group">
-                    <div className="w-56 h-56 md:w-[320px] md:h-[320px] overflow-hidden rounded-lg mb-4 shadow-md bg-gray-100">
+                    <div className="w-48 h-48 md:w-[280px] md:h-[280px] overflow-hidden rounded-lg mb-4 shadow-md bg-gray-100">
                       <img
                         src={col.image}
                         alt={`${col.title} collection`}
@@ -244,6 +256,10 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
                     <button
                       type="button"
                       className="mt-2 bg-yellow-accent px-4 py-2 rounded-md text-sm font-medium text-black hover:bg-yellow-500 transition"
+                      onClick={() => {
+                        const cat = categoryRouteMap[col.id] || col.value || col.id;
+                        navigate("/products", { state: { category: cat, scrollTo: "products" } });
+                      }}
                     >
                       Explore {col.title}
                     </button>
