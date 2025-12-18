@@ -349,6 +349,11 @@ export default function CartPage() {
                           <p className="text-xs sm:text-sm text-gray-600">
                             ₹{item.price.toLocaleString()} <span className="text-gray-400">each</span>
                           </p>
+                          {item.quantityPack && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Pack of {item.quantityPack}
+                            </p>
+                          )}
                         </div>
 
                         <div className="text-right shrink-0">
