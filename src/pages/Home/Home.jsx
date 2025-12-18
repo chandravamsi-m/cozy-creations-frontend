@@ -116,9 +116,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
               className="bg-yellow-accent flex items-center gap-2 px-6 py-3 rounded-md mt-4 text-black font-medium"
               type="button"
               onClick={() => {
-                const el = document.getElementById("collections");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-                else navigate("/products");
+                navigate("/products", { state: { scrollTo: "products" } });
               }}
             >
               <img src={searchBold} alt="Search" className="w-6 h-6" />
@@ -146,14 +144,19 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             <button
               className="bg-yellow-accent px-6 py-3 rounded-md text-black font-medium text-base capitalize whitespace-nowrap"
               type="button"
+              onClick={() => {
+                const el = document.getElementById("collections");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
             >
               Explore collections
             </button>
             <button
               className="border border-black px-6 py-3 rounded-md text-black font-medium text-base capitalize hover:bg-black hover:text-white transition whitespace-nowrap"
               type="button"
+              onClick={() => navigate("/about")}
             >
-              Customize Your Candle
+              Who We Are
             </button>
           </div>
         </div>
