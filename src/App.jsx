@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import MainLayout from "./layouts/MainLayout";
 import { ProductsProvider } from "./contexts/ProductsContext";
 import { AuthProvider } from "./contexts/AuthContext"; // ⭐ REQUIRED
+import { LoginModalProvider, useLoginModal } from "./contexts/LoginModalContext";
 import LoginModal from "./components/LoginModal";
 import { CartProvider } from "./hooks/useCart";
 import { useAuth } from "./contexts/AuthContext";
@@ -19,6 +20,7 @@ const Products = lazy(() => import("./pages/Products/Products"));
 const Custom = lazy(() => import("./pages/Custom/Custom"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const CartPage = lazy(() => import("./pages/Cart/Cart"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess/OrderSuccess"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
@@ -35,9 +37,8 @@ function AppContent({
   stickyNavRef,
   menuOpen,
   setMenuOpen,
-  loginModalOpen,
-  setLoginModalOpen,
 }) {
+  const { openLoginModal } = useLoginModal();
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -124,11 +125,13 @@ function AppContent({
     return () => ctx?.revert();
   }, [location.pathname]);
 
+  const { isOpen: loginModalOpen, closeLoginModal } = useLoginModal();
+
   return (
     <>
       {/* GLOBAL LOGIN MODAL */}
       {loginModalOpen && (
-        <LoginModal closeModal={() => setLoginModalOpen(false)} />
+        <LoginModal closeModal={closeLoginModal} />
       )}
 
       <Suspense
@@ -146,7 +149,6 @@ function AppContent({
                 stickyNavRef={stickyNavRef}
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
-                setLoginModalOpen={setLoginModalOpen}
               />
             }
           >
@@ -166,6 +168,7 @@ function AppContent({
             <Route path="custom" element={<Custom />} />
             <Route path="contact" element={<Contact />} />
             <Route path="cart" element={<CartPage />} />
+            <Route path="order-success" element={<OrderSuccess />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -188,27 +191,24 @@ export default function App() {
   const stickyNavRef = useRef(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   return (
     <AuthProvider>
-      {" "}
-      {/* ⭐ FIXED */}
-      <CartProvider>
-        <ProductsProvider>
-          <BrowserRouter>
-            <AppContent
-              heroRef={heroRef}
-              productSectionRef={productSectionRef}
-              stickyNavRef={stickyNavRef}
-              menuOpen={menuOpen}
-              setMenuOpen={setMenuOpen}
-              loginModalOpen={loginModalOpen}
-              setLoginModalOpen={setLoginModalOpen}
-            />
-          </BrowserRouter>
-        </ProductsProvider>
-      </CartProvider>
+      <LoginModalProvider>
+        <CartProvider>
+          <ProductsProvider>
+            <BrowserRouter>
+              <AppContent
+                heroRef={heroRef}
+                productSectionRef={productSectionRef}
+                stickyNavRef={stickyNavRef}
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+              />
+            </BrowserRouter>
+          </ProductsProvider>
+        </CartProvider>
+      </LoginModalProvider>
     </AuthProvider>
   );
 }

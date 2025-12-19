@@ -5,13 +5,14 @@ import logo from "../assets/images/logo image.png";
 
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
+import { useLoginModal } from "../contexts/LoginModalContext";
 
 export default function Navbar({
   stickyNavRef,
   menuOpen,
   setMenuOpen,
-  setLoginModalOpen,
 }) {
+  const { openLoginModal } = useLoginModal();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logoutUser } = useAuth();
@@ -155,7 +156,7 @@ export default function Navbar({
               </div>
             ) : (
               <button
-                onClick={() => setLoginModalOpen(true)}
+                onClick={openLoginModal}
                 className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs font-semibold text-black hover:bg-yellow-500 transition-colors"
               >
                 Login
@@ -283,7 +284,7 @@ export default function Navbar({
             <button
               onClick={() => {
                 setMenuOpen(false);
-                setLoginModalOpen(true);
+                openLoginModal();
               }}
               className="block hover:text-yellow-accent py-2"
             >

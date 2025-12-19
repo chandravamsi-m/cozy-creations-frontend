@@ -49,6 +49,12 @@ export default function ProductCard({ product }) {
         key: "burnTime",
       });
     }
+    if (product.quantityPack) {
+      chips.push({
+        label: `Pack of ${product.quantityPack}`,
+        key: "quantityPack",
+      });
+    }
     return chips;
   };
 
@@ -74,6 +80,7 @@ export default function ProductCard({ product }) {
       name: product.name,
       price: product.price,
       thumbnailUrl: product.thumbnailUrl || product.imageUrl,
+      quantityPack: product.quantityPack || 1,
       quantity: 1,
     });
     setQuantity(1);

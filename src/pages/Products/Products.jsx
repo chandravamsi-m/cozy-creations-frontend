@@ -25,6 +25,11 @@ const SORT_OPTIONS = [
   { value: "name-desc", label: "Name: Z to A" },
 ];
 
+// Helper function to get mobile-friendly sort label (removes prefixes)
+const getMobileSortLabel = (label) => {
+  return label.replace(/^(Price|Name):\s*/i, "");
+};
+
 export default function ProductsPage() {
   const location = useLocation();
   const {
@@ -46,8 +51,18 @@ export default function ProductsPage() {
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [sortBy, setSortBy] = useState("featured");
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
+  const heroContentRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const productsSectionRef = useRef(null);
+  const productsGridRef = useRef(null);
+  const [isVisible, setIsVisible] = useState({
+    hero: false,
+    sidebar: false,
+    products: false,
+  });
   // Keep page size aligned with the desktop grid so rows fill cleanly.
   // With xl:grid-cols-4, 8 items = 2 full rows.
   const productsPerPage = 8;
@@ -58,6 +73,90 @@ export default function ProductsPage() {
     targetId: "products",
     delayMs: 5000,
   });
+
+  // Hero fade-in on mount
+  useEffect(() => {
+    setIsVisible((prev) => ({ ...prev, hero: true }));
+  }, []);
+
+  // Scroll to top of products section when page changes
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    // Skip scroll on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    // Scroll to products section when page changes
+    const productsElement = document.getElementById("products");
+    if (productsElement) {
+      productsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [currentPage]);
+
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const section = entry.target.getAttribute("data-section");
+            if (section) {
+              setIsVisible((prev) => ({ ...prev, [section]: true }));
+            }
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    if (sidebarRef.current) {
+      observer.observe(sidebarRef.current);
+    }
+    if (productsSectionRef.current) {
+      observer.observe(productsSectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSortMenu && !event.target.closest('[data-sort-dropdown]')) {
+        setShowSortMenu(false);
+      }
+      if (showCategoryMenu && !event.target.closest('[data-category-dropdown]')) {
+        setShowCategoryMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSortMenu, showCategoryMenu]);
+
+  // Animate product cards when they appear
+  useEffect(() => {
+    if (productsGridRef.current && filtered.length > 0 && !contextLoading) {
+      const cards = productsGridRef.current.querySelectorAll('[data-product-card]');
+      // Reset all cards first
+      cards.forEach((card) => {
+        card.style.opacity = "0";
+        card.style.transform = "translateY(20px)";
+      });
+      // Animate them in with stagger
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          if (card) {
+            card.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+            card.style.opacity = "1";
+            card.style.transform = "translateY(0)";
+          }
+        }, index * 50);
+      });
+    }
+  }, [filtered, currentPage, contextLoading]);
 
   // When Firestore products are loaded, set local lists
   useEffect(() => {
@@ -167,11 +266,20 @@ export default function ProductsPage() {
         <img src={productsHeroBg} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/30" />
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-[150px]">
-          <div className="max-w-[461px] flex flex-col gap-6">
+          <div
+            ref={heroContentRef}
+            className={`max-w-[461px] flex flex-col gap-6 transition-all duration-700 ${
+              isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+            }`}
+          >
             <h1 className="text-white text-5xl font-normal leading-tight">
               Lighting Moments, One Candle at a Time
             </h1>
-            <p className="text-white text-lg">
+            <p
+              className={`text-white text-lg transition-all duration-700 delay-200 ${
+                isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
+            >
               Browse our lovingly made collections designed to uplift your space, calm your senses, and make gifting truly special.
             </p>
             <a
@@ -180,7 +288,9 @@ export default function ProductsPage() {
                 e.preventDefault();
                 document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="bg-yellow-accent hover:bg-yellow-accent/90 text-black px-6 py-3 rounded-md w-fit"
+              className={`bg-yellow-accent hover:bg-yellow-accent/90 hover:scale-105 transition-all duration-300 text-black px-6 py-3 rounded-md w-fit delay-300 ${
+                isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
             >
               Shop Now
             </a>
@@ -196,11 +306,22 @@ export default function ProductsPage() {
       </section>
 
       {/* PRODUCTS SECTION — full old UI restored */}
-      <section id="products" className="min-h-screen bg-[#FBFAF9]">
+      <section
+        id="products"
+        ref={productsSectionRef}
+        data-section="products"
+        className="min-h-screen bg-[#FBFAF9]"
+      >
         <div className="flex flex-col lg:flex-row">
 
           {/* SIDEBAR — unchanged */}
-          <aside className="hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 sticky top-6 self-start max-h-[calc(100vh-24px)] overflow-y-auto rounded-xl">
+          <aside
+            ref={sidebarRef}
+            data-section="sidebar"
+            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 sticky top-6 self-start max-h-[calc(100vh-24px)] overflow-y-auto rounded-xl transition-all duration-700 ${
+              isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"
+            }`}
+          >
             <h2 className="text-xl font-semibold mb-6">Collections</h2>
 
             <button
@@ -236,11 +357,15 @@ export default function ProductsPage() {
           </aside>
 
           {/* MAIN CONTENT — layout preserved */}
-          <div className="flex-1 p-4 lg:p-6 pb-6">
+          <div className="flex-1 p-4 lg:p-6 pb-6 relative z-10">
 
             {/* SORT ROW */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <div className="text-sm text-gray-600">
+            <div
+              className={`relative flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 transition-all duration-700 delay-200 z-[100] ${
+                isVisible.products ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
+            >
+              <div className="text-sm text-gray-600 hidden sm:block">
                 <span className="font-medium text-gray-900">{filtered.length}</span>{" "}
                 {filtered.length === 1 ? "product" : "products"} found
                 {category && (
@@ -251,10 +376,123 @@ export default function ProductsPage() {
                 )}
               </div>
 
-              <div className="relative w-full sm:w-auto">
+              {/* Mobile Dropdowns Row */}
+              <div className="lg:hidden flex flex-row gap-3 w-full">
+                {/* Mobile Category Dropdown */}
+                <div className="relative flex-1" data-category-dropdown>
                 <button
-                  onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="w-full sm:w-auto px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition"
+                  onClick={() => {
+                    setShowCategoryMenu(!showCategoryMenu);
+                    setShowSortMenu(false);
+                  }}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition z-[100]"
+                >
+                  <span className="text-sm font-semibold text-gray-800">
+                    {category ? COLLECTIONS[category]?.label || category : "All Products"}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-gray-500 transition-transform ${showCategoryMenu ? "rotate-180" : ""}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+
+                {showCategoryMenu && (
+                  <div className="absolute left-0 top-full mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] py-1 overflow-hidden max-h-[400px] overflow-y-auto">
+                    <button
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
+                        !category ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"
+                      }`}
+                      onClick={() => {
+                        setCategory("");
+                        setShowCategoryMenu(false);
+                      }}
+                    >
+                      All Products
+                    </button>
+                    {Object.entries(COLLECTIONS).map(([key, c]) => {
+                      const isActive = category === key;
+                      return (
+                        <button
+                          key={key}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
+                            isActive ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"
+                          }`}
+                          onClick={() => {
+                            setCategory(key);
+                            setShowCategoryMenu(false);
+                          }}
+                        >
+                          <span>{c.icon}</span> {c.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="relative flex-1" data-sort-dropdown>
+                <button
+                  onClick={() => {
+                    setShowSortMenu(!showSortMenu);
+                    setShowCategoryMenu(false);
+                  }}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition z-[100]"
+                >
+                  <span className="text-sm font-semibold text-gray-800">
+                    {getMobileSortLabel(SORT_OPTIONS.find((o) => o.value === sortBy)?.label || "")}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-gray-500 transition-transform ${showSortMenu ? "rotate-180" : ""}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+
+                {showSortMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] py-1 overflow-hidden">
+                    {SORT_OPTIONS.map((o) => {
+                      const active = o.value === sortBy;
+                      return (
+                        <button
+                          key={o.value}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${active ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"
+                            }`}
+                          onClick={() => {
+                            setSortBy(o.value);
+                            setShowSortMenu(false);
+                          }}
+                        >
+                          {getMobileSortLabel(o.label)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                </div>
+              </div>
+
+              {/* Desktop: Sort only */}
+              <div className="hidden lg:block relative" data-sort-dropdown>
+                <button
+                  onClick={() => {
+                    setShowSortMenu(!showSortMenu);
+                    setShowCategoryMenu(false);
+                  }}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition z-[100]"
                 >
                   <span className="text-sm font-medium text-gray-800">
                     Sort:{" "}
@@ -276,7 +514,7 @@ export default function ProductsPage() {
                 </button>
 
                 {showSortMenu && (
-                  <div className="absolute right-0 mt-2 w-full sm:w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-10 py-1 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] py-1 overflow-hidden">
                     {SORT_OPTIONS.map((o) => {
                       const active = o.value === sortBy;
                       return (
@@ -312,14 +550,19 @@ export default function ProductsPage() {
                 {filtered.length === 0 ? (
                   <div className="py-12 text-center text-gray-700">No products found.</div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+                  <div
+                    ref={productsGridRef}
+                    className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5"
+                  >
                     {filtered
                       .slice(
                         (currentPage - 1) * productsPerPage,
                         currentPage * productsPerPage
                       )
                       .map((p) => (
-                        <ProductCard key={p.id} product={p} />
+                        <div key={p.id} data-product-card>
+                          <ProductCard product={p} />
+                        </div>
                       ))}
                   </div>
                 )}

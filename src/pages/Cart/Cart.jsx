@@ -2,6 +2,9 @@
 import React from "react";
 import { useCart } from "../../hooks/useCart";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { useLoginModal } from "../../contexts/LoginModalContext";
+import { BACKEND_URL } from "../../config/backend";
 
 const FRAGRANCE_OPTIONS = [
   "Rose",
@@ -34,8 +37,10 @@ const COLOR_PRESETS = [
 ];
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeItem } = useCart();
+  const { cart, updateQuantity, removeItem, clearCart } = useCart();
   const navigate = useNavigate();
+  const { user, idToken } = useAuth();
+  const { openLoginModal } = useLoginModal();
 
   const [customizations, setCustomizations] = React.useState(() => {
     try {
@@ -115,6 +120,164 @@ export default function CartPage() {
 
   const removeFromCart = (id) => removeItem(id);
 
+  // Handle checkout - check auth first
+  const handleCheckout = async () => {
+    // Check if cart is empty
+    if (cart.length === 0) {
+      return;
+    }
+
+    // Check if user is logged in
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+
+    // User is logged in - proceed with payment
+    try {
+      await initiatePayment();
+    } catch (error) {
+      console.error("Payment initiation failed:", error);
+      alert("Failed to initiate payment. Please try again.");
+    }
+  };
+
+  // Initiate Razorpay payment
+  const initiatePayment = async () => {
+    if (!idToken) {
+      alert("Please wait while we verify your session...");
+      return;
+    }
+
+    // Prepare order data
+    const orderData = {
+      items: cart.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        customization: customizations[item.productId] || null,
+      })),
+      total: totalAmount,
+    };
+
+    // Debug logging
+    console.log("Initiating payment with:", {
+      backendUrl: BACKEND_URL,
+      orderData,
+      hasIdToken: !!idToken,
+    });
+
+    try {
+      // Build URL - handle case where BACKEND_URL might already include /api
+      const baseUrl = (BACKEND_URL || "").replace(/\/api$/, ""); // Remove trailing /api if present
+      const paymentUrl = `${baseUrl}/api/orders/create-payment`;
+      
+      console.log("Calling payment endpoint:", paymentUrl);
+
+      // Call backend to create Razorpay order
+      const response = await fetch(paymentUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      // Clone response for error handling (so we can read it multiple times)
+      const responseClone = response.clone();
+
+      if (!response.ok) {
+        // Try to get error message from backend
+        let errorMessage = "Failed to create payment order";
+        try {
+          const errorData = await responseClone.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.error("Backend error:", errorData);
+        } catch (e) {
+          try {
+            const errorText = await responseClone.text();
+            console.error("Backend error response:", errorText);
+            errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
+          } catch (textError) {
+            errorMessage = `Server error (${response.status}): ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      const { orderId, amount, currency, key } = await response.json();
+
+      // Validate response
+      if (!orderId || !amount || !key) {
+        throw new Error("Invalid response from payment server");
+      }
+
+      // Initialize Razorpay
+      const options = {
+        key: key, // Razorpay key from backend
+        amount: amount, // Amount in paise
+        currency: currency,
+        name: "Cozy Creations",
+        description: `Order for ${cart.length} item(s)`,
+        order_id: orderId,
+        handler: async function (response) {
+          // Payment successful - verify with backend
+          try {
+            // Build URL - handle case where BACKEND_URL might already include /api
+            const baseUrl = (BACKEND_URL || "").replace(/\/api$/, ""); // Remove trailing /api if present
+            const verifyUrl = `${baseUrl}/api/orders/verify-payment`;
+            
+            const verifyResponse = await fetch(verifyUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${idToken}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData: orderData,
+              }),
+            });
+
+            if (verifyResponse.ok) {
+              const result = await verifyResponse.json();
+              // Clear cart and customizations
+              clearCart();
+              localStorage.removeItem("cc_cart_customizations_v1");
+              // Navigate to success page or show success message
+              navigate("/order-success", { state: { orderId: result.orderId } });
+            } else {
+              throw new Error("Payment verification failed");
+            }
+          } catch (error) {
+            console.error("Payment verification error:", error);
+            alert("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: user.displayName || "",
+          email: user.email || "",
+        },
+        theme: {
+          color: "#FACC15", // yellow-accent
+        },
+        modal: {
+          ondismiss: function () {
+            console.log("Payment cancelled");
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Payment initiation error:", error);
+      throw error;
+    }
+  };
+
   return (
     <main className="w-full bg-[#FBFAF9] min-h-screen px-4 py-10 pt-20 sm:pt-24 font-montserrat">
       <div className="max-w-[1100px] mx-auto">
@@ -161,118 +324,128 @@ export default function CartPage() {
               {cart.map((item) => (
                 <div
                   key={item.productId}
-                  className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white border border-gray-200/60 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex gap-4">
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gray-100 rounded-xl overflow-hidden shrink-0">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Product Image */}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden shrink-0 relative group">
                       <img
                         src={item.thumbnailUrl || item.imageUrl}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
                         decoding="async"
                       />
                     </div>
 
+                    {/* Product Details */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 leading-tight line-clamp-2">
                             {item.name}
                           </h2>
-                          <p className="mt-1 text-sm text-gray-600">
-                            ₹{item.price} <span className="text-gray-400">each</span>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            ₹{item.price.toLocaleString()} <span className="text-gray-400">each</span>
                           </p>
+                          {item.quantityPack && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Pack of {item.quantityPack}
+                            </p>
+                          )}
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">Subtotal</p>
-                          <p className="text-base font-semibold text-gray-900">
-                            ₹{item.price * item.quantity}
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Subtotal</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            ₹{(item.price * item.quantity).toLocaleString()}
                           </p>
                         </div>
                       </div>
 
-                      <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                      {/* Customization Display */}
+                      {customizations[item.productId]?.fragrance ||
+                      customizations[item.productId]?.colourHex ||
+                      customizations[item.productId]?.colourName ? (
+                        <div className="mb-3 p-2.5 bg-gradient-to-br from-yellow-accent/10 to-yellow-accent/5 border border-yellow-accent/20 rounded-lg">
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <svg className="w-3.5 h-3.5 text-yellow-accent" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-[10px] font-semibold text-gray-800 uppercase tracking-wide">Customized</span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            {customizations[item.productId]?.fragrance && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-600">Fragrance:</span>
+                                <span className="font-semibold text-gray-900 bg-white px-2 py-0.5 rounded text-[11px]">
+                                  {customizations[item.productId].fragrance === "Other"
+                                    ? customizations[item.productId].fragranceOther || "Other"
+                                    : customizations[item.productId].fragrance}
+                                </span>
+                              </div>
+                            )}
+                            {(customizations[item.productId]?.colourHex ||
+                              customizations[item.productId]?.colourName) && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-600">Color:</span>
+                                {customizations[item.productId]?.colourHex && (
+                                  <span
+                                    className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                    style={{ backgroundColor: customizations[item.productId].colourHex }}
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                <span className="font-semibold text-gray-900 bg-white px-2 py-0.5 rounded text-[11px]">
+                                  {customizations[item.productId]?.colourName ||
+                                    customizations[item.productId]?.colourHex}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {/* Actions Row */}
+                      <div className="flex flex-row items-center gap-2 pt-3 border-t border-gray-200">
                         {/* Quantity Controls */}
-                        <div className="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1">
+                        <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
                           <button
                             onClick={() => decreaseQuantity(item.productId)}
-                            className="w-9 h-9 rounded-full hover:bg-gray-50 text-gray-800 grid place-items-center"
+                            className="w-6 h-6 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs transition-all"
                             aria-label="Decrease quantity"
                           >
                             −
                           </button>
 
-                          <span className="min-w-[28px] text-center font-semibold text-gray-900">
+                          <span className="min-w-[24px] text-center font-bold text-gray-900 text-xs">
                             {item.quantity}
                           </span>
 
                           <button
                             onClick={() => increaseQuantity(item.productId)}
-                            className="w-9 h-9 rounded-full hover:bg-gray-50 text-gray-800 grid place-items-center"
+                            className="w-6 h-6 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs transition-all"
                             aria-label="Increase quantity"
                           >
                             +
                           </button>
                         </div>
 
-                          <button
-                            onClick={() => openCustomize(item)}
-                            className="text-sm font-semibold text-gray-800 border border-gray-300 bg-white hover:bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto"
-                          >
-                            Customize
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => openCustomize(item)}
+                          className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-xs font-semibold text-gray-800 transition-all hover:border-gray-400 whitespace-nowrap"
+                        >
+                          {customizations[item.productId] ? "Edit" : "Customize"}
+                        </button>
 
                         <button
                           onClick={() => removeFromCart(item.productId)}
-                          className="text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg w-full sm:w-auto"
+                          className="px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 active:bg-red-100 text-xs font-semibold text-red-600 hover:text-red-700 transition-all hover:border-red-300 whitespace-nowrap"
                         >
                           Remove
                         </button>
                       </div>
-
-                      {customizations[item.productId]?.fragrance ||
-                      customizations[item.productId]?.colourHex ||
-                      customizations[item.productId]?.colourName ? (
-                        <div className="mt-3 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-2">
-                          <span className="font-semibold text-gray-800">Customization:</span>{" "}
-                          {customizations[item.productId]?.fragrance ? (
-                            <span>
-                              Fragrance:{" "}
-                              <span className="font-medium text-gray-900">
-                                {customizations[item.productId].fragrance === "Other"
-                                  ? customizations[item.productId].fragranceOther || "Other"
-                                  : customizations[item.productId].fragrance}
-                              </span>
-                            </span>
-                          ) : null}
-                          {customizations[item.productId]?.fragrance &&
-                          (customizations[item.productId]?.colourHex ||
-                            customizations[item.productId]?.colourName) ? (
-                            <span> • </span>
-                          ) : null}
-                          {(customizations[item.productId]?.colourHex ||
-                            customizations[item.productId]?.colourName) && (
-                            <span className="inline-flex items-center gap-2">
-                              <span>Colour:</span>
-                              {customizations[item.productId]?.colourHex && (
-                                <span
-                                  className="inline-block w-3 h-3 rounded-full border border-black/10"
-                                  style={{ backgroundColor: customizations[item.productId].colourHex }}
-                                  aria-hidden="true"
-                                />
-                              )}
-                              <span className="font-medium text-gray-900">
-                                {customizations[item.productId]?.colourName ||
-                                  customizations[item.productId]?.colourHex}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -305,8 +478,9 @@ export default function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => navigate("/checkout")}
-                  className="mt-5 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-semibold"
+                  onClick={handleCheckout}
+                  disabled={cart.length === 0}
+                  className="mt-5 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   Proceed to Checkout →
                 </button>
