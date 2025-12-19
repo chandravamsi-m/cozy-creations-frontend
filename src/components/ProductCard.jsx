@@ -3,6 +3,12 @@ import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 
+import FlowerIcon from "../assets/svgs/flower-icon.svg";
+import AnimalIcon from "../assets/svgs/animal-icon.svg";
+import FestiveIcon from "../assets/svgs/festive-icon.svg";
+import SpecialIcon from "../assets/svgs/spl-icon.svg";
+import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
+
 export default function ProductCard({ product }) {
   const [quantity, setQuantity] = useState(0);
 
@@ -10,16 +16,24 @@ export default function ProductCard({ product }) {
 
   // CATEGORY ICONS
   const categoryIcons = {
-    flower: "🌸",
-    animal: "🐾",
-    festive: "🎆",
-    special: "⭐",
-    glassJar: "🫙",
+    flower: FlowerIcon,
+    animal: AnimalIcon,
+    festive: FestiveIcon,
+    special: SpecialIcon,
+    glassJar: GlassJarIcon,
   };
 
   const getCategoryIcon = (category) => {
-    return categoryIcons[category] || "🕯️";
-  };
+    if (!category || !categoryIcons[category]) return null;
+  
+    return (
+      <img
+        src={categoryIcons[category]}
+        alt={category}
+        className="w-6 h-6"
+      />
+    );
+  };  
 
   const formatPrice = (price) => {
     if (!price) return "₹0";

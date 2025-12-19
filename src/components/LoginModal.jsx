@@ -10,6 +10,7 @@ export default function LoginModal({ closeModal }) {
     signInWithGoogle,
     loginWithEmail,
     signupWithEmail,
+    getErrorMessage,
     isAdmin,
     loading: authLoading,
   } = useAuth();
@@ -18,6 +19,7 @@ export default function LoginModal({ closeModal }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
@@ -32,24 +34,47 @@ export default function LoginModal({ closeModal }) {
   const submitEmailForm = async () => {
     setErrMsg("");
 
+    // Validation
     if (!email.trim() || !password.trim()) {
       setErrMsg("Please enter both email and password.");
       return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrMsg("Please enter a valid email address.");
+      return;
+    }
+
+    // For signup, validate password and confirm password
+    if (mode === "signup") {
+      if (password.length < 6) {
+        setErrMsg("Password must be at least 6 characters long.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setErrMsg("Passwords do not match. Please try again.");
+        return;
+      }
     }
 
     try {
       setLoading(true);
 
       if (mode === "login") {
-        await loginWithEmail(email, password);
+        await loginWithEmail(email.trim(), password);
       } else {
-        await signupWithEmail(email, password);
+        await signupWithEmail(email.trim(), password);
       }
 
       handlePostLogin();
 
     } catch (err) {
-      setErrMsg(err.message || "Something went wrong.");
+      // Use getErrorMessage if available, otherwise use error message
+      const errorMsg = getErrorMessage ? getErrorMessage(err) : (err.message || "Something went wrong.");
+      setErrMsg(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -68,11 +93,19 @@ export default function LoginModal({ closeModal }) {
       handlePostLogin();
 
     } catch (err) {
-      setErrMsg("Google Sign-In failed.");
+      const errorMsg = getErrorMessage ? getErrorMessage(err) : "Google Sign-In failed.";
+      setErrMsg(errorMsg);
     } finally {
       setLoading(false);
     }
   };
+
+  // Reset form when mode changes
+  useEffect(() => {
+    setErrMsg("");
+    setPassword("");
+    setConfirmPassword("");
+  }, [mode]);
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
@@ -148,6 +181,11 @@ export default function LoginModal({ closeModal }) {
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (mode === "login" || (mode === "signup" && confirmPassword))) {
+                    submitEmailForm();
+                  }
+                }}
               />
               {mode === "signup" && (
                 <p className="text-[11px] text-gray-500 mt-1">
@@ -155,6 +193,25 @@ export default function LoginModal({ closeModal }) {
                 </p>
               )}
             </div>
+
+            {/* CONFIRM PASSWORD - Only show in signup mode */}
+            {mode === "signup" && (
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent"
+                  placeholder="********"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && password && confirmPassword) {
+                      submitEmailForm();
+                    }
+                  }}
+                />
+              </div>
+            )}
 
             {/* SUBMIT BUTTON */}
             <button
