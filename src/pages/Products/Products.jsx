@@ -433,7 +433,8 @@ export default function ProductsPage() {
                               setShowCategoryMenu(false);
                             }}
                           >
-                            <span>{c.icon}</span> {c.label}
+                            <img src={c.icon} alt={c.label} className="w-5 h-5" />
+                            {c.label}
                           </button>
                         );
                       })}

@@ -8,6 +8,7 @@ import instagram from "../../assets/svgs/instagram-fill.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import { BACKEND_URL } from "../../config/backend";
+import { useProducts } from "../../contexts/ProductsContext";
 
 const COLLECTIONS = [
   { label: "Flower Collection", value: "flower" },
@@ -55,8 +56,8 @@ export default function ContactUs() {
     location: "",
   });
 
+  const { products: contextProducts, loading: loadingProducts, loadProducts } = useProducts();
   const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -117,114 +118,34 @@ export default function ContactUs() {
     }
   };
 
+  // Fetch products from Firebase when collection changes
   useEffect(() => {
     const collection = formData.collection;
     if (!collection) {
       setProducts([]);
-      setLoadingProducts(false);
+      setErrorMessage("");
       return;
     }
 
-    let isMounted = true;
-    const controller = new AbortController();
-
-    const tryFetch = async (url) => {
-      // small wrapper to try fetch and return parsed json or throw
-      const resp = await fetch(url, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      });
-      if (!resp.ok) {
-        const txt = await resp.text().catch(() => "");
-        throw new Error(`HTTP ${resp.status} ${resp.statusText} ${txt}`);
-      }
-      const json = await resp.json().catch(() => null);
-      return json;
-    };
-
-    const fetchProductsForCollection = async () => {
-      setLoadingProducts(true);
-      setErrorMessage("");
-      setProducts([]);
-      try {
-        // try several reasonable category encodings (original, lowercase, dashed)
-        const candidates = [
-          collection,
-          collection.toLowerCase(),
-          collection.replace(/\s+/g, "-").toLowerCase(),
-        ];
-        let json = null;
-        let lastError = null;
-        for (const c of [...new Set(candidates)]) {
-          const url = `${BACKEND_URL || ""}/api/products?category=${encodeURIComponent(c)}`;
-          try {
-            json = await tryFetch(url);
-            // if parsed successfully, stop trying alternatives
-            if (json !== null) break;
-          } catch (err) {
-            lastError = err;
-            // continue to next candidate
-          }
-        }
-
-        if (!isMounted) return;
-
-        if (!json) {
-          // no valid response from candidates
-          console.warn("Products fetch returned no json", lastError);
-          setErrorMessage("No products found for the selected collection.");
-          setProducts([]);
-          return;
-        }
-
-        // normalize response shapes
-        let arr = [];
-        if (Array.isArray(json)) {
-          arr = json;
-        } else if (Array.isArray(json.products)) {
-          arr = json.products;
-        } else if (Array.isArray(json.data)) {
-          arr = json.data;
-        } else if (Array.isArray(json.result)) {
-          arr = json.result;
-        } else {
-          // maybe backend sends { success: true, data: [...] }
-          // fallback: try to find any array value inside the object
-          const anyArray = Object.values(json).find((v) => Array.isArray(v));
-          if (anyArray) arr = anyArray;
-        }
-
-        if (!arr.length) {
-          setErrorMessage("No products available for this collection.");
-          setProducts([]);
-          return;
-        }
-
-        const mapped = arr.map((p) => ({
-          label: p.name || p.title || p.productName || p._id || String(p.value),
-          value: p._id || p.sku || p.value || p.slug || p.name || p.title,
+    // Load products for the selected category from Firebase
+    loadProducts(collection).then((fetchedProducts) => {
+      if (fetchedProducts && fetchedProducts.length > 0) {
+        const mapped = fetchedProducts.map((p) => ({
+          label: p.name || p.productName || p.title || p.id,
+          value: p.id || p._id,
         }));
-
         setProducts(mapped);
         setErrorMessage("");
-      } catch (err) {
-        if (!isMounted) return;
-        console.error("Error fetching products:", err);
-        setErrorMessage("Unable to load products. Please try again later.");
+      } else {
         setProducts([]);
-      } finally {
-        if (isMounted) setLoadingProducts(false);
+        setErrorMessage("No products available for this collection.");
       }
-    };
-
-    fetchProductsForCollection();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [formData.collection]);
+    }).catch((err) => {
+      console.error("Error fetching products:", err);
+      setProducts([]);
+      setErrorMessage("Unable to load products. Please try again later.");
+    });
+  }, [formData.collection, loadProducts]);
 
   const validate = () => {
     if (!formData.name.trim()) {
@@ -280,7 +201,7 @@ export default function ContactUs() {
       };
 
       // backend may not be ready; this will fail gracefully
-      const resp = await fetch(`${BACKEND_URL || ""}/api/contact`, {
+      const resp = await fetch(`${BACKEND_URL || ""}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

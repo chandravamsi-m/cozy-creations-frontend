@@ -9,16 +9,23 @@ export async function fetchFirestoreProducts(category = "") {
       constraints.push(where("category", "==", category));
     }
 
-    constraints.push(orderBy("createdAt", "desc"));
+    // constraints.push(orderBy("createdAt", "desc"));
 
     const q = query(collection(db, "products"), ...constraints);
 
     const snap = await getDocs(q);
 
-    return snap.docs.map(doc => ({
+    const docs = snap.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
+
+    // Client-side sort to avoid complex index requirements
+    return docs.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || 0;
+      return timeB - timeA;
+    });
   } catch (e) {
     console.error("Firestore fetch error:", e);
     return [];

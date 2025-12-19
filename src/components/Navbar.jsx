@@ -7,6 +7,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
 import { useLoginModal } from "../contexts/LoginModalContext";
 
+import cartIcon from "../assets/svgs/cart-icon.svg";
+
 export default function Navbar({
   stickyNavRef,
   menuOpen,
@@ -168,7 +170,7 @@ export default function Navbar({
               onClick={() => navigate("/cart")}
               className="relative hidden md:flex items-center justify-center text-white"
             >
-              <span className="text-xl">🛒</span>
+              <img src={cartIcon} alt="Cart" className="w-6 h-6" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-2 bg-yellow-accent text-black text-[10px] px-1.5 py-[1px] rounded-full font-semibold">
                   {cartCount}
@@ -298,9 +300,10 @@ export default function Navbar({
               setMenuOpen(false);
               navigate("/cart");
             }}
-            className="relative block text-left hover:text-yellow-accent"
+            className="relative flex items-center gap-2 text-left hover:text-yellow-accent"
           >
-            🛒 Cart{" "}
+            <img src={cartIcon} alt="Cart" className="w-5 h-5" />
+            Cart{" "}
             {cartCount > 0 && (
               <span className="ml-2 bg-yellow-accent text-black text-[10px] px-2 rounded-full">
                 {cartCount}

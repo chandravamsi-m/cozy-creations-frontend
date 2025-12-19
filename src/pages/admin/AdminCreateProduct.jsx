@@ -6,8 +6,8 @@ import { createProduct } from "../../api/adminProducts";
 // You can override these via Vite env vars:
 // - VITE_CLOUDINARY_CLOUD_NAME
 // - VITE_CLOUDINARY_UPLOAD_PRESET
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dlrtaxlcl";
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "cozy_unsigned";
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 // Cloudinary (free tier / many presets) commonly enforce a 10MB upload limit.
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10,485,760 bytes
 
