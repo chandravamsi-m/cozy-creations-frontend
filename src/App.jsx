@@ -17,7 +17,6 @@ import { useNavigate } from "react-router-dom";
 const Home = lazy(() => import("./pages/Home/Home"));
 const About = lazy(() => import("./pages/About/About"));
 const Products = lazy(() => import("./pages/Products/Products"));
-const Custom = lazy(() => import("./pages/Custom/Custom"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const CartPage = lazy(() => import("./pages/Cart/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
@@ -167,7 +166,6 @@ function AppContent({
             />
             <Route path="about" element={<About />} />
             <Route path="products" element={<Products />} />
-            <Route path="custom" element={<Custom />} />
             <Route path="contact" element={<Contact />} />
             <Route path="cart" element={<CartPage />} />
             {/* Checkout Route */}

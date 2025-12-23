@@ -39,10 +39,10 @@ export default function Checkout() {
   // Fetch saved address on mount
   React.useEffect(() => {
     const fetchSavedAddress = async () => {
-      if (user?.email) {
+      if (user?.uid) {
         try {
-          const emailDocId = user.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
-          const userRef = doc(db, "users", emailDocId);
+          // Changed from emailDocId to user.uid
+          const userRef = doc(db, "users", user.uid);
           const snap = await getDoc(userRef);
           
           if (snap.exists() && snap.data().shippingAddress) {
@@ -164,10 +164,9 @@ export default function Checkout() {
             if (verifyRes.ok) {
               const result = await verifyRes.json();
               
-              // Save address for future (User Profile)
+              // Save address for future (User Profile) - Updated to use UID
               try {
-                const emailDocId = user.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
-                const userRef = doc(db, "users", emailDocId);
+                const userRef = doc(db, "users", user.uid);
                 await setDoc(userRef, { shippingAddress: address }, { merge: true });
               } catch (err) {
                 console.error("Failed to save address:", err);

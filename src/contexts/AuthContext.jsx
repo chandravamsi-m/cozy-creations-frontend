@@ -12,7 +12,7 @@ import {
 } from "firebase/auth";
 
 import { db } from "../firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 const AuthContext = createContext(null);
 
@@ -29,54 +29,69 @@ export function AuthProvider({ children }) {
   // ------------------------------------------
   const createUserDocument = async (user, email) => {
     try {
-      // Use email as document ID (sanitize email for Firestore document ID)
-      // Firestore document IDs cannot contain certain characters, so we'll use a safe version
-      const emailDocId = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
-      const userRef = doc(db, "users", emailDocId);
-
-      // Check if user already exists
+      // NEW: Use UID as document ID for better security and structure
+      const userRef = doc(db, "users", user.uid);
+      
+      // Migration logic: Check if UID doc exists
       const userSnap = await getDoc(userRef);
       
       if (!userSnap.exists()) {
-        // Create new user document with default role "user"
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: email.toLowerCase(),
-          displayName: user.displayName || null,
-          photoURL: user.photoURL || null,
-          role: "user", // Default role
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      } else {
-        // Update existing user document with latest info
-        await setDoc(
-          userRef,
-          {
+        // Check if an old email-based document exists
+        const emailDocId = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+        const oldRef = doc(db, "users", emailDocId);
+        const oldSnap = await getDoc(oldRef);
+
+        if (oldSnap.exists()) {
+          // MIGRATE: Copy data from old email-doc to new UID-doc
+          const oldData = oldSnap.data();
+          await setDoc(userRef, {
+            ...oldData,
+            uid: user.uid,
+            email: email.toLowerCase(),
+            displayName: user.displayName || oldData.displayName || null,
+            photoURL: user.photoURL || oldData.photoURL || null,
+            updatedAt: serverTimestamp(),
+          });
+          // Delete old doc for cleanliness
+          await deleteDoc(oldRef);
+          console.log(`Migrated user ${email} to UID doc and deleted old entry`);
+        } else {
+          // Create new user document
+          await setDoc(userRef, {
             uid: user.uid,
             email: email.toLowerCase(),
             displayName: user.displayName || null,
             photoURL: user.photoURL || null,
+            role: "user",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } else {
+        // Update existing UID document
+        await setDoc(
+          userRef,
+          {
+            email: email.toLowerCase(),
+            displayName: user.displayName || userSnap.data().displayName,
+            photoURL: user.photoURL || userSnap.data().photoURL,
             updatedAt: serverTimestamp(),
           },
           { merge: true }
         );
       }
     } catch (error) {
-      console.error("Error creating user document:", error);
-      // Don't throw error - user is still authenticated even if document creation fails
+      console.error("Error creating/migrating user document:", error);
     }
   };
 
   // ------------------------------------------
-  // CHECK ADMIN ROLE FROM FIRESTORE (users collection only)
+  // CHECK ADMIN ROLE FROM FIRESTORE
   // ------------------------------------------
-  const checkAdminRole = async (uid, email) => {
+  const checkAdminRole = async (uid) => {
     try {
-      // Check users collection (by email) for admin role
-      if (email) {
-        const emailDocId = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
-        const userRef = doc(db, "users", emailDocId);
+      if (uid) {
+        const userRef = doc(db, "users", uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists() && userSnap.data()?.role === "admin") {
@@ -104,12 +119,12 @@ export function AuthProvider({ children }) {
         setIdToken(token);
 
         const email = u.email || "";
-        // Ensure user document exists
+        // Ensure user document exists (handles migration too)
         if (email) {
           await createUserDocument(u, email);
         }
-        // Check admin role
-        await checkAdminRole(u.uid, email);
+        // Check admin role by UID
+        await checkAdminRole(u.uid);
       } else {
         setIdToken(null);
         setIsAdmin(false);
