@@ -29,6 +29,11 @@ export default function AdminProducts() {
       const snap = await getDocs(collection(db, "products"));
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setProducts(list);
+      console.log("Loaded products:", list.length); // Debug log
+    } catch (error) {
+      console.error("Error loading products:", error);
+      // Set empty array on error so UI shows "no products" message
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -132,10 +137,10 @@ export default function AdminProducts() {
                   )}
                 </div>
 
-                <div className="mt-auto flex gap-2 pt-2">
+                <div className="mt-auto flex flex-wrap gap-2 pt-2">
                   <button
                     onClick={() => navigate(`/admin/products/${p.id}/edit`)}
-                    className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded"
+                    className="flex-1 min-w-[60px] whitespace-nowrap px-2 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   >
                     Edit
                   </button>
@@ -143,14 +148,14 @@ export default function AdminProducts() {
                   {p.isActive === false ? (
                     <button
                       onClick={() => handleActivate(p.id)}
-                      className="flex-1 px-3 py-2 text-sm bg-emerald-600 text-white rounded"
+                      className="flex-1 min-w-[80px] whitespace-nowrap px-2 py-1.5 text-xs sm:text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
                     >
                       Activate
                     </button>
                   ) : (
                     <button
                       onClick={() => handleDelete(p.id)}
-                      className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded"
+                      className="flex-1 min-w-[80px] whitespace-nowrap px-2 py-1.5 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                     >
                       Deactivate
                     </button>

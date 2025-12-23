@@ -3,6 +3,12 @@ import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 
+import FlowerIcon from "../assets/svgs/flower-icon.svg";
+import AnimalIcon from "../assets/svgs/animal-icon.svg";
+import FestiveIcon from "../assets/svgs/festive-icon.svg";
+import SpecialIcon from "../assets/svgs/spl-icon.svg";
+import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
+
 export default function ProductCard({ product }) {
   const [quantity, setQuantity] = useState(0);
 
@@ -10,16 +16,24 @@ export default function ProductCard({ product }) {
 
   // CATEGORY ICONS
   const categoryIcons = {
-    flower: "🌸",
-    animal: "🐾",
-    festive: "🎆",
-    special: "⭐",
-    glassJar: "🫙",
+    flower: FlowerIcon,
+    animal: AnimalIcon,
+    festive: FestiveIcon,
+    special: SpecialIcon,
+    glassJar: GlassJarIcon,
   };
 
   const getCategoryIcon = (category) => {
-    return categoryIcons[category] || "🕯️";
-  };
+    if (!category || !categoryIcons[category]) return null;
+  
+    return (
+      <img
+        src={categoryIcons[category]}
+        alt={category}
+        className="w-6 h-6"
+      />
+    );
+  };  
 
   const formatPrice = (price) => {
     if (!price) return "₹0";
@@ -99,7 +113,7 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm relative group hover:shadow-md transition-shadow duration-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm relative group hover:shadow-md transition-shadow duration-200 overflow-hidden h-full flex flex-col">
       {/* TAGS */}
       {product.onSale && (
         <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-10">
@@ -114,7 +128,7 @@ export default function ProductCard({ product }) {
 
       {/* PRODUCT IMAGE */}
       <div
-        className="aspect-[4/3] bg-[#F5F5F0] overflow-hidden"
+        className="aspect-[4/3] bg-[#F5F5F0] overflow-hidden shrink-0"
       >
         <img
           src={toCloudinaryThumb(
@@ -133,13 +147,13 @@ export default function ProductCard({ product }) {
       </div>
 
       {/* PRODUCT DETAILS */}
-      <div className="p-3 sm:p-4 xl:p-3 space-y-2">
+      <div className="p-3 sm:p-4 xl:p-3 space-y-2 flex-1 flex flex-col">
         {/* NAME + PRICE */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 flex-1">
+        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-1 sm:gap-2">
+          <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 w-full sm:w-auto sm:flex-1 leading-tight">
             {product.name}
           </h3>
-          <span className="text-sm sm:text-base xl:text-sm font-bold text-[#6F573D] whitespace-nowrap bg-yellow-accent/60 border border-yellow-accent/70 px-3 py-1 rounded-full leading-none shadow-sm">
+          <span className="text-sm sm:text-base xl:text-sm font-bold text-[#6F573D] whitespace-nowrap bg-yellow-accent/60 border border-yellow-accent/70 px-3 py-1 rounded-full leading-none shadow-sm self-start sm:self-auto mt-1 sm:mt-0">
             {formatPrice(product.price)}
           </span>
         </div>
@@ -156,7 +170,7 @@ export default function ProductCard({ product }) {
           ))}
         </div>
 
-        <div className="border-t border-gray-200 my-3"></div>
+        <div className="border-t border-gray-200 mt-auto mb-3"></div>
 
         {/* CATEGORY + CART BUTTON */}
         <div className="flex items-center justify-between pt-1">

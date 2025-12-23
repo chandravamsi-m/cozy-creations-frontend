@@ -20,6 +20,7 @@ const Products = lazy(() => import("./pages/Products/Products"));
 const Custom = lazy(() => import("./pages/Custom/Custom"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const CartPage = lazy(() => import("./pages/Cart/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess/OrderSuccess"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -29,6 +30,7 @@ const AdminCreateProduct = lazy(() =>
 );
 const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 
 // Component with routing
 function AppContent({
@@ -168,7 +170,10 @@ function AppContent({
             <Route path="custom" element={<Custom />} />
             <Route path="contact" element={<Contact />} />
             <Route path="cart" element={<CartPage />} />
-            <Route path="order-success" element={<OrderSuccess />} />
+            {/* Checkout Route */}
+            <Route path="/checkout" element={<Checkout />} />
+
+            <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -178,6 +183,7 @@ function AppContent({
             <Route path="create" element={<AdminCreateProduct />} />
             <Route path="products/:id/edit" element={<AdminEditProduct />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="users" element={<AdminUsers />} />
           </Route>
         </Routes>
       </Suspense>

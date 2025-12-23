@@ -78,6 +78,7 @@ export default function AdminOrders() {
       // Refresh list (keeps UI consistent)
       await loadOrders();
       setMsg("Status updated ✔");
+      setExpandedId(null); // Close the details view on success
     } catch (err) {
       console.error("Failed to update status:", err);
       setMsg("Failed to update status.");
@@ -114,7 +115,7 @@ export default function AdminOrders() {
             key={order.id}
             className="border rounded-lg p-4 shadow-sm bg-white"
           >
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
               <p className="font-semibold text-gray-800">
                 Order #{order.id}
               </p>
@@ -179,6 +180,22 @@ export default function AdminOrders() {
                     {savingId === order.id ? "Saving..." : "Save"}
                   </button>
                 </div>
+
+                {/* SHIPPING DETAILS */}
+                {order.shippingAddress && (
+                  <div>
+                    <h3 className="font-semibold mb-2 text-gray-900">Shipping Details</h3>
+                    <div className="bg-white border rounded p-3 text-sm text-gray-700 space-y-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <p><span className="font-medium text-gray-900">Name:</span> {order.shippingAddress.fullName}</p>
+                        <p><span className="font-medium text-gray-900">Phone:</span> {order.shippingAddress.phone}</p>
+                      </div>
+                      <div className="border-t my-2 border-gray-100"></div>
+                      <p><span className="font-medium text-gray-900">Address:</span> {order.shippingAddress.street}</p>
+                      <p><span className="font-medium text-gray-900">City/State:</span> {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* ITEMS */}
                 <div>
