@@ -177,101 +177,146 @@ export default function AdminUsers() {
       )}
 
       {loading ? (
-        <p className="text-gray-500">Loading users...</p>
+        <p className="text-gray-500 text-center py-10">Loading users...</p>
       ) : (
-        <div className="overflow-x-auto bg-white border rounded-lg shadow-sm">
-          <table className="w-full text-left text-sm text-gray-700">
-            <thead className="bg-gray-50 text-gray-900 border-b">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Role</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{u.email}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {u.displayName || u.shippingAddress?.fullName || u.fullName || "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span 
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        u.role === "admin" 
-                          ? "bg-purple-100 text-purple-800" 
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {u.role || "user"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setSelectedUser(u)}
-                      className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded"
-                    >
-                      Manage
-                    </button>
-                  </td>
+        <>
+          {/* MOBILE CARD VIEW */}
+          <div className="grid md:hidden grid-cols-1 gap-4">
+            {users.map((u) => (
+              <div key={u.id} className="bg-white border rounded-xl p-4 shadow-sm space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-gray-900 truncate">
+                      {u.displayName || u.shippingAddress?.fullName || u.fullName || "No Name"}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">{u.email}</p>
+                  </div>
+                  <span 
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      u.role === "admin" 
+                        ? "bg-purple-100 text-purple-700 border border-purple-200" 
+                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                    }`}
+                  >
+                    {u.role || "user"}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={() => setSelectedUser(u)}
+                  className="w-full text-center text-sm font-semibold text-white bg-black hover:bg-gray-800 py-2.5 rounded-lg transition-colors"
+                >
+                  Manage User
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* DESKTOP TABLE VIEW */}
+          <div className="hidden md:block overflow-x-auto bg-white border rounded-xl shadow-sm">
+            <table className="w-full text-left text-sm text-gray-700">
+              <thead className="bg-gray-50 text-gray-900 border-b">
+                <tr>
+                  <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Email</th>
+                  <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Name</th>
+                  <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider">Role</th>
+                  <th className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">{u.email}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {u.displayName || u.shippingAddress?.fullName || u.fullName || "-"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span 
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          u.role === "admin" 
+                            ? "bg-purple-100 text-purple-800" 
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {u.role || "user"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => setSelectedUser(u)}
+                        className="text-xs font-bold text-blue-600 hover:text-white border border-blue-600 hover:bg-blue-600 px-4 py-2 rounded-lg transition-all"
+                      >
+                        Manage
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* USER DETAILS MODAL */}
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedUser(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedUser(null)}>
+          <div className="bg-white sm:rounded-2xl shadow-2xl w-full max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
             {/* HEADER */}
-            <div className="p-6 border-b flex justify-between items-start">
-              <div>
+            <div className="p-4 sm:p-6 border-b flex justify-between items-start sticky top-0 bg-white z-10">
+              <div className="flex-1 min-w-0 mr-4">
                 {isEditing ? (
-                   <input 
-                     value={editFormData.displayName}
-                     onChange={(e) => handleEditChange("root", "displayName", e.target.value)}
-                     className="text-xl font-bold text-gray-900 border-b border-gray-300 focus:outline-none focus:border-black w-full"
-                     placeholder="Display Name"
-                   />
+                   <div className="space-y-1">
+                     <label className="text-[10px] uppercase font-bold text-gray-400">Edit Display Name</label>
+                     <input 
+                       value={editFormData.displayName}
+                       onChange={(e) => handleEditChange("root", "displayName", e.target.value)}
+                       className="text-lg sm:text-xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none w-full bg-blue-50/30 px-2 py-1 rounded-t"
+                       placeholder="Display Name"
+                       autoFocus
+                     />
+                   </div>
                 ) : (
-                  <h3 className="text-xl font-bold text-gray-900">{selectedUser.displayName || selectedUser.shippingAddress?.fullName || "No Name"}</h3>
+                  <>
+                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 truncate">
+                      {selectedUser.displayName || selectedUser.shippingAddress?.fullName || "No Name"}
+                    </h3>
+                    <p className="text-gray-500 text-sm truncate">{selectedUser.email}</p>
+                  </>
                 )}
-                <p className="text-gray-500 text-sm mt-1">{selectedUser.email}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {!isEditing && (
                   <button 
                     onClick={() => setIsEditing(true)}
-                    className="text-sm bg-black text-white hover:bg-gray-800 px-4 py-1.5 rounded font-medium transition-colors shadow-sm"
+                    className="text-xs sm:text-sm bg-black text-white hover:bg-gray-800 px-3 sm:px-4 py-2 rounded-lg font-bold transition-transform active:scale-95 shadow-lg"
                   >
-                    Edit Details
+                    Edit
                   </button>
                 )}
                 <button 
                   onClick={() => setSelectedUser(null)}
-                  className="text-gray-400 hover:text-gray-600 p-1 ml-2"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 p-2 rounded-full transition-colors"
                 >
-                  ✕
+                  <span className="text-xl leading-none">✕</span>
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-8 flex-1">
               
               {/* BASIC INFO */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500 font-medium">User ID</p>
-                  <p className="text-gray-900 font-mono text-xs">{selectedUser.uid}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">User ID</p>
+                  <p className="text-gray-900 font-mono text-xs break-all">{selectedUser.uid}</p>
                 </div>
-                <div>
-                  <p className="text-gray-500 font-medium">Role</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      selectedUser.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-600"
+                <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Account Role</p>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+                      selectedUser.role === "admin" 
+                        ? "bg-purple-100 text-purple-700 border-purple-200" 
+                        : "bg-white text-gray-600 border-gray-200"
                     }`}>
                       {selectedUser.role || "user"}
                     </span>
@@ -279,9 +324,9 @@ export default function AdminUsers() {
                        <button
                          onClick={() => toggleAdmin(selectedUser)}
                          disabled={updatingId === selectedUser.id}
-                         className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+                         className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
                        >
-                         {selectedUser.role === "admin" ? "Revoke Admin" : "Grant Admin"}
+                         {selectedUser.role === "admin" ? "Demote" : "Promote to Admin"}
                        </button>
                     )}
                   </div>
@@ -289,152 +334,177 @@ export default function AdminUsers() {
               </div>
 
               {/* SHIPPING ADDRESS */}
-              <div className="bg-gray-50 rounded-lg p-4 border relative">
-                <h4 className="font-semibold text-gray-900 mb-2">Saved Shipping Address</h4>
+              <div className="bg-white rounded-2xl p-5 border-2 border-gray-100 shadow-sm relative">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1.5 h-4 bg-yellow-400 rounded-full"></div>
+                  <h4 className="font-bold text-gray-900 uppercase text-sm tracking-tight">Shipping Address</h4>
+                </div>
                 
                 {isEditing ? (
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="col-span-2 sm:col-span-1">
-                        <label className="text-xs text-gray-500">Full Name</label>
+                        <label className="text-[10px] uppercase font-bold text-gray-400 ml-1">Full Name</label>
                         <input 
                           value={editFormData.shippingAddress.fullName || ""}
                           onChange={(e) => handleEditChange("address", "fullName", e.target.value)}
-                          className="w-full text-sm border p-1.5 rounded"
+                          className="w-full text-sm border-2 border-gray-100 p-2.5 rounded-xl focus:border-black focus:outline-none bg-gray-50/50"
                           placeholder="Full Name"
                         />
                       </div>
                       <div className="col-span-2 sm:col-span-1">
-                        <label className="text-xs text-gray-500">Phone</label>
+                        <label className="text-[10px] uppercase font-bold text-gray-400 ml-1">Phone</label>
                         <input 
                           value={editFormData.shippingAddress.phone || ""}
                           onChange={(e) => handleEditChange("address", "phone", e.target.value)}
-                          className="w-full text-sm border p-1.5 rounded"
+                          className="w-full text-sm border-2 border-gray-100 p-2.5 rounded-xl focus:border-black focus:outline-none bg-gray-50/50"
                           placeholder="Phone Number"
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="text-xs text-gray-500">Street Address</label>
+                        <label className="text-[10px] uppercase font-bold text-gray-400 ml-1">Street Address</label>
                         <input 
                           value={editFormData.shippingAddress.street || ""}
                           onChange={(e) => handleEditChange("address", "street", e.target.value)}
-                          className="w-full text-sm border p-1.5 rounded"
+                          className="w-full text-sm border-2 border-gray-100 p-2.5 rounded-xl focus:border-black focus:outline-none bg-gray-50/50"
                           placeholder="Street Address"
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">City</label>
+                        <label className="text-[10px] uppercase font-bold text-gray-400 ml-1">City</label>
                         <input 
                           value={editFormData.shippingAddress.city || ""}
                           onChange={(e) => handleEditChange("address", "city", e.target.value)}
-                          className="w-full text-sm border p-1.5 rounded"
+                          className="w-full text-sm border-2 border-gray-100 p-2.5 rounded-xl focus:border-black focus:outline-none bg-gray-50/50"
                           placeholder="City"
                         />
                       </div>
-                      <div>
-                        <label className="text-xs text-gray-500">State</label>
-                        <input 
-                          value={editFormData.shippingAddress.state || ""}
-                          onChange={(e) => handleEditChange("address", "state", e.target.value)}
-                          className="w-full text-sm border p-1.5 rounded"
-                          placeholder="State"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Pincode</label>
-                        <input 
-                          value={editFormData.shippingAddress.pincode || ""}
-                          onChange={(e) => handleEditChange("address", "pincode", e.target.value)}
-                          className="w-full text-sm border p-1.5 rounded"
-                          placeholder="Pincode"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] uppercase font-bold text-gray-400 ml-1">State</label>
+                          <input 
+                            value={editFormData.shippingAddress.state || ""}
+                            onChange={(e) => handleEditChange("address", "state", e.target.value)}
+                            className="w-full text-sm border-2 border-gray-100 p-2.5 rounded-xl focus:border-black focus:outline-none bg-gray-50/50"
+                            placeholder="State"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase font-bold text-gray-400 ml-1">Pincode</label>
+                          <input 
+                            value={editFormData.shippingAddress.pincode || ""}
+                            onChange={(e) => handleEditChange("address", "pincode", e.target.value)}
+                            className="w-full text-sm border-2 border-gray-100 p-2.5 rounded-xl focus:border-black focus:outline-none bg-gray-50/50"
+                            placeholder="Pincode"
+                          />
+                        </div>
                       </div>
                    </div>
                 ) : (
                   selectedUser.shippingAddress ? (
-                     <div className="text-sm text-gray-700 space-y-1">
-                        <p><span className="font-medium">Name:</span> {selectedUser.shippingAddress.fullName}</p>
-                        <p><span className="font-medium">Phone:</span> {selectedUser.shippingAddress.phone}</p>
-                        <p><span className="font-medium">Address:</span> {selectedUser.shippingAddress.street}</p>
-                        <p>{selectedUser.shippingAddress.city}, {selectedUser.shippingAddress.state} - {selectedUser.shippingAddress.pincode}</p>
+                     <div className="text-sm text-gray-800 space-y-2 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold min-w-[60px] text-gray-400 text-xs">NAME</span>
+                          <span className="font-medium">{selectedUser.shippingAddress.fullName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold min-w-[60px] text-gray-400 text-xs">PHONE</span>
+                          <span className="font-medium">{selectedUser.shippingAddress.phone}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold min-w-[60px] text-gray-400 text-xs">ADDRESS</span>
+                          <div className="font-medium">
+                            <p>{selectedUser.shippingAddress.street}</p>
+                            <p>{selectedUser.shippingAddress.city}, {selectedUser.shippingAddress.state} - {selectedUser.shippingAddress.pincode}</p>
+                          </div>
+                        </div>
                      </div>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">No address saved yet.</p>
+                    <div className="text-sm text-gray-400 italic bg-gray-50 border border-dashed rounded-xl p-6 text-center">
+                      No shipping address saved in profile.
+                    </div>
                   )
                 )}
               </div>
 
               {/* ORDER HISTORY */}
               {!isEditing && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Order History</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+                    <h4 className="font-bold text-gray-900 uppercase text-sm tracking-tight">Order History</h4>
+                  </div>
+                  
                   {loadingOrders ? (
-                    <div className="text-center py-4 text-gray-500 text-sm">Loading orders...</div>
+                    <div className="text-center py-8">
+                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto"></div>
+                       <p className="mt-2 text-xs font-bold text-gray-400">LOADING ORDERS</p>
+                    </div>
                   ) : userOrders.length > 0 ? (
-                    <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-                      <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-100 text-gray-700 sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2">Order ID</th>
-                            <th className="px-3 py-2">Date</th>
-                            <th className="px-3 py-2">Total</th>
-                            <th className="px-3 py-2">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {userOrders.map(order => (
-                            <tr key={order.id} className="bg-white">
-                              <td className="px-3 py-2 font-mono text-xs">{order.id.slice(0, 8)}...</td>
-                              <td className="px-3 py-2">
+                    <div className="space-y-3">
+                      {userOrders.map(order => (
+                        <div key={order.id} className="bg-white border text-sm rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-300 transition-colors shadow-sm">
+                          <div className="flex items-center gap-4">
+                            <div className="bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center font-bold text-gray-400 text-[10px]">
+                               #{order.id.slice(-4).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-black text-gray-900">₹{order.total}</p>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase">
                                 {order.createdAt?.seconds 
-                                  ? new Date(order.createdAt.seconds * 1000).toLocaleDateString()
-                                  : "N/A"}
-                              </td>
-                              <td className="px-3 py-2 font-medium">₹{order.total}</td>
-                              <td className="px-3 py-2">
-                                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                                  order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                  order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                  {order.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                                  ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                  : "DATE UNKNOWN"}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                              order.status === 'delivered' ? 'bg-green-50 text-green-700 border-green-100' :
+                              order.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
+                              'bg-yellow-50 text-yellow-700 border-yellow-100'
+                            }`}>
+                              {order.status}
+                            </span>
+                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                               →
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded text-center">No orders found.</p>
+                    <div className="text-sm text-gray-400 font-bold bg-gray-50 rounded-2xl p-8 text-center border-2 border-dashed border-gray-100">
+                      NO ORDERS FOUND FOR THIS USER
+                    </div>
                   )}
                 </div>
               )}
 
             </div>
             
-            <div className="p-4 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+            <div className="p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0 z-10 sm:rounded-b-2xl flex flex-col sm:flex-row justify-end gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
               {isEditing ? (
                 <>
                   <button 
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    className="order-2 sm:order-1 px-6 py-3 text-gray-500 hover:text-gray-800 text-sm font-bold uppercase tracking-wider transition-colors"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={saveUserDetails}
                     disabled={savingUser}
-                    className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm font-medium disabled:opacity-50"
+                    className="order-1 sm:order-2 px-8 py-3 bg-black text-white rounded-xl hover:bg-gray-800 text-sm font-bold uppercase tracking-wider transition-all shadow-lg active:scale-95 disabled:opacity-50"
                   >
-                    {savingUser ? "Saving..." : "Save Changes"}
+                    {savingUser ? "Saving Changes..." : "Save Changes"}
                   </button>
                 </>
               ) : (
                 <button 
                   onClick={() => setSelectedUser(null)}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium"
+                  className="w-full sm:w-auto px-8 py-3 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 text-sm font-bold uppercase tracking-wider transition-all active:scale-95"
                 >
-                  Close
+                  Close Profile
                 </button>
               )}
             </div>
