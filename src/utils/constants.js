@@ -1,14 +1,14 @@
 // src/utils/constants.js
-import ellipse172 from '../assets/images/ellipse-172.png';
-import ellipse173 from '../assets/images/ellipse-173.png';
-import ellipse174 from '../assets/images/ellipse-174.png';
-import ellipse175 from '../assets/images/ellipse-175.png';
+import ellipse172 from '../assets/images/ellipse-172.webp';
+import ellipse173 from '../assets/images/ellipse-173.webp';
+import ellipse174 from '../assets/images/ellipse-174.webp';
+import ellipse175 from '../assets/images/ellipse-175.webp';
 
-import flowerImg from '../assets/images/collections/flower.png';
-import animalImg from '../assets/images/collections/animal.png';
-import festiveImg from '../assets/images/collections/festive.png';
-import glassjarImg from '../assets/images/collections/glassjar.png';
-import specialImg from '../assets/images/collections/special.png';
+import flowerImg from '../assets/images/flower.webp';
+import animalImg from '../assets/images/animal.webp';
+import festiveImg from '../assets/images/festive.webp';
+import glassjarImg from '../assets/images/glassjar.webp';
+import specialImg from '../assets/images/special.webp';
 
 export const INITIAL_FEATURES = [
   {

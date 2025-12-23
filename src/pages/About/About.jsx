@@ -1,20 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
-import aboutHeroBg from '../../assets/images/about-hero-bg.png';
-import aboutHeroOverlay from '../../assets/images/about-hero-overlay.png';
-import aboutJourney from '../../assets/images/about-journey.png';
-import aboutCandle1 from '../../assets/images/about-candle-1.png';
-import aboutCandle2 from '../../assets/images/about-candle-2.png';
-import aboutCandle3 from '../../assets/images/about-candle-3.png';
-import aboutCandle4 from '../../assets/images/about-candle-4.png';
-import aboutGrid from'../../assets/images/about-grid.png';
-import collection1 from '../../assets/images/collection-1.png';
-import collection2 from '../../assets/images/collection-2.png';
-import collection3 from '../../assets/images/collection-3.png';
-import collection4 from '../../assets/images/collection-4.png';
-import collection5 from '../../assets/images/collection-5.png';
+import aboutHeroBg from '../../assets/images/about-hero-bg.webp';
+import aboutJourney from '../../assets/images/about-journey.webp';
+import aboutGrid from'../../assets/images/about-grid.webp';
+import collection1 from '../../assets/images/collection-1.webp';
+import collection2 from '../../assets/images/collection-2.webp';
+import collection3 from '../../assets/images/collection-3.webp';
+import collection4 from '../../assets/images/collection-4.webp';
+import collection5 from '../../assets/images/collection-5.webp';
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 
 export default function About() {
@@ -77,20 +71,12 @@ export default function About() {
       <div className="pt-0">
       {/* Hero Section - About Us */}
       <section className="relative w-full h-screen overflow-hidden">
-        {/* Background Images */}
+        {/* Background Image */}
         <div className="absolute inset-0">
           <img 
             src={aboutHeroBg} 
             alt="About Background" 
             className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/30"></div>
-        </div>
-        <div className="absolute inset-0 overflow-hidden">
-          <img 
-            src={aboutHeroOverlay} 
-            alt="About Overlay" 
-            className="w-full h-full object-cover opacity-90"
           />
           <div className="absolute inset-0 bg-black/40"></div>
         </div>

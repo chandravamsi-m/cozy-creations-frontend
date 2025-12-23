@@ -1,6 +1,6 @@
 // src/pages/Products/Products.jsx
 import React, { useEffect, useRef, useState } from "react";
-import productsHeroBg from "../../assets/images/products-hero-bg.png";
+import productsHeroBg from "../../assets/images/products-hero-bg.webp";
 import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";

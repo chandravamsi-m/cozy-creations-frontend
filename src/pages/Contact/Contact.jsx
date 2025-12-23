@@ -1,6 +1,6 @@
 // src/pages/Contact/ContactUs.jsx
 import React, { useEffect, useState, useRef } from "react";
-import contactusHeroBg from "../../assets/images/contactus-hero-bg.png";
+import contactusHeroBg from "../../assets/images/contactus-hero-bg.webp";
 import mailRounded from "../../assets/svgs/mail-rounded.svg";
 import call from "../../assets/svgs/call.svg";
 import pin from "../../assets/svgs/ion_pin.svg";

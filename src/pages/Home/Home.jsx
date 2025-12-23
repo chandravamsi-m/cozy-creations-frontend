@@ -2,10 +2,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
-import rectangle60 from "../../assets/images/rectangle-60.png";
-import unnamed7 from "../../assets/images/unnamed-7.png";
-import macbookAir2 from "../../assets/images/macbook-air-2.png";
-import whatsapp3 from "../../assets/images/whatsapp-3.png";
+import rectangle60 from "../../assets/images/rectangle-60.webp";
+import unnamed7 from "../../assets/images/unnamed-7.webp";
+import macbookAir2 from "../../assets/images/macbook-air-2.webp";
 
 import searchBold from "../../assets/svgs/search-bold.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
