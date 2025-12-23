@@ -81,6 +81,10 @@ export default function AdminLayout() {
           <Link to="/admin/orders" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
             🧾 Orders
           </Link>
+
+          <Link to="/admin/users" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
+            👥 Users
+          </Link>
         </nav>
 
         <button

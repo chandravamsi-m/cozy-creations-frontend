@@ -120,12 +120,10 @@ export default function CartPage() {
 
   const removeFromCart = (id) => removeItem(id);
 
-  // Handle checkout - check auth first
-  const handleCheckout = async () => {
+  // Handle checkout - navigate to checkout page
+  const handleCheckout = () => {
     // Check if cart is empty
-    if (cart.length === 0) {
-      return;
-    }
+    if (cart.length === 0) return;
 
     // Check if user is logged in
     if (!user) {
@@ -133,149 +131,8 @@ export default function CartPage() {
       return;
     }
 
-    // User is logged in - proceed with payment
-    try {
-      await initiatePayment();
-    } catch (error) {
-      console.error("Payment initiation failed:", error);
-      alert("Failed to initiate payment. Please try again.");
-    }
-  };
-
-  // Initiate Razorpay payment
-  const initiatePayment = async () => {
-    if (!idToken) {
-      alert("Please wait while we verify your session...");
-      return;
-    }
-
-    // Prepare order data
-    const orderData = {
-      items: cart.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        customization: customizations[item.productId] || null,
-      })),
-      total: totalAmount,
-    };
-
-    // Debug logging
-    console.log("Initiating payment with:", {
-      backendUrl: BACKEND_URL,
-      orderData,
-      hasIdToken: !!idToken,
-    });
-
-    try {
-      // Build URL - handle case where BACKEND_URL might already include /api
-      const baseUrl = (BACKEND_URL || "").replace(/\/api$/, ""); // Remove trailing /api if present
-      const paymentUrl = `${baseUrl}/api/orders/create-payment`;
-      
-      console.log("Calling payment endpoint:", paymentUrl);
-
-      // Call backend to create Razorpay order
-      const response = await fetch(paymentUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      // Clone response for error handling (so we can read it multiple times)
-      const responseClone = response.clone();
-
-      if (!response.ok) {
-        // Try to get error message from backend
-        let errorMessage = "Failed to create payment order";
-        try {
-          const errorData = await responseClone.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-          console.error("Backend error:", errorData);
-        } catch (e) {
-          try {
-            const errorText = await responseClone.text();
-            console.error("Backend error response:", errorText);
-            errorMessage = `Server error (${response.status}): ${errorText.substring(0, 100)}`;
-          } catch (textError) {
-            errorMessage = `Server error (${response.status}): ${response.statusText}`;
-          }
-        }
-        throw new Error(errorMessage);
-      }
-
-      const { orderId, amount, currency, key } = await response.json();
-
-      // Validate response
-      if (!orderId || !amount || !key) {
-        throw new Error("Invalid response from payment server");
-      }
-
-      // Initialize Razorpay
-      const options = {
-        key: key, // Razorpay key from backend
-        amount: amount, // Amount in paise
-        currency: currency,
-        name: "Cozy Creations",
-        description: `Order for ${cart.length} item(s)`,
-        order_id: orderId,
-        handler: async function (response) {
-          // Payment successful - verify with backend
-          try {
-            // Build URL - handle case where BACKEND_URL might already include /api
-            const baseUrl = (BACKEND_URL || "").replace(/\/api$/, ""); // Remove trailing /api if present
-            const verifyUrl = `${baseUrl}/api/orders/verify-payment`;
-            
-            const verifyResponse = await fetch(verifyUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${idToken}`,
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: orderData,
-              }),
-            });
-
-            if (verifyResponse.ok) {
-              const result = await verifyResponse.json();
-              // Clear cart and customizations
-              clearCart();
-              localStorage.removeItem("cc_cart_customizations_v1");
-              // Navigate to success page or show success message
-              navigate("/order-success", { state: { orderId: result.orderId } });
-            } else {
-              throw new Error("Payment verification failed");
-            }
-          } catch (error) {
-            console.error("Payment verification error:", error);
-            alert("Payment verification failed. Please contact support.");
-          }
-        },
-        prefill: {
-          name: user.displayName || "",
-          email: user.email || "",
-        },
-        theme: {
-          color: "#FACC15", // yellow-accent
-        },
-        modal: {
-          ondismiss: function () {
-            console.log("Payment cancelled");
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error("Payment initiation error:", error);
-      throw error;
-    }
+    // Proceed to checkout page
+    navigate("/checkout");
   };
 
   return (

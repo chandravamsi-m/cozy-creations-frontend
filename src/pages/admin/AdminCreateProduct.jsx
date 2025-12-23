@@ -286,6 +286,7 @@ export default function AdminCreateProduct() {
             <div className="relative w-full">
               <input
                 id="product-burn-time"
+                type="text"
                 value={product.burnTimeHours}
                 onChange={(e) => updateField("burnTimeHours", e.target.value)}
                 placeholder="Burn Time"

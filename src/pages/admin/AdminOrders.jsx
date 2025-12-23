@@ -181,6 +181,22 @@ export default function AdminOrders() {
                   </button>
                 </div>
 
+                {/* SHIPPING DETAILS */}
+                {order.shippingAddress && (
+                  <div>
+                    <h3 className="font-semibold mb-2 text-gray-900">Shipping Details</h3>
+                    <div className="bg-white border rounded p-3 text-sm text-gray-700 space-y-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <p><span className="font-medium text-gray-900">Name:</span> {order.shippingAddress.fullName}</p>
+                        <p><span className="font-medium text-gray-900">Phone:</span> {order.shippingAddress.phone}</p>
+                      </div>
+                      <div className="border-t my-2 border-gray-100"></div>
+                      <p><span className="font-medium text-gray-900">Address:</span> {order.shippingAddress.street}</p>
+                      <p><span className="font-medium text-gray-900">City/State:</span> {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* ITEMS */}
                 <div>
                   <h3 className="font-semibold mb-2 text-gray-900">Items</h3>
