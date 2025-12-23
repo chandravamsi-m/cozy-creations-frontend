@@ -1,8 +1,8 @@
 // src/pages/admin/AdminUsers.jsx
 import React, { useEffect, useState } from "react";
-import { db } from "../src/firebase";
+import { db } from "../../firebase";
 import { collection, getDocs, doc, updateDoc, query, where, orderBy } from "firebase/firestore";
-import { useAuth } from "../src/contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
