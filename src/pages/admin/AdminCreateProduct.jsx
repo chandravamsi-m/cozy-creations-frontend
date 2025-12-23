@@ -190,7 +190,7 @@ export default function AdminCreateProduct() {
   };
 
   return (
-    <div className="p-5 max-w-xl">
+    <div className="p-4 sm:p-5 max-w-xl">
       <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
 
       {msg && <p className="mb-3">{msg}</p>}
@@ -232,7 +232,7 @@ export default function AdminCreateProduct() {
         </div>
 
         {/* ROW 1 */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="product-wax-type" className="text-sm font-medium text-gray-800">
               Wax Type <span className="text-red-600">*</span>
@@ -278,7 +278,7 @@ export default function AdminCreateProduct() {
         </div>
 
         {/* ROW 2 */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="product-burn-time" className="text-sm font-medium text-gray-800">
               Burn Time <span className="text-red-600">*</span>
@@ -328,7 +328,7 @@ export default function AdminCreateProduct() {
         </div>
 
         {/* ROW: Customizations */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="product-custom-fragrance" className="text-sm font-medium text-gray-800">
               Customizable Fragrance

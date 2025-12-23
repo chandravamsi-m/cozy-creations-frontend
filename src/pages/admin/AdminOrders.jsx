@@ -78,6 +78,7 @@ export default function AdminOrders() {
       // Refresh list (keeps UI consistent)
       await loadOrders();
       setMsg("Status updated ✔");
+      setExpandedId(null); // Close the details view on success
     } catch (err) {
       console.error("Failed to update status:", err);
       setMsg("Failed to update status.");
@@ -114,7 +115,7 @@ export default function AdminOrders() {
             key={order.id}
             className="border rounded-lg p-4 shadow-sm bg-white"
           >
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
               <p className="font-semibold text-gray-800">
                 Order #{order.id}
               </p>

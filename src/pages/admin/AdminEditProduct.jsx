@@ -198,7 +198,7 @@ export default function AdminEditProduct() {
   if (!product) return <p className="p-4">Loading product...</p>;
 
   return (
-    <div className="p-5 max-w-xl">
+    <div className="p-4 sm:p-5 max-w-xl">
       <h2 className="text-xl font-semibold mb-3">Edit Product</h2>
 
       {msg && <p className="my-2">{msg}</p>}
@@ -241,7 +241,7 @@ export default function AdminEditProduct() {
         </div>
 
         {/* ROW 1 */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-wax-type" className="text-sm font-medium text-gray-800">
               Wax Type <span className="text-red-600">*</span>
@@ -287,7 +287,7 @@ export default function AdminEditProduct() {
         </div>
 
         {/* ROW 2 */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-burn-time" className="text-sm font-medium text-gray-800">
               Burn Time <span className="text-red-600">*</span>
@@ -336,7 +336,7 @@ export default function AdminEditProduct() {
         </div>
 
         {/* ROW: Customizations */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-custom-fragrance" className="text-sm font-medium text-gray-800">
               Customizable Fragrance
