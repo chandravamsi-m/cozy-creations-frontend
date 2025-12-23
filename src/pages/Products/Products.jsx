@@ -234,10 +234,13 @@ export default function ProductsPage() {
     }
   }, [location.state]);
 
-  // If we navigated here from Home, jump straight to the products grid (skip hero).
+  // When arriving from a CTA that explicitly asks to skip the hero, jump to products.
+  // Default (e.g., navbar) keeps the hero visible.
   useEffect(() => {
     if (appliedInitialScrollRef.current) return;
-    if (location.state?.scrollTo !== "products") return;
+    const shouldSkipHero =
+      location.state?.scrollTo === "products" && location.state?.skipHero;
+    if (!shouldSkipHero) return;
     appliedInitialScrollRef.current = true;
 
     // Wait a tick for layout so scroll is reliable.
@@ -246,6 +249,14 @@ export default function ProductsPage() {
       if (el) el.scrollIntoView({ behavior: "smooth" });
     });
   }, [location.state]);
+
+  // On normal visits, make sure we start at the top of the page/hero.
+  useEffect(() => {
+    const shouldSkipHero =
+      location.state?.scrollTo === "products" && location.state?.skipHero;
+    if (shouldSkipHero) return;
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / productsPerPage));
   const pageItems = (() => {

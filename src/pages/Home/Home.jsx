@@ -178,7 +178,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
               }`}
               type="button"
               onClick={() => {
-                navigate("/products", { state: { scrollTo: "products" } });
+                navigate("/products", { state: { scrollTo: "products", skipHero: true } });
               }}
             >
               <img src={searchBold} alt="Search" className="w-6 h-6" />
@@ -346,7 +346,9 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
                       className="mt-2 bg-yellow-accent px-4 py-2 rounded-md text-sm font-medium text-black hover:bg-yellow-500 hover:scale-105 transition-all duration-300"
                       onClick={() => {
                         const cat = categoryRouteMap[col.id] || col.value || col.id;
-                        navigate("/products", { state: { category: cat, scrollTo: "products" } });
+                        navigate("/products", {
+                          state: { category: cat, scrollTo: "products", skipHero: true },
+                        });
                       }}
                     >
                       Explore {col.title}
