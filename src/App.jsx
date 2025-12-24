@@ -20,7 +20,7 @@ const Products = lazy(() => import("./pages/Products/Products"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const CartPage = lazy(() => import("./pages/Cart/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
-const OrderSuccess = lazy(() => import("./pages/OrderSuccess/OrderSuccess"));
+// Removed OrderSuccess lazy import
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
@@ -171,7 +171,7 @@ function AppContent({
             {/* Checkout Route */}
             <Route path="/checkout" element={<Checkout />} />
 
-            <Route path="/order-success" element={<OrderSuccess />} />
+// Redundant Route Removed
             <Route path="*" element={<NotFound />} />
           </Route>
 
