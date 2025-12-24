@@ -39,3 +39,15 @@ export async function deleteProduct(id, idToken) {
   if (!res.ok) throw new Error("Failed to delete product");
   return res.json();
 }
+
+export async function permanentlyDeleteProduct(id, idToken) {
+  const res = await fetch(`${BACKEND_URL}/admin/products/${id}/permanent`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to permanently delete product");
+  return res.json();
+}

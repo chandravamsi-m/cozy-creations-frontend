@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
-import { deleteProduct, updateProduct } from "../../api/adminProducts";
+import { deleteProduct, updateProduct, permanentlyDeleteProduct } from "../../api/adminProducts";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminProducts() {
@@ -55,6 +55,21 @@ export default function AdminProducts() {
 
     await updateProduct(id, { isActive: true }, idToken);
     loadProducts();
+  };
+
+  const handlePermanentDelete = async (id) => {
+    const confirmed = window.confirm(
+      "WARNING: This will PERMANENTLY delete this product from the database. This action cannot be undone. Proceed?"
+    );
+    if (!confirmed) return;
+
+    try {
+      await permanentlyDeleteProduct(id, idToken);
+      loadProducts();
+    } catch (error) {
+      console.error("Failed to permanent delete:", error);
+      alert("Error: " + error.message);
+    }
   };
 
   return (
@@ -155,11 +170,18 @@ export default function AdminProducts() {
                   ) : (
                     <button
                       onClick={() => handleDelete(p.id)}
-                      className="flex-1 min-w-[80px] whitespace-nowrap px-2 py-1.5 text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                      className="flex-1 min-w-[80px] whitespace-nowrap px-2 py-1.5 text-xs sm:text-sm bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors"
                     >
                       Deactivate
                     </button>
                   )}
+
+                  <button
+                    onClick={() => handlePermanentDelete(p.id)}
+                    className="w-full mt-1 px-2 py-1.5 text-xs sm:text-sm border border-red-200 text-red-600 rounded hover:bg-red-50 transition-colors font-medium"
+                  >
+                    Delete Permanently
+                  </button>
                 </div>
               </div>
             </div>
