@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, doc, updateDoc, query, where, orderBy } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
+import { deleteUser } from "../../api/adminUsers";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
@@ -156,6 +157,32 @@ export default function AdminUsers() {
       alert("Failed to save changes: " + err.message);
     }
     setSavingUser(false);
+  };
+
+  const handleDeleteUser = async (targetUser) => {
+    if (targetUser.uid === currentUser?.uid) {
+      alert("You cannot delete yourself.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `WARNING: This will PERMANENTLY delete the account for ${targetUser.email}. This cannot be undone. Proceed?`
+    );
+    if (!confirmed) return;
+
+    setUpdatingId(targetUser.id);
+    try {
+      const idToken = await currentUser.getIdToken();
+      await deleteUser(targetUser.uid, idToken);
+      
+      setMsg(`User ${targetUser.email} deleted successfully ✔`);
+      setSelectedUser(null);
+      loadUsers();
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      alert("Failed to delete user: " + err.message);
+    }
+    setUpdatingId(null);
   };
 
   return (
@@ -477,6 +504,28 @@ export default function AdminUsers() {
                       NO ORDERS FOUND FOR THIS USER
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* DANGER ZONE */}
+              {!isEditing && selectedUser.uid !== currentUser?.uid && (
+                <div className="pt-6 border-t border-red-100">
+                  <div className="bg-red-50 rounded-2xl p-5 border border-red-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">⚠️</span>
+                      <h4 className="font-bold text-red-700 uppercase text-xs tracking-wider">Danger Zone</h4>
+                    </div>
+                    <p className="text-xs text-red-600 mb-4 opacity-80">
+                      Deleting this user will permanently remove their account and all profile data. This action is irreversible.
+                    </p>
+                    <button
+                      onClick={() => handleDeleteUser(selectedUser)}
+                      disabled={updatingId === selectedUser.id}
+                      className="w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95 disabled:opacity-50"
+                    >
+                      {updatingId === selectedUser.id ? "DELETING..." : "PERMANENTLY DELETE USER"}
+                    </button>
+                  </div>
                 </div>
               )}
 

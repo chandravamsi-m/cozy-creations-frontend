@@ -29,7 +29,6 @@ export default function AdminProducts() {
       const snap = await getDocs(collection(db, "products"));
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setProducts(list);
-      console.log("Loaded products:", list.length); // Debug log
     } catch (error) {
       console.error("Error loading products:", error);
       // Set empty array on error so UI shows "no products" message
