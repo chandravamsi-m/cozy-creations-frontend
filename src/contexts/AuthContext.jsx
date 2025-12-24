@@ -27,36 +27,14 @@ export function AuthProvider({ children }) {
   // ------------------------------------------
   // CREATE USER DOCUMENT IN FIRESTORE
   // ------------------------------------------
-  const createUserDocument = async (user, email) => {
+  const createUserDocument = async (user, email, allowCreation = false) => {
     try {
-      // NEW: Use UID as document ID for better security and structure
       const userRef = doc(db, "users", user.uid);
-      
-      // Migration logic: Check if UID doc exists
       const userSnap = await getDoc(userRef);
       
       if (!userSnap.exists()) {
-        // Check if an old email-based document exists
-        const emailDocId = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
-        const oldRef = doc(db, "users", emailDocId);
-        const oldSnap = await getDoc(oldRef);
-
-        if (oldSnap.exists()) {
-          // MIGRATE: Copy data from old email-doc to new UID-doc
-          const oldData = oldSnap.data();
-          await setDoc(userRef, {
-            ...oldData,
-            uid: user.uid,
-            email: email.toLowerCase(),
-            displayName: user.displayName || oldData.displayName || null,
-            photoURL: user.photoURL || oldData.photoURL || null,
-            updatedAt: serverTimestamp(),
-          });
-          // Delete old doc for cleanliness
-          await deleteDoc(oldRef);
-          console.log(`Migrated user ${email} to UID doc and deleted old entry`);
-        } else {
-          // Create new user document
+        if (allowCreation) {
+          // Intentional Creation (Signup / Social First Time)
           await setDoc(userRef, {
             uid: user.uid,
             email: email.toLowerCase(),
@@ -68,7 +46,7 @@ export function AuthProvider({ children }) {
           });
         }
       } else {
-        // Update existing UID document
+        // Update existing profile with latest info if available
         await setDoc(
           userRef,
           {
@@ -81,7 +59,7 @@ export function AuthProvider({ children }) {
         );
       }
     } catch (error) {
-      console.error("Error creating/migrating user document:", error);
+      console.error("AuthContext: Error in createUserDocument:", error);
     }
   };
 
@@ -102,7 +80,7 @@ export function AuthProvider({ children }) {
 
       setIsAdmin(false);
     } catch (error) {
-      console.error("Admin check failed:", error);
+      console.error("AuthContext: Admin check failed:", error);
       setIsAdmin(false);
     }
   };
@@ -119,11 +97,11 @@ export function AuthProvider({ children }) {
         setIdToken(token);
 
         const email = u.email || "";
-        // Ensure user document exists (handles migration too)
         if (email) {
-          await createUserDocument(u, email);
+          // IMPORTANT: allowCreation is FALSE by default here
+          // This prevents "Login" from causing a "Signup" UI event in Firestore
+          await createUserDocument(u, email, false);
         }
-        // Check admin role by UID
         await checkAdminRole(u.uid);
       } else {
         setIdToken(null);
@@ -184,26 +162,32 @@ export function AuthProvider({ children }) {
     const result = await signInWithPopup(auth, provider);
     const email = result.user.email || "";
     if (email) {
-      await createUserDocument(result.user, email);
+      // Social login acts like a signup on first hit
+      await createUserDocument(result.user, email, true);
     }
-    await checkAdminRole(result.user.uid, email);
+    await checkAdminRole(result.user.uid);
     return result.user;
   };
 
   const loginWithEmail = async (email, password) => {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    const emailLower = email.toLowerCase();
-    await createUserDocument(result.user, emailLower);
-    await checkAdminRole(result.user.uid, emailLower);
-    return result.user;
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      await checkAdminRole(result.user.uid);
+      return result.user;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const signupWithEmail = async (email, password) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    const emailLower = email.toLowerCase();
-    await createUserDocument(result.user, emailLower);
-    await checkAdminRole(result.user.uid, emailLower);
-    return result.user;
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await createUserDocument(result.user, email.toLowerCase(), true);
+      await checkAdminRole(result.user.uid);
+      return result.user;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const resetPassword = async (email) => {
