@@ -136,9 +136,16 @@ export default function AdminOrders() {
                 : "N/A"}
             </p>
 
-            <p className="text-sm text-gray-600">
-              Total Amount: ₹{order.total}
-            </p>
+            <div className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+              <span>Total Amount: <span className="font-bold text-gray-900">₹{order.total}</span></span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                order.paymentMethod === 'cod' 
+                  ? 'bg-orange-100 text-orange-700 border-orange-200' 
+                  : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+              }`}>
+                {order.paymentMethod || "online"}
+              </span>
+            </div>
 
             <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
               <button

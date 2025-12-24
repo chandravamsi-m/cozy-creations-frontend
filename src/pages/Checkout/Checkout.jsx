@@ -13,6 +13,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [completedOrderId, setCompletedOrderId] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("online"); // 'online' or 'cod'
 
   // Address State
   const [address, setAddress] = useState({
@@ -95,7 +96,6 @@ export default function Checkout() {
 
     try {
       // 1. Prepare Order Payload
-      // We retrieve customizations from localStorage just like Cart does
       let customizations = {};
       try {
         const raw = localStorage.getItem("cc_cart_customizations_v1");
@@ -111,13 +111,38 @@ export default function Checkout() {
           customization: customizations[item.productId] || null,
         })),
         total: totalAmount,
-        shippingAddress: address, // NEW FIELD
+        shippingAddress: address,
       };
 
-      // 2. Create Razorpay Order
       const baseUrl = (BACKEND_URL || "").replace(/\/api$/, "");
-      const paymentUrl = `${baseUrl}/api/orders/create-payment`;
 
+      // FORK: ONLINE VS COD
+      if (paymentMethod === "cod") {
+        const codUrl = `${baseUrl}/api/orders/place-cod`;
+        const response = await fetch(codUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify(orderData),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || "Failed to place COD order");
+        }
+
+        const { orderId } = await response.json();
+        setIsOrderComplete(true);
+        clearCart();
+        localStorage.removeItem("cc_cart_customizations_v1");
+        setCompletedOrderId(orderId);
+        return;
+      }
+
+      // ONLINE PAYMENT (RAZORPAY)
+      const paymentUrl = `${baseUrl}/api/orders/create-payment`;
       const response = await fetch(paymentUrl, {
         method: "POST",
         headers: {
@@ -136,7 +161,6 @@ export default function Checkout() {
 
       if (!orderId) throw new Error("Invalid server response");
 
-      // 3. Open Razorpay
       const options = {
         key: key,
         amount: amount,
@@ -145,7 +169,6 @@ export default function Checkout() {
         description: `Payment for Order #${orderId}`,
         order_id: orderId,
         handler: async function (pxResponse) {
-          // 4. Verify Payment
           try {
             const verifyUrl = `${baseUrl}/api/orders/verify-payment`;
             const verifyRes = await fetch(verifyUrl, {
@@ -164,16 +187,12 @@ export default function Checkout() {
 
             if (verifyRes.ok) {
               const result = await verifyRes.json();
-              
-              // Save address for future (User Profile) - Updated to use UID
               try {
                 const userRef = doc(db, "users", user.uid);
                 await setDoc(userRef, { shippingAddress: address }, { merge: true });
               } catch (err) {
                 console.error("Failed to save address:", err);
               }
-
-
 
               setIsOrderComplete(true);
               clearCart();
@@ -318,7 +337,41 @@ export default function Checkout() {
                 ))}
               </div>
 
-              <div className="border-t pt-4 space-y-2">
+              {/* PAYMENT METHOD SELECTOR */}
+              <div className="mt-4 pt-4 border-t space-y-3">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Payment Method</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    onClick={() => setPaymentMethod("online")}
+                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                      paymentMethod === "online" 
+                      ? "border-black bg-gray-50 font-bold" 
+                      : "border-gray-100 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-lg">💳</span> Online Payment
+                    </div>
+                    {paymentMethod === "online" && <span className="bg-black text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✓</span>}
+                  </button>
+
+                  <button
+                    onClick={() => setPaymentMethod("cod")}
+                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                      paymentMethod === "cod" 
+                      ? "border-black bg-gray-50 font-bold" 
+                      : "border-gray-100 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-lg">🚚</span> Cash on Delivery
+                    </div>
+                    {paymentMethod === "cod" && <span className="bg-black text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✓</span>}
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t mt-4 pt-4 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span>₹{totalAmount}</span>
