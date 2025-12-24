@@ -26,19 +26,29 @@ export default function Navbar({
 
   const desktopDropdownRef = React.useRef(null);
 
-  // Close only DESKTOP dropdown when clicking outside
+  // Close dropdowns when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (e) => {
+      // Desktop Profile Dropdown
       if (
         desktopDropdownRef.current &&
         !desktopDropdownRef.current.contains(e.target)
       ) {
         setDesktopProfileOpen(false);
       }
+
+      // Mobile Hamburger Menu
+      if (
+        menuOpen && 
+        stickyNavRef.current && 
+        !stickyNavRef.current.contains(e.target)
+      ) {
+        setMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [menuOpen, setMenuOpen, stickyNavRef]);
 
   // Total quantity badge
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -110,7 +120,7 @@ export default function Navbar({
           </div>
 
           {/* RIGHT SIDE BUTTONS */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
             {/* DESKTOP PROFILE DROPDOWN */}
             {user ? (
               <div className="relative hidden md:block" ref={desktopDropdownRef}>
@@ -165,14 +175,14 @@ export default function Navbar({
               </button>
             )}
 
-            {/* DESKTOP CART */}
+            {/* CART BUTTON (Visible on both Mobile & Desktop) */}
             <button
               onClick={() => navigate("/cart")}
-              className="relative hidden md:flex items-center justify-center text-white"
+              className="relative flex items-center justify-center text-white p-2"
             >
               <img src={cartIcon} alt="Cart" className="w-6 h-6" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-2 bg-yellow-accent text-black text-[10px] px-1.5 py-[1px] rounded-full font-semibold">
+                <span className="absolute top-0 right-0 bg-yellow-accent text-black text-[10px] px-1.5 py-[1px] rounded-full font-semibold">
                   {cartCount}
                 </span>
               )}
@@ -294,22 +304,7 @@ export default function Navbar({
             </button>
           )}
 
-          {/* MOBILE CART */}
-          <button
-            onClick={() => {
-              setMenuOpen(false);
-              navigate("/cart");
-            }}
-            className="relative flex items-center gap-2 text-left hover:text-yellow-accent"
-          >
-            <img src={cartIcon} alt="Cart" className="w-5 h-5" />
-            Cart{" "}
-            {cartCount > 0 && (
-              <span className="ml-2 bg-yellow-accent text-black text-[10px] px-2 rounded-full">
-                {cartCount}
-              </span>
-            )}
-          </button>
+          {/* Mobile Cart Removed from here as it's now in the top bar */}
 
         </div>
       </div>
