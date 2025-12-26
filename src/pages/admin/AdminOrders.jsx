@@ -1,9 +1,10 @@
 // src/pages/admin/AdminOrders.jsx
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { updateAdminOrderStatus } from "../../api/adminOrders";
+import { sendOrderStatusUpdate } from "../../api/email";
 
 export default function AdminOrders() {
   const { idToken } = useAuth();
@@ -63,7 +64,8 @@ export default function AdminOrders() {
     "cancelled",
   ];
 
-  const handleSaveStatus = async (orderId) => {
+  const handleSaveStatus = async (order) => {
+    const orderId = order.id;
     const nextStatus = statusDraft[orderId];
     if (!nextStatus) return;
     if (!idToken) {
@@ -76,9 +78,29 @@ export default function AdminOrders() {
     try {
       await updateAdminOrderStatus(orderId, nextStatus, idToken);
       // Refresh list (keeps UI consistent)
-      await loadOrders();
       setMsg("Status updated ✔");
       setExpandedId(null); // Close the details view on success
+
+      // Send Status Update Email (Non-blocking)
+      let targetEmail = order.userEmail;
+
+      // Fallback for older orders: Try to fetch email from user profile
+      if (!targetEmail && order.userId) {
+        try {
+          const userSnap = await getDoc(doc(db, "users", order.userId));
+          if (userSnap.exists()) {
+            targetEmail = userSnap.data().email;
+          }
+        } catch (err) {
+          console.error("Failed to fetch user profile for email fallback:", err);
+        }
+      }
+
+      if (targetEmail) {
+        sendOrderStatusUpdate(targetEmail, orderId, nextStatus);
+      } else {
+        console.warn(`AdminOrders: Could not find any recipient email for order ${orderId}.`);
+      }
     } catch (err) {
       console.error("Failed to update status:", err);
       setMsg("Failed to update status.");
@@ -180,7 +202,7 @@ export default function AdminOrders() {
                   </div>
 
                   <button
-                    onClick={() => handleSaveStatus(order.id)}
+                    onClick={() => handleSaveStatus(order)}
                     disabled={savingId === order.id}
                     className="px-4 py-2 bg-emerald-600 text-white rounded disabled:opacity-50 w-full sm:w-auto"
                   >

@@ -13,6 +13,7 @@ import {
 
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { sendWelcomeEmail } from "../api/email";
 
 const AuthContext = createContext(null);
 
@@ -44,6 +45,9 @@ export function AuthProvider({ children }) {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
+
+          // Trigger Welcome Email (Non-blocking)
+          sendWelcomeEmail(email, user.displayName || null);
         }
       } else {
         // Update existing profile with latest info if available

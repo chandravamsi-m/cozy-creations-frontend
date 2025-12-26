@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { sendOrderConfirmation } from "../../api/email";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
 import { BACKEND_URL } from "../../config/backend";
@@ -112,6 +113,7 @@ export default function Checkout() {
         })),
         total: totalAmount,
         shippingAddress: address,
+        userEmail: user.email, // Save email for status updates
       };
 
       const baseUrl = (BACKEND_URL || "").replace(/\/api$/, "");
@@ -138,6 +140,14 @@ export default function Checkout() {
         clearCart();
         localStorage.removeItem("cc_cart_customizations_v1");
         setCompletedOrderId(orderId);
+
+        // Send Order Confirmation Email (Non-blocking)
+        sendOrderConfirmation(user.email, {
+          orderId,
+          items: orderData.items,
+          total: orderData.total,
+          paymentMethod: "cod"
+        });
         return;
       }
 
@@ -198,6 +208,14 @@ export default function Checkout() {
               clearCart();
               localStorage.removeItem("cc_cart_customizations_v1");
               setCompletedOrderId(result.orderId);
+
+              // Send Order Confirmation Email (Non-blocking)
+              sendOrderConfirmation(user.email, {
+                orderId: result.orderId,
+                items: orderData.items,
+                total: orderData.total,
+                paymentMethod: "online"
+              });
             } else {
               throw new Error("Payment verification failed");
             }
