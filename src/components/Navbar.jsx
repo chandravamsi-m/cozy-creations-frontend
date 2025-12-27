@@ -39,8 +39,8 @@ export default function Navbar({
 
       // Mobile Hamburger Menu
       if (
-        menuOpen && 
-        stickyNavRef.current && 
+        menuOpen &&
+        stickyNavRef.current &&
         !stickyNavRef.current.contains(e.target)
       ) {
         setMenuOpen(false);
@@ -63,16 +63,14 @@ export default function Navbar({
   }, [user]);
 
   const navLinkClass = ({ isActive }) =>
-    `hover:text-yellow-accent transition-colors ${
-      isActive ? "text-yellow-accent drop-shadow-[0_0_10px_rgba(250,204,21,0.45)]" : ""
+    `hover:text-yellow-accent transition-colors ${isActive ? "text-yellow-accent drop-shadow-[0_0_10px_rgba(250,204,21,0.45)]" : ""
     }`;
 
   return (
     <nav
       ref={stickyNavRef}
-      className={`fixed top-0 left-0 w-full z-50 ${
-        location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
-      }`}
+      className={`fixed top-0 left-0 w-full z-50 ${location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
+        }`}
     >
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">
@@ -147,11 +145,23 @@ export default function Navbar({
                     </div>
 
                     <div className="py-2">
-                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
+                      <button
+                        onClick={() => {
+                          navigate("/profile");
+                          setDesktopProfileOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                      >
                         My Profile
                       </button>
-                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                        Orders
+                      <button
+                        onClick={() => {
+                          navigate("/my-orders");
+                          setDesktopProfileOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                      >
+                        My Orders
                       </button>
                       <button
                         onClick={() => {
@@ -200,11 +210,10 @@ export default function Navbar({
 
         {/* MOBILE MENU */}
         <div
-          className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-4 text-white text-sm shadow-lg transition-all duration-250 ${
-            menuOpen
-              ? "opacity-100 translate-y-0 scale-100"
-              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-          }`}
+          className={`md:hidden absolute left-0 right-0 top-full w-full bg-black/80 backdrop-blur-md p-4 space-y-4 text-white text-sm shadow-lg transition-all duration-250 ${menuOpen
+            ? "opacity-100 translate-y-0 scale-100"
+            : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+            }`}
         >
           <NavLink
             to="/"
@@ -257,39 +266,53 @@ export default function Navbar({
               </button>
 
               {mobileProfileOpen && (
-  <div className="mt-1 ml-2 border-l border-white/20 pl-3 space-y-3 animate-fadeIn">
+                <div className="mt-1 ml-2 border-l border-white/20 pl-3 space-y-3 animate-fadeIn">
 
-    {/* USER INFO BOX LIKE DESKTOP */}
-    <div className="bg-white/10 p-3 rounded-lg">
-      <p className="text-sm font-semibold">
-        {user.displayName || "User"}
-      </p>
-      <p className="text-xs text-white/70 truncate">
-        {user.email}
-      </p>
-    </div>
+                  {/* USER INFO BOX LIKE DESKTOP */}
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <p className="text-sm font-semibold">
+                      {user.displayName || "User"}
+                    </p>
+                    <p className="text-xs text-white/70 truncate">
+                      {user.email}
+                    </p>
+                  </div>
 
-    {/* LINKS */}
-    <button className="block w-full text-left py-1 hover:text-yellow-accent">
-      My Profile
-    </button>
+                  {/* LINKS */}
+                  <button
+                    onClick={() => {
+                      navigate("/profile");
+                      setMenuOpen(false);
+                      setMobileProfileOpen(false);
+                    }}
+                    className="block w-full text-left py-1 hover:text-yellow-accent"
+                  >
+                    My Profile
+                  </button>
 
-    <button className="block w-full text-left py-1 hover:text-yellow-accent">
-      Orders
-    </button>
+                  <button
+                    onClick={() => {
+                      navigate("/my-orders");
+                      setMenuOpen(false);
+                      setMobileProfileOpen(false);
+                    }}
+                    className="block w-full text-left py-1 hover:text-yellow-accent"
+                  >
+                    My Orders
+                  </button>
 
-    <button
-      onClick={() => {
-        logoutUser();
-        setMenuOpen(false);
-        setMobileProfileOpen(false);
-      }}
-      className="block w-full text-left py-1 text-red-300 hover:text-red-200"
-    >
-      Logout
-    </button>
-  </div>
-)}
+                  <button
+                    onClick={() => {
+                      logoutUser();
+                      setMenuOpen(false);
+                      setMobileProfileOpen(false);
+                    }}
+                    className="block w-full text-left py-1 text-red-300 hover:text-red-200"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
 
             </div>
           ) : (

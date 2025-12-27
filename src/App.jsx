@@ -30,6 +30,8 @@ const AdminCreateProduct = lazy(() =>
 const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const Profile = lazy(() => import("./pages/Profile/Profile"));
+const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
 
 // Component with routing
 function AppContent({
@@ -170,6 +172,9 @@ function AppContent({
             <Route path="cart" element={<CartPage />} />
             {/* Checkout Route */}
             <Route path="/checkout" element={<Checkout />} />
+            {/* User Account Routes */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/my-orders" element={<MyOrders />} />
 
 // Redundant Route Removed
             <Route path="*" element={<NotFound />} />
