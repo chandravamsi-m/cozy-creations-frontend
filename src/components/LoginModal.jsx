@@ -10,6 +10,7 @@ export default function LoginModal({ closeModal }) {
     signInWithGoogle,
     loginWithEmail,
     signupWithEmail,
+    resetPassword,
     getErrorMessage,
     isAdmin,
     loading: authLoading,
@@ -23,6 +24,7 @@ export default function LoginModal({ closeModal }) {
 
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+  const [msg, setMsg] = useState("");
 
   const handlePostLogin = () => {
     closeModal();
@@ -100,9 +102,35 @@ export default function LoginModal({ closeModal }) {
     }
   };
 
+  const handleResetPassword = async () => {
+    setErrMsg("");
+    setMsg("");
+
+    if (!email.trim()) {
+      setErrMsg("Please enter your email address.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await resetPassword(email.trim());
+
+      if (res && res.success) {
+        setMsg("Password reset link sent! Please check your email inbox.");
+      } else {
+        setErrMsg(res?.error || "Could not send reset link. Please try again.");
+      }
+    } catch (err) {
+      setErrMsg("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Reset form when mode changes
   useEffect(() => {
     setErrMsg("");
+    setMsg("");
     setPassword("");
     setConfirmPassword("");
   }, [mode]);
@@ -115,41 +143,44 @@ export default function LoginModal({ closeModal }) {
 
       {/* MODAL */}
       <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-fadeIn">
-        
+
         {/* HEADER */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-xl font-semibold text-gray-800">
-            {mode === "login" ? "Welcome Back" : "Create Account"}
+            {mode === "login"
+              ? "Welcome Back"
+              : mode === "forgot"
+                ? "Reset Password"
+                : "Create Account"}
           </h2>
           <button onClick={closeModal} className="text-gray-500 text-xl hover:text-black">
             ✕
           </button>
         </div>
-
         {/* TABS */}
-        <div className="flex">
-          <button
-            className={`flex-1 py-3 text-center font-medium ${
-              mode === "login"
+        {mode !== "forgot" && (
+          <div className="flex">
+            <button
+              className={`flex-1 py-3 text-center font-medium ${mode === "login"
                 ? "text-gray-900 border-b-2 border-yellow-accent"
                 : "text-gray-500"
-            }`}
-            onClick={() => setMode("login")}
-          >
-            Login
-          </button>
+                }`}
+              onClick={() => setMode("login")}
+            >
+              Login
+            </button>
 
-          <button
-            className={`flex-1 py-3 text-center font-medium ${
-              mode === "signup"
+            <button
+              className={`flex-1 py-3 text-center font-medium ${mode === "signup"
                 ? "text-gray-900 border-b-2 border-yellow-accent"
                 : "text-gray-500"
-            }`}
-            onClick={() => setMode("signup")}
-          >
-            Signup
-          </button>
-        </div>
+                }`}
+              onClick={() => setMode("signup")}
+            >
+              Signup
+            </button>
+          </div>
+        )}
 
         {/* BODY */}
         <div className="px-6 py-6">
@@ -159,8 +190,13 @@ export default function LoginModal({ closeModal }) {
             </div>
           )}
 
+          {msg && (
+            <div className="mb-3 text-sm text-emerald-600 bg-emerald-50 p-2 rounded">
+              {msg}
+            </div>
+          )}
+
           <div className="flex flex-col gap-4">
-            {/* EMAIL */}
             <div>
               <label className="block text-sm text-gray-700 mb-1">Email</label>
               <input
@@ -172,27 +208,49 @@ export default function LoginModal({ closeModal }) {
               />
             </div>
 
+            {mode === "forgot" && (
+              <p className="text-sm text-gray-600">
+                Enter your email address and we'll send you a link to reset your
+                password.
+              </p>
+            )}
+
             {/* PASSWORD */}
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
-                className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent"
-                placeholder="********"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (mode === "login" || (mode === "signup" && confirmPassword))) {
-                    submitEmailForm();
-                  }
-                }}
-              />
-              {mode === "signup" && (
-                <p className="text-[11px] text-gray-500 mt-1">
-                  Password must be at least 6 characters.
-                </p>
-              )}
-            </div>
+            {mode !== "forgot" && (
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm text-gray-700">Password</label>
+                  {mode === "login" && (
+                    <button
+                      onClick={() => setMode("forgot")}
+                      className="text-[11px] text-yellow-600 hover:underline"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent"
+                  placeholder="********"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key === "Enter" &&
+                      (mode === "login" || (mode === "signup" && confirmPassword))
+                    ) {
+                      submitEmailForm();
+                    }
+                  }}
+                />
+                {mode === "signup" && (
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Password must be at least 6 characters.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* CONFIRM PASSWORD - Only show in signup mode */}
             {mode === "signup" && (
@@ -215,11 +273,17 @@ export default function LoginModal({ closeModal }) {
 
             {/* SUBMIT BUTTON */}
             <button
-              onClick={submitEmailForm}
+              onClick={mode === "forgot" ? handleResetPassword : submitEmailForm}
               disabled={loading}
               className="w-full py-2 bg-yellow-accent text-black rounded-lg font-semibold hover:bg-yellow-500 transition-colors disabled:opacity-50"
             >
-              {loading ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
+              {loading
+                ? "Please wait…"
+                : mode === "login"
+                  ? "Login"
+                  : mode === "forgot"
+                    ? "Send Reset Link"
+                    : "Create Account"}
             </button>
 
             {/* DIVIDER */}
@@ -257,6 +321,16 @@ export default function LoginModal({ closeModal }) {
                 onClick={() => setMode("signup")}
               >
                 Sign up
+              </button>
+            </>
+          ) : mode === "forgot" ? (
+            <>
+              Remembered your password?{" "}
+              <button
+                className="text-yellow-accent hover:underline"
+                onClick={() => setMode("login")}
+              >
+                Log in
               </button>
             </>
           ) : (

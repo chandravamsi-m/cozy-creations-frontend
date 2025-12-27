@@ -47,7 +47,7 @@ export default function Checkout() {
           // Changed from emailDocId to user.uid
           const userRef = doc(db, "users", user.uid);
           const snap = await getDoc(userRef);
-          
+
           if (snap.exists() && snap.data().shippingAddress) {
             setAddress(snap.data().shippingAddress);
           } else if (user.displayName && !address.fullName) {
@@ -108,6 +108,7 @@ export default function Checkout() {
       const orderData = {
         items: cart.map((item) => ({
           productId: item.productId,
+          name: item.name, // Include product name for human-readable emails
           quantity: item.quantity,
           customization: customizations[item.productId] || null,
         })),
@@ -146,7 +147,8 @@ export default function Checkout() {
           orderId,
           items: orderData.items,
           total: orderData.total,
-          paymentMethod: "cod"
+          paymentMethod: "cod",
+          shippingAddress: orderData.shippingAddress
         });
         return;
       }
@@ -214,7 +216,8 @@ export default function Checkout() {
                 orderId: result.orderId,
                 items: orderData.items,
                 total: orderData.total,
-                paymentMethod: "online"
+                paymentMethod: "online",
+                shippingAddress: orderData.shippingAddress
               });
             } else {
               throw new Error("Payment verification failed");
@@ -361,11 +364,10 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 gap-2">
                   <button
                     onClick={() => setPaymentMethod("online")}
-                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                      paymentMethod === "online" 
-                      ? "border-black bg-gray-50 font-bold" 
+                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === "online"
+                      ? "border-black bg-gray-50 font-bold"
                       : "border-gray-100 opacity-60 hover:opacity-100"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3 text-sm">
                       <span className="text-lg">💳</span> Online Payment
@@ -375,11 +377,10 @@ export default function Checkout() {
 
                   <button
                     onClick={() => setPaymentMethod("cod")}
-                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                      paymentMethod === "cod" 
-                      ? "border-black bg-gray-50 font-bold" 
+                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === "cod"
+                      ? "border-black bg-gray-50 font-bold"
                       : "border-gray-100 opacity-60 hover:opacity-100"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3 text-sm">
                       <span className="text-lg">🚚</span> Cash on Delivery
@@ -421,12 +422,12 @@ export default function Checkout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h2>
             <p className="text-gray-600 mb-6">
               Thank you for your purchase. Your order has been placed successfully.
             </p>
-            
+
             <div className="bg-gray-50 rounded-xl p-4 mb-8">
               <p className="text-xs font-bold text-gray-400 uppercase mb-1">Order ID</p>
               <p className="font-mono text-sm font-bold text-gray-900">{completedOrderId}</p>

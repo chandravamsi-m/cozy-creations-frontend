@@ -7,13 +7,12 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
   signOut,
 } from "firebase/auth";
 
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
-import { sendWelcomeEmail } from "../api/email";
+import { sendWelcomeEmail, sendPasswordResetEmail as sendBackendResetEmail } from "../api/email";
 
 const AuthContext = createContext(null);
 
@@ -26,20 +25,34 @@ export function AuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // ------------------------------------------
+  // HELPER: EXTRACT NAME FROM EMAIL
+  // ------------------------------------------
+  const extractNameFromEmail = (email) => {
+    if (!email) return "Customer";
+    const partBeforeAt = email.split("@")[0];
+    // Take the first part before any dot or underscore
+    const firstName = partBeforeAt.split(/[._]/)[0];
+    // Capitalize first letter
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  };
+
+  // ------------------------------------------
   // CREATE USER DOCUMENT IN FIRESTORE
   // ------------------------------------------
   const createUserDocument = async (user, email, allowCreation = false) => {
     try {
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
-      
+
+      const derivedName = user.displayName || extractNameFromEmail(email);
+
       if (!userSnap.exists()) {
         if (allowCreation) {
           // Intentional Creation (Signup / Social First Time)
           await setDoc(userRef, {
             uid: user.uid,
             email: email.toLowerCase(),
-            displayName: user.displayName || null,
+            displayName: derivedName,
             photoURL: user.photoURL || null,
             role: "user",
             createdAt: serverTimestamp(),
@@ -47,7 +60,7 @@ export function AuthProvider({ children }) {
           });
 
           // Trigger Welcome Email (Non-blocking)
-          sendWelcomeEmail(email, user.displayName || null);
+          sendWelcomeEmail(email, derivedName);
         }
       } else {
         // Update existing profile with latest info if available
@@ -55,7 +68,7 @@ export function AuthProvider({ children }) {
           userRef,
           {
             email: email.toLowerCase(),
-            displayName: user.displayName || userSnap.data().displayName,
+            displayName: user.displayName || userSnap.data().displayName || derivedName,
             photoURL: user.photoURL || userSnap.data().photoURL,
             updatedAt: serverTimestamp(),
           },
@@ -195,7 +208,7 @@ export function AuthProvider({ children }) {
   };
 
   const resetPassword = async (email) => {
-    await sendPasswordResetEmail(auth, email);
+    return await sendBackendResetEmail(email);
   };
 
   const logoutUser = async () => {

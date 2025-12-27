@@ -97,7 +97,7 @@ export default function AdminOrders() {
       }
 
       if (targetEmail) {
-        sendOrderStatusUpdate(targetEmail, orderId, nextStatus);
+        sendOrderStatusUpdate(targetEmail, orderId, nextStatus, order.shippingAddress?.fullName || "Customer");
       } else {
         console.warn(`AdminOrders: Could not find any recipient email for order ${orderId}.`);
       }
