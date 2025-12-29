@@ -141,30 +141,26 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
           {/* Hero Text */}
           <div
             ref={heroContentRef}
-            className={`flex-1 flex flex-col justify-center items-center text-center gap-5 mt-10 text-white transition-opacity duration-1000 ${
-              isVisible.hero ? "opacity-100" : "opacity-0"
-            }`}
+            className={`flex-1 flex flex-col justify-center items-center text-center gap-5 mt-10 text-white transition-opacity duration-1000 ${isVisible.hero ? "opacity-100" : "opacity-0"
+              }`}
           >
             <p
-              className={`font-semibold text-xs uppercase tracking-wider transition-all duration-700 delay-100 ${
-                isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-              }`}
+              className={`font-semibold text-xs uppercase tracking-wider transition-all duration-700 delay-100 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                }`}
             >
               Crafted with Love, Made for Happy Hearts
             </p>
             <div className="flex flex-col gap-2">
               <h1
-                className={`font-bold text-4xl md:text-6xl leading-tight transition-all duration-700 delay-200 ${
-                  isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-                }`}
+                className={`font-bold text-4xl md:text-6xl leading-tight transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                  }`}
               >
                 Handcrafted Candles
                 <br /> Made to Warm Your World
               </h1>
               <p
-                className={`font-semibold text-xs md:text-sm max-w-lg mx-auto transition-all duration-700 delay-300 ${
-                  isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-                }`}
+                className={`font-semibold text-xs md:text-sm max-w-lg mx-auto transition-all duration-700 delay-300 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                  }`}
               >
                 Discover soothing fragrances, soft glows, and artisanal designs
                 crafted to bring comfort into every corner of your home.
@@ -172,9 +168,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             </div>
 
             <button
-              className={`bg-yellow-accent flex items-center gap-2 px-6 py-3 rounded-md mt-4 text-black font-medium hover:scale-105 transition-all duration-300 delay-400 ${
-                isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-              }`}
+              className={`bg-yellow-accent flex items-center gap-2 px-6 py-3 rounded-md mt-4 text-black font-medium hover:scale-105 transition-all duration-300 delay-400 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                }`}
               type="button"
               onClick={() => {
                 navigate("/products", { state: { scrollTo: "products", skipHero: true } });
@@ -198,9 +193,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
         className="relative w-full h-screen bg-white flex flex-col md:flex-row overflow-hidden z-20"
       >
         <div
-          className={`w-full md:w-1/2 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:pl-[100px] py-8 sm:py-12 md:py-16 h-full transition-all duration-700 ${
-            isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
-          }`}
+          className={`w-full md:w-1/2 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:pl-[100px] py-8 sm:py-12 md:py-16 h-full transition-all duration-700 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+            }`}
         >
           <h2 className="font-normal text-2xl sm:text-3xl md:text-4xl lg:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-xl mb-6 sm:mb-8 md:mb-12 break-words">
             Elevate Your Space With Handcrafted Glow
@@ -227,9 +221,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
           </div>
         </div>
         <div
-          className={`w-full md:w-1/2 h-full overflow-hidden transition-all duration-700 delay-200 ${
-            isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
-          }`}
+          className={`w-full md:w-1/2 h-full overflow-hidden transition-all duration-700 delay-200 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
+            }`}
         >
           <img
             src={rectangle60}
@@ -248,9 +241,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
       >
         <div className="max-w-[1280px] mx-auto px-4 relative">
           <h2
-            className={`font-['Montserrat:Regular',sans-serif] font-normal text-4xl md:text-5xl text-black uppercase mb-8 text-center transition-all duration-700 ${
-              isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-            }`}
+            className={`font-['Montserrat:Regular',sans-serif] font-normal text-4xl md:text-5xl text-black uppercase mb-8 text-center transition-all duration-700 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
           >
             Our Collections
           </h2>
@@ -260,9 +252,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             type="button"
             onClick={scrollLeft}
             aria-label="Scroll collections left"
-            className={`absolute left-[0] top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-yellow-accent shadow-2xl flex items-center justify-center transition-transform hover:scale-105 ${
-              canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+            className={`absolute left-[0] top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-yellow-accent shadow-2xl flex items-center justify-center transition-transform hover:scale-105 ${canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
           >
             <svg
               width="20"
@@ -287,9 +278,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             type="button"
             onClick={scrollRight}
             aria-label="Scroll collections right"
-            className={`absolute right-[0] top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-yellow-accent shadow-2xl flex items-center justify-center transition-transform hover:scale-105 ${
-              canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+            className={`absolute right-[0] top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-yellow-accent shadow-2xl flex items-center justify-center transition-transform hover:scale-105 ${canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
           >
             <svg
               width="20"
@@ -318,11 +308,10 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
               {COLLECTIONS.map((col, index) => (
                 <div
                   key={col.id}
-                  className={`flex-shrink-0 w-56 md:flex-1 md:w-auto transition-all duration-500 ${
-                    isVisible.collections
-                      ? "translate-y-0 opacity-100"
-                      : "translate-y-8 opacity-0"
-                  }`}
+                  className={`flex-shrink-0 w-56 md:flex-1 md:w-auto transition-all duration-500 ${isVisible.collections
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-8 opacity-0"
+                    }`}
                   style={{ transitionDelay: `${index * 100}ms` }}
                 >
                   <div className="flex flex-col items-center text-center cursor-pointer group">
@@ -377,16 +366,14 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
 
         <div className="relative w-full max-w-[1280px] mx-auto py-16 flex flex-col items-center">
           <h2
-            className={`font-semibold text-4xl text-black capitalize mb-2 text-center transition-all duration-700 ${
-              isVisible.features ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-            }`}
+            className={`font-semibold text-4xl text-black capitalize mb-2 text-center transition-all duration-700 ${isVisible.features ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
           >
             Why Choose Us
           </h2>
           <p
-            className={`text-lg text-black mb-16 text-center px-4 transition-all duration-700 delay-100 ${
-              isVisible.features ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-            }`}
+            className={`text-lg text-black mb-16 text-center px-4 transition-all duration-700 delay-100 ${isVisible.features ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
           >
             Candles crafted to comfort, glow and soothe your space.
           </p>
@@ -395,9 +382,8 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             {INITIAL_FEATURES.map((feature, index) => (
               <div
                 key={feature.id}
-                className={`flex flex-col items-center text-center transition-all duration-500 ${
-                  isVisible.features ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                }`}
+                className={`flex flex-col items-center text-center transition-all duration-500 ${isVisible.features ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                  }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className="mb-6 flex justify-center items-center">
@@ -413,15 +399,23 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             ))}
           </div>
 
-          <div className={`mt-16 relative z-10 transition-all duration-700 delay-500 ${
-            isVisible.features ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-          }`}>
+          <div className={`mt-16 relative z-10 transition-all duration-700 delay-500 ${isVisible.features ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+            }`}>
             <button
               className="bg-yellow-accent px-8 py-3 rounded-lg font-medium text-black capitalize hover:scale-105 transition-transform duration-300"
               type="button"
+              onClick={() =>
+                window.open(
+                  "https://drive.google.com/uc?export=download&id=1FkjVEDDm_-rEKPcqLr-TgK99qwzLR3Gg",
+                  "_blank"
+                )
+              }
             >
-              View Catalogue
+              Download Catalogue
             </button>
+
+
+
           </div>
         </div>
       </div>
