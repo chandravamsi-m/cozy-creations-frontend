@@ -413,9 +413,6 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             >
               Download Catalogue
             </button>
-
-
-
           </div>
         </div>
       </div>
