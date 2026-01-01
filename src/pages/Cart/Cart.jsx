@@ -4,7 +4,8 @@ import { useCart } from "../../hooks/useCart";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLoginModal } from "../../contexts/LoginModalContext";
-import { BACKEND_URL } from "../../config/backend";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 
 const FRAGRANCE_OPTIONS = [
   "Rose",
@@ -187,7 +188,7 @@ export default function CartPage() {
                     {/* Product Image */}
                     <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden shrink-0 relative group">
                       <img
-                        src={item.thumbnailUrl || item.imageUrl}
+                        src={optimizeCloudinaryImage(item.thumbnailUrl || item.imageUrl, IMAGE_PRESETS.cart)}
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
@@ -223,8 +224,8 @@ export default function CartPage() {
 
                       {/* Customization Display */}
                       {customizations[item.productId]?.fragrance ||
-                      customizations[item.productId]?.colourHex ||
-                      customizations[item.productId]?.colourName ? (
+                        customizations[item.productId]?.colourHex ||
+                        customizations[item.productId]?.colourName ? (
                         <div className="mb-3 p-2.5 bg-gradient-to-br from-yellow-accent/10 to-yellow-accent/5 border border-yellow-accent/20 rounded-lg">
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <svg className="w-3.5 h-3.5 text-yellow-accent" fill="currentColor" viewBox="0 0 20 20">
@@ -245,21 +246,21 @@ export default function CartPage() {
                             )}
                             {(customizations[item.productId]?.colourHex ||
                               customizations[item.productId]?.colourName) && (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-gray-600">Color:</span>
-                                {customizations[item.productId]?.colourHex && (
-                                  <span
-                                    className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                                    style={{ backgroundColor: customizations[item.productId].colourHex }}
-                                    aria-hidden="true"
-                                  />
-                                )}
-                                <span className="font-semibold text-gray-900 bg-white px-2 py-0.5 rounded text-[11px]">
-                                  {customizations[item.productId]?.colourName ||
-                                    customizations[item.productId]?.colourHex}
-                                </span>
-                              </div>
-                            )}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-600">Color:</span>
+                                  {customizations[item.productId]?.colourHex && (
+                                    <span
+                                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                      style={{ backgroundColor: customizations[item.productId].colourHex }}
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                  <span className="font-semibold text-gray-900 bg-white px-2 py-0.5 rounded text-[11px]">
+                                    {customizations[item.productId]?.colourName ||
+                                      customizations[item.productId]?.colourHex}
+                                  </span>
+                                </div>
+                              )}
                           </div>
                         </div>
                       ) : null}
@@ -458,9 +459,8 @@ export default function CartPage() {
                               colourName: c.name,
                             }))
                           }
-                          className={`w-9 h-9 rounded-full border ${
-                            active ? "ring-2 ring-yellow-accent border-black/20" : "border-black/10"
-                          }`}
+                          className={`w-9 h-9 rounded-full border ${active ? "ring-2 ring-yellow-accent border-black/20" : "border-black/10"
+                            }`}
                           style={{ backgroundColor: c.value }}
                           aria-label={c.name}
                           title={c.name}

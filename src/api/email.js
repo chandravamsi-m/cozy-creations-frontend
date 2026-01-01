@@ -1,4 +1,4 @@
-import { BACKEND_URL } from "../config/backend";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 /**
  * Sends a welcome email to a new user.
@@ -8,8 +8,7 @@ import { BACKEND_URL } from "../config/backend";
 export async function sendWelcomeEmail(email, name) {
   if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
   
-  const baseUrl = BACKEND_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
-  const url = `${baseUrl}/api/send-welcome-email`;
+  const url = `${BACKEND_URL}/send-welcome-email`;
   
   try {
     const res = await fetch(url, {
@@ -44,8 +43,7 @@ export async function sendWelcomeEmail(email, name) {
  */
 export async function sendOrderConfirmation(email, orderData) {
   if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  const baseUrl = BACKEND_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
-  const url = `${baseUrl}/api/send-order-confirmation`;
+  const url = `${BACKEND_URL}/send-order-confirmation`;
 
   try {
     const res = await fetch(url, {
@@ -68,8 +66,7 @@ export async function sendOrderConfirmation(email, orderData) {
  */
 export async function sendOrderStatusUpdate(email, orderId, status, name) {
   if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  const baseUrl = BACKEND_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
-  const url = `${baseUrl}/api/send-status-update`;
+  const url = `${BACKEND_URL}/send-status-update`;
 
   try {
     const res = await fetch(url, {
@@ -88,8 +85,7 @@ export async function sendOrderStatusUpdate(email, orderId, status, name) {
  */
 export async function sendPasswordResetEmail(email) {
   if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  const baseUrl = BACKEND_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
-  const url = `${baseUrl}/api/send-password-reset`;
+  const url = `${BACKEND_URL}/send-password-reset`;
 
   try {
     const res = await fetch(url, {

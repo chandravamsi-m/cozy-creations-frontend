@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { sendOrderConfirmation } from "../../api/email";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
-import { BACKEND_URL } from "../../config/backend";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -108,20 +109,22 @@ export default function Checkout() {
       const orderData = {
         items: cart.map((item) => ({
           productId: item.productId,
-          name: item.name, // Include product name for human-readable emails
+          name: item.name,
           quantity: item.quantity,
+          price: item.price, // Include price for easier subtotaling in email
+          image: item.thumbnailUrl || item.imageUrl, // Include image for professional email
           customization: customizations[item.productId] || null,
         })),
         total: totalAmount,
         shippingAddress: address,
-        userEmail: user.email, // Save email for status updates
+        customerName: address.fullName, // Explicitly pass name for personalized greeting
+        userEmail: user.email,
       };
 
-      const baseUrl = (BACKEND_URL || "").replace(/\/api$/, "");
 
       // FORK: ONLINE VS COD
       if (paymentMethod === "cod") {
-        const codUrl = `${baseUrl}/api/orders/place-cod`;
+        const codUrl = `${BACKEND_URL}/orders/place-cod`;
         const response = await fetch(codUrl, {
           method: "POST",
           headers: {
@@ -137,6 +140,15 @@ export default function Checkout() {
         }
 
         const { orderId } = await response.json();
+
+        // Save address to user profile for future use
+        try {
+          const userRef = doc(db, "users", user.uid);
+          await setDoc(userRef, { shippingAddress: address }, { merge: true });
+        } catch (err) {
+          console.error("Failed to save address:", err);
+        }
+
         setIsOrderComplete(true);
         clearCart();
         localStorage.removeItem("cc_cart_customizations_v1");
@@ -147,6 +159,7 @@ export default function Checkout() {
           orderId,
           items: orderData.items,
           total: orderData.total,
+          customerName: orderData.customerName, // Fix: Include name for personalization
           paymentMethod: "cod",
           shippingAddress: orderData.shippingAddress
         });
@@ -154,7 +167,7 @@ export default function Checkout() {
       }
 
       // ONLINE PAYMENT (RAZORPAY)
-      const paymentUrl = `${baseUrl}/api/orders/create-payment`;
+      const paymentUrl = `${BACKEND_URL}/orders/create-payment`;
       const response = await fetch(paymentUrl, {
         method: "POST",
         headers: {
@@ -182,7 +195,7 @@ export default function Checkout() {
         order_id: orderId,
         handler: async function (pxResponse) {
           try {
-            const verifyUrl = `${baseUrl}/api/orders/verify-payment`;
+            const verifyUrl = `${BACKEND_URL}/orders/verify-payment`;
             const verifyRes = await fetch(verifyUrl, {
               method: "POST",
               headers: {
@@ -216,6 +229,7 @@ export default function Checkout() {
                 orderId: result.orderId,
                 items: orderData.items,
                 total: orderData.total,
+                customerName: orderData.customerName, // Fix: Include name for personalization
                 paymentMethod: "online",
                 shippingAddress: orderData.shippingAddress
               });
@@ -340,9 +354,10 @@ export default function Checkout() {
                   <div key={item.productId} className="flex gap-3 text-sm">
                     <div className="w-12 h-12 bg-gray-100 rounded shrink-0 overflow-hidden">
                       <img
-                        src={item.thumbnailUrl || item.imageUrl}
+                        src={optimizeCloudinaryImage(item.thumbnailUrl || item.imageUrl, IMAGE_PRESETS.checkout)}
                         className="w-full h-full object-cover"
                         alt=""
+                        loading="lazy"
                       />
                     </div>
                     <div className="flex-1">

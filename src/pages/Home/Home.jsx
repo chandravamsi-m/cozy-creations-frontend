@@ -2,9 +2,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
+import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import rectangle60 from "../../assets/images/rectangle-60.webp";
-import unnamed7 from "../../assets/images/unnamed-7.webp";
 import macbookAir2 from "../../assets/images/macbook-air-2.webp";
+
+// Cloudinary hero image
+const HOME_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176149/unnamed-7_j6fal6.webp";
 
 import searchBold from "../../assets/svgs/search-bold.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
@@ -127,9 +130,10 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
-            src={unnamed7}
+            src={optimizeCloudinaryImage(HOME_HERO_IMAGE, IMAGE_PRESETS.hero)}
             alt="Hero Background"
             className="w-full h-full object-cover object-top"
+            loading="eager"
           />
           <div className="absolute inset-0 bg-black/50"></div>
         </div>

@@ -1,14 +1,21 @@
 // src/pages/Contact/ContactUs.jsx
 import React, { useEffect, useState, useRef } from "react";
-import contactusHeroBg from "../../assets/images/contactus-hero-bg.webp";
+import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
+import { useAuth } from "../../contexts/AuthContext";
+import { useLoginModal } from "../../contexts/LoginModalContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase";
 import mailRounded from "../../assets/svgs/mail-rounded.svg";
 import call from "../../assets/svgs/call.svg";
 import pin from "../../assets/svgs/ion_pin.svg";
 import instagram from "../../assets/svgs/instagram-fill.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
-import { BACKEND_URL } from "../../config/backend";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { useProducts } from "../../contexts/ProductsContext";
+
+// Cloudinary hero image
+const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176496/contactus-hero-bg_z88fyh.webp";
 
 const COLLECTIONS = [
   { label: "Flower Collection", value: "flower" },
@@ -45,6 +52,9 @@ function ContactCard({ icon, title, value, children, delay = 0 }) {
 }
 
 export default function ContactUs() {
+  const { user } = useAuth();
+  const { openLoginModal } = useLoginModal();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -107,6 +117,39 @@ export default function ContactUs() {
 
     return () => observer.disconnect();
   }, []);
+
+  // Pre-fill user data when logged in
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!user) return;
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          setFormData(prev => ({
+            ...prev,
+            name: userData.displayName || user.displayName || "",
+            email: user.email || "",
+            phone: userData.phone || "",
+          }));
+        } else {
+          // User document doesn't exist, just use auth data
+          setFormData(prev => ({
+            ...prev,
+            name: user.displayName || "",
+            email: user.email || "",
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+
+    loadUserData();
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -182,6 +225,14 @@ export default function ContactUs() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if user is logged in
+    if (!user) {
+      setErrorMessage("Please log in to submit an inquiry.");
+      openLoginModal();
+      return;
+    }
+
     if (!validate()) return;
 
     setSubmitting(true);
@@ -189,19 +240,24 @@ export default function ContactUs() {
     setErrorMessage("");
 
     try {
+      // Find product name from products list
+      const selectedProduct = products.find(p => p.id === formData.product);
+      const productName = selectedProduct?.name || selectedProduct?.productName || "";
+
       const payload = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         collection: formData.collection,
         product: formData.product,
+        productName: productName,
         quantity: Number(formData.quantity),
         customization: formData.customization,
         location: formData.location,
       };
 
       // backend may not be ready; this will fail gracefully
-      const resp = await fetch(`${BACKEND_URL || ""}/contact`, {
+      const resp = await fetch(`${BACKEND_URL}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,7 +271,7 @@ export default function ContactUs() {
         try {
           const errBody = await resp.json();
           msg = errBody.message || JSON.stringify(errBody);
-        } catch {}
+        } catch { }
         throw new Error(msg);
       }
 
@@ -247,9 +303,10 @@ export default function ContactUs() {
       {/* HERO */}
       <section className="relative w-full h-screen overflow-hidden">
         <img
-          src={contactusHeroBg}
-          alt="Contact Background"
+          src={optimizeCloudinaryImage(CONTACT_HERO_IMAGE, IMAGE_PRESETS.hero)}
+          alt="Contact Hero Background"
           className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/40" />
@@ -257,9 +314,8 @@ export default function ContactUs() {
         <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div
             ref={heroContentRef}
-            className={`max-w-3xl transition-all duration-700 ${
-              isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-            }`}
+            className={`max-w-3xl transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              }`}
           >
             <div className="inline-block mb-4">
               <span className="text-yellow-accent font-semibold text-xs sm:text-sm tracking-widest uppercase bg-yellow-accent/10 px-4 py-2 rounded-full border border-yellow-accent/30">
@@ -271,9 +327,8 @@ export default function ContactUs() {
               <span className="block text-yellow-accent mt-2">Beautiful Together</span>
             </h1>
             <p
-              className={`text-white/90 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl transition-all duration-700 delay-200 ${
-                isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-              }`}
+              className={`text-white/90 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                }`}
             >
               Have a bulk order, custom request, or a question? Share the details below.
             </p>
@@ -297,9 +352,8 @@ export default function ContactUs() {
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
             <div
-              className={`transition-all duration-500 ${
-                isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-              }`}
+              className={`transition-all duration-500 ${isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
               style={{ transitionDelay: "100ms" }}
             >
               <ContactCard
@@ -309,17 +363,15 @@ export default function ContactUs() {
               />
             </div>
             <div
-              className={`transition-all duration-500 ${
-                isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-              }`}
+              className={`transition-all duration-500 ${isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
               style={{ transitionDelay: "200ms" }}
             >
               <ContactCard icon={call} title="Phone" value="+91 8019401322" />
             </div>
             <div
-              className={`transition-all duration-500 ${
-                isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-              }`}
+              className={`transition-all duration-500 ${isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
               style={{ transitionDelay: "300ms" }}
             >
               <ContactCard
@@ -329,9 +381,8 @@ export default function ContactUs() {
               />
             </div>
             <div
-              className={`transition-all duration-500 ${
-                isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-              }`}
+              className={`transition-all duration-500 ${isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
               style={{ transitionDelay: "400ms" }}
             >
               <ContactCard
@@ -351,9 +402,8 @@ export default function ContactUs() {
         className="w-full flex justify-center py-10 sm:py-12 lg:py-14 px-4 sm:px-6 lg:px-8 bg-[#FBFAF9]"
       >
         <div
-          className={`bg-white border border-gray-200/60 rounded-2xl w-full max-w-[750px] p-5 sm:p-6 md:p-7 lg:p-8 shadow-xl transition-all duration-700 ${
-            isVisible.form ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-          }`}
+          className={`bg-white border border-gray-200/60 rounded-2xl w-full max-w-[750px] p-5 sm:p-6 md:p-7 lg:p-8 shadow-xl transition-all duration-700 ${isVisible.form ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+            }`}
         >
           <div className="text-center mb-8 sm:mb-10">
             <div className="inline-block mb-3">
@@ -503,10 +553,10 @@ export default function ContactUs() {
                       {loadingProducts
                         ? "Loading products..."
                         : !formData.collection
-                        ? "Select collection first"
-                        : products.length
-                        ? "Select a product"
-                        : "No products available"}
+                          ? "Select collection first"
+                          : products.length
+                            ? "Select a product"
+                            : "No products available"}
                     </option>
                     {products.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -583,11 +633,10 @@ export default function ContactUs() {
               <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full h-[50px] sm:h-[52px] rounded-lg text-sm sm:text-base font-bold text-gray-900 bg-yellow-accent hover:bg-yellow-accent/90 transition-all duration-300 shadow-lg hover:shadow-xl ${
-                  submitting
-                    ? "opacity-70 pointer-events-none cursor-not-allowed"
-                    : "hover:scale-[1.02] active:scale-[0.98]"
-                }`}
+                className={`w-full h-[50px] sm:h-[52px] rounded-lg text-sm sm:text-base font-bold text-gray-900 bg-yellow-accent hover:bg-yellow-accent/90 transition-all duration-300 shadow-lg hover:shadow-xl ${submitting
+                  ? "opacity-70 pointer-events-none cursor-not-allowed"
+                  : "hover:scale-[1.02] active:scale-[0.98]"
+                  }`}
                 aria-busy={submitting}
               >
                 {submitting ? (

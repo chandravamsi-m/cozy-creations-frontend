@@ -1,11 +1,14 @@
 // src/pages/Products/Products.jsx
 import React, { useEffect, useRef, useState } from "react";
-import productsHeroBg from "../../assets/images/products-hero-bg.webp";
+import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useLocation } from "react-router-dom";
+
+// Cloudinary hero image
+const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176386/products-hero-bg_m2tljm.webp";
 
 import FlowerIcon from "../../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../../assets/svgs/animal-icon.svg";
@@ -280,7 +283,12 @@ export default function ProductsPage() {
 
       {/* HERO SECTION — unchanged UI */}
       <section className="relative w-full h-screen overflow-hidden">
-        <img src={productsHeroBg} className="absolute inset-0 w-full h-full object-cover" />
+        <img
+          src={optimizeCloudinaryImage(PRODUCTS_HERO_IMAGE, IMAGE_PRESETS.hero)}
+          className="absolute inset-0 w-full h-full object-cover"
+          alt="Products Hero Background"
+          loading="eager"
+        />
         <div className="absolute inset-0 bg-black/30" />
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-[150px]">
           <div

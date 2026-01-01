@@ -1,4 +1,4 @@
-import { BACKEND_URL } from "../config/backend";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export async function createProduct(product, idToken) {
   const res = await fetch(`${BACKEND_URL}/admin/products`, {

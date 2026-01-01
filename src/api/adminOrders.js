@@ -1,4 +1,4 @@
-import { BACKEND_URL } from "../config/backend";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export async function listAdminOrders(idToken, { limit } = {}) {
   const url = new URL(`${BACKEND_URL}/admin/orders`);
