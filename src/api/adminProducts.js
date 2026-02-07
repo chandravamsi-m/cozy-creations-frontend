@@ -51,3 +51,14 @@ export async function permanentlyDeleteProduct(id, idToken) {
   if (!res.ok) throw new Error("Failed to permanently delete product");
   return res.json();
 }
+
+export async function generateCatalogue(idToken) {
+  const res = await fetch(`${BACKEND_URL}/admin/generate-catalogue`, {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to generate catalogue");
+  return res.blob();
+}

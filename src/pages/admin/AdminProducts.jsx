@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
-import { deleteProduct, updateProduct, permanentlyDeleteProduct } from "../../api/adminProducts";
+import { deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue } from "../../api/adminProducts";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminProducts() {
@@ -71,6 +71,28 @@ export default function AdminProducts() {
     }
   };
 
+  const handleGenerateCatalogue = async () => {
+    if (!window.confirm("Generate and download the product catalogue PDF?")) return;
+
+    setLoading(true);
+    try {
+      const blob = await generateCatalogue(idToken);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cozy-creations-catalogue-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Catalogue Generation Error:", error);
+      alert("Error generating catalogue: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -81,12 +103,21 @@ export default function AdminProducts() {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate("/admin/create")}
-          className="px-4 py-2 bg-black text-white rounded w-full sm:w-auto"
-        >
-          + Add Product
-        </button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleGenerateCatalogue}
+            disabled={loading}
+            className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          >
+            📄 Generate Catalogue
+          </button>
+          <button
+            onClick={() => navigate("/admin/create")}
+            className="px-4 py-2 bg-black text-white rounded"
+          >
+            + Add Product
+          </button>
+        </div>
       </div>
 
       {!loading && products.length === 0 && (
