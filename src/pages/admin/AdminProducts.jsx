@@ -10,6 +10,7 @@ export default function AdminProducts() {
   const { idToken } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [catalogueLoading, setCatalogueLoading] = useState(false);
   const navigate = useNavigate();
 
   const toCloudinaryThumb = (url) => {
@@ -74,13 +75,13 @@ export default function AdminProducts() {
   const handleGenerateCatalogue = async () => {
     if (!window.confirm("Generate and download the product catalogue PDF?")) return;
 
-    setLoading(true);
+    setCatalogueLoading(true);
     try {
       const blob = await generateCatalogue(idToken);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `cozy-creations-catalogue-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `cozy-catalogue.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -89,7 +90,7 @@ export default function AdminProducts() {
       console.error("Catalogue Generation Error:", error);
       alert("Error generating catalogue: " + error.message);
     } finally {
-      setLoading(false);
+      setCatalogueLoading(false);
     }
   };
 
@@ -106,10 +107,20 @@ export default function AdminProducts() {
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             onClick={handleGenerateCatalogue}
-            disabled={loading}
-            className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            disabled={loading || catalogueLoading}
+            className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            📄 Generate Catalogue
+            {catalogueLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating...
+              </>
+            ) : (
+              <>📄 Generate Catalogue</>
+            )}
           </button>
           <button
             onClick={() => navigate("/admin/create")}
