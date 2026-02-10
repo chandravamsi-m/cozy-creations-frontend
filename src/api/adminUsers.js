@@ -15,3 +15,20 @@ export async function deleteUser(uid, idToken) {
 
   return res.json();
 }
+export async function createUser(userData, idToken) {
+  const res = await fetch(`${BACKEND_URL}/admin/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(userData),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create user");
+  }
+
+  return res.json();
+}

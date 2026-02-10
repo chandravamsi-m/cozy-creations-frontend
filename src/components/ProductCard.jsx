@@ -25,7 +25,7 @@ export default function ProductCard({ product }) {
 
   const getCategoryIcon = (category) => {
     if (!category || !categoryIcons[category]) return null;
-  
+
     return (
       <img
         src={categoryIcons[category]}
@@ -33,7 +33,7 @@ export default function ProductCard({ product }) {
         className="w-6 h-6"
       />
     );
-  };  
+  };
 
   const formatPrice = (price) => {
     if (!price) return "₹0";
@@ -61,6 +61,12 @@ export default function ProductCard({ product }) {
       chips.push({
         label: `${product.burnTimeHours}h Burn`,
         key: "burnTime",
+      });
+    }
+    if (product.dimensions) {
+      chips.push({
+        label: product.dimensions,
+        key: "dimensions",
       });
     }
     if (product.quantityPack) {

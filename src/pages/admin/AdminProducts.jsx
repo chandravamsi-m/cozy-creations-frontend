@@ -21,7 +21,8 @@ export default function AdminProducts() {
     if (!url.includes("/image/upload/")) return url;
     const parts = url.split("/image/upload/");
     if (parts.length !== 2) return url;
-    return `${parts[0]}/image/upload/w_360,h_270,c_fill,q_auto,f_auto/${parts[1]}`;
+    // Higher quality thumbnails for the admin view
+    return `${parts[0]}/image/upload/w_600,h_450,c_fill,q_auto,f_auto/${parts[1]}`;
   };
 
   const loadProducts = async () => {
@@ -146,7 +147,7 @@ export default function AdminProducts() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {products.map((p) => {
           const img = toCloudinaryThumb(p.thumbnailUrl || p.imageUrl || "");
           return (
@@ -154,7 +155,7 @@ export default function AdminProducts() {
               key={p.id}
               className="border rounded bg-white overflow-hidden flex flex-col h-full"
             >
-              <div className="w-full h-32 sm:h-36 bg-gray-100">
+              <div className="w-full aspect-[4/3] bg-gray-100">
                 {img ? (
                   <img
                     src={img}
@@ -188,6 +189,7 @@ export default function AdminProducts() {
                 <div className="text-[11px] text-gray-500 flex flex-wrap gap-x-3 gap-y-1 min-h-[2.5rem]">
                   {p.category && <span>Category: {p.category}</span>}
                   {p.waxType && <span>Wax: {p.waxType}</span>}
+                  {p.dimensions && <span>Size: {p.dimensions}</span>}
                   {typeof p.inventory !== "undefined" && (
                     <span>Inventory: {p.inventory}</span>
                   )}

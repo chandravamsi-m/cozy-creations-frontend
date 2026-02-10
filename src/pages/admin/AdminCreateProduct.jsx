@@ -21,6 +21,8 @@ export default function AdminCreateProduct() {
     waxTypeOther: "",
     weightGrams: "",
     burnTimeHours: "",
+    dimensions: "",
+    dimensionUnit: "cm",
     price: "",
     quantityPack: "",
     customizableFragrance: true,
@@ -151,11 +153,13 @@ export default function AdminCreateProduct() {
         weightGrams: Number(product.weightGrams),
         quantityPack: Number(product.quantityPack),
         burnTimeHours: product.burnTimeHours || "",
+        dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
         inventory: product.inventory ? Number(product.inventory) : 100, // DEFAULT VALUE
         imageUrl,
+        altText: product.name, // Auto-set from product name
         thumbnailUrl: imageUrl, // you used imageUrl for thumbnail previously
       };
 
@@ -172,6 +176,8 @@ export default function AdminCreateProduct() {
         waxTypeOther: "",
         weightGrams: "",
         burnTimeHours: "",
+        dimensions: "",
+        dimensionUnit: "cm",
         price: "",
         quantityPack: "",
         customizableFragrance: true,
@@ -299,6 +305,33 @@ export default function AdminCreateProduct() {
           </div>
 
           <div className="space-y-1 w-full">
+            <label htmlFor="product-dimensions" className="text-sm font-medium text-gray-800">
+              Dimensions (Optional)
+            </label>
+            <div className="relative w-full">
+              <input
+                id="product-dimensions"
+                type="text"
+                value={product.dimensions}
+                onChange={(e) => updateField("dimensions", e.target.value)}
+                placeholder="e.g., 6x10"
+                className="border p-2 pr-16 w-full rounded"
+              />
+              <select
+                value={product.dimensionUnit}
+                onChange={(e) => updateField("dimensionUnit", e.target.value)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-sm text-gray-600 bg-gray-50 border-l border-gray-200 h-[calc(100%-8px)] px-1 rounded-r focus:outline-none"
+              >
+                <option value="cm">cm</option>
+                <option value="mm">mm</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 3 */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="space-y-1 w-full">
             <label htmlFor="product-price" className="text-sm font-medium text-gray-800">
               Price <span className="text-red-600">*</span>
             </label>
@@ -361,19 +394,6 @@ export default function AdminCreateProduct() {
           </div>
         </div>
 
-        {/* ALT TEXT */}
-        <div className="space-y-1">
-          <label htmlFor="product-alt-text" className="text-sm font-medium text-gray-800">
-            Alt Text <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="product-alt-text"
-            value={product.altText}
-            onChange={(e) => updateField("altText", e.target.value)}
-            placeholder="Alt Text"
-            className="border p-2 w-full rounded"
-          />
-        </div>
 
         {/* INVENTORY (NEW FIELD) */}
         <div className="space-y-1">
