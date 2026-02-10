@@ -30,8 +30,8 @@ export default function AdminUsers() {
   });
   const [creatingUser, setCreatingUser] = useState(false);
 
-  const loadUsers = async () => {
-    setLoading(true);
+  const loadUsers = async (silent = false) => {
+    if (!silent) setLoading(true);
     setMsg("");
     try {
       const snap = await getDocs(collection(db, "users"));
@@ -41,7 +41,7 @@ export default function AdminUsers() {
       console.error("Error loading users:", err);
       setMsg("Failed to load users. Check permissions.");
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   useEffect(() => {
@@ -185,7 +185,7 @@ export default function AdminUsers() {
 
       setMsg(`User ${targetUser.email} deleted successfully ✔`);
       setSelectedUser(null);
-      loadUsers();
+      loadUsers(true);
     } catch (err) {
       console.error("Error deleting user:", err);
       alert("Failed to delete user: " + err.message);
@@ -203,7 +203,7 @@ export default function AdminUsers() {
       setMsg(`User ${createFormData.email} created successfully ✔`);
       setShowCreateModal(false);
       setCreateFormData({ email: "", password: "", displayName: "", role: "user" });
-      loadUsers();
+      loadUsers(true);
     } catch (err) {
       console.error("Error creating user:", err);
       alert("Failed to create user: " + err.message);
@@ -254,8 +254,8 @@ export default function AdminUsers() {
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${u.role === "admin"
-                        ? "bg-purple-100 text-purple-700 border border-purple-200"
-                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                      ? "bg-purple-100 text-purple-700 border border-purple-200"
+                      : "bg-gray-100 text-gray-600 border border-gray-200"
                       }`}
                   >
                     {u.role || "user"}
@@ -293,8 +293,8 @@ export default function AdminUsers() {
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${u.role === "admin"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-gray-100 text-gray-600"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-gray-100 text-gray-600"
                           }`}
                       >
                         {u.role || "user"}
@@ -373,8 +373,8 @@ export default function AdminUsers() {
                   <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Account Role</p>
                   <div className="flex items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${selectedUser.role === "admin"
-                        ? "bg-purple-100 text-purple-700 border-purple-200"
-                        : "bg-white text-gray-600 border-gray-200"
+                      ? "bg-purple-100 text-purple-700 border-purple-200"
+                      : "bg-white text-gray-600 border-gray-200"
                       }`}>
                       {selectedUser.role || "user"}
                     </span>
@@ -517,8 +517,8 @@ export default function AdminUsers() {
 
                           <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${order.status === 'delivered' ? 'bg-green-50 text-green-700 border-green-100' :
-                                order.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
-                                  'bg-yellow-50 text-yellow-700 border-yellow-100'
+                              order.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
+                                'bg-yellow-50 text-yellow-700 border-yellow-100'
                               }`}>
                               {order.status}
                             </span>

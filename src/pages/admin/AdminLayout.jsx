@@ -37,21 +37,21 @@ export default function AdminLayout() {
         <h1 className="text-lg font-bold absolute left-1/2 transform -translate-x-1/2">
           Admin Panel
         </h1>
-        
+
         {/* Empty placeholder to balance flex if needed, or just rely on absolute centering */}
-        <div className="w-8"></div> 
+        <div className="w-8"></div>
       </div>
 
       {/* MOBILE BACKDROP OVERLAY */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={closeSidebar}
         ></div>
       )}
 
       {/* SIDEBAR */}
-      <aside 
+      <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white p-5 space-y-4 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out
           md:static md:translate-x-0 md:inset-auto shrink-0
@@ -61,7 +61,7 @@ export default function AdminLayout() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Admin Panel</h1>
           {/* Close button inside sidebar for mobile */}
-          <button 
+          <button
             onClick={closeSidebar}
             className="md:hidden text-gray-400 hover:text-white"
           >
@@ -71,11 +71,11 @@ export default function AdminLayout() {
 
         <nav className="flex flex-col gap-3">
           <Link to="/admin" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-            📦 All Products
+            📦 Products
           </Link>
 
-          <Link to="/admin/create" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-            ➕ Create Product
+          <Link to="/admin/bulk-products" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
+            📦 Bulk Products
           </Link>
 
           <Link to="/admin/orders" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
@@ -96,7 +96,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-6 h-full overflow-y-auto pt-20 md:pt-6 w-full">
+      <main className="flex-1 p-4 sm:p-6 h-full overflow-y-auto pt-20 md:pt-6 w-full">
         <Outlet />
       </main>
     </div>

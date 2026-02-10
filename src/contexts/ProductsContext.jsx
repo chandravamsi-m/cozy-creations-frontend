@@ -15,26 +15,28 @@ export function ProductsProvider({ children }) {
   });
 
   const loadProducts = useCallback(
-    async (category = "") => {
+    async (category = "", silent = false) => {
       try {
-        setLoading(true);
+        if (!silent) setLoading(true);
         setError(null);
 
         // 1️⃣ If category exists in cache → return instantly
-        if (category && cache.categories[category]) {
-          setProducts(cache.categories[category]);
-          setLoading(false);
-          return cache.categories[category];
+        // Skip cache if silent refresh is requested (usually by admin)
+        if (!silent) {
+          if (category && cache.categories[category]) {
+            setProducts(cache.categories[category]);
+            setLoading(false);
+            return cache.categories[category];
+          }
+
+          if (!category && cache.all) {
+            setProducts(cache.all);
+            setLoading(false);
+            return cache.all;
+          }
         }
 
-        // 2️⃣ If category = "" and we already have all products
-        if (!category && cache.all) {
-          setProducts(cache.all);
-          setLoading(false);
-          return cache.all;
-        }
-
-        // 3️⃣ Fetch from Firestore
+        // 2️⃣ Fetch from Firestore
         const result = await fetchFirestoreProducts(category);
 
         setProducts(result);
@@ -54,7 +56,7 @@ export function ProductsProvider({ children }) {
         setError("Failed to load products");
         setProducts([]);
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     },
     [cache]

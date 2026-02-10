@@ -24,8 +24,8 @@ const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminCreateProduct = lazy(() =>
-  import("./pages/admin/AdminCreateProduct")
+const AdminBulkProducts = lazy(() =>
+  import("./pages/admin/AdminBulkProducts")
 );
 const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
@@ -183,7 +183,7 @@ function AppContent({
           {/* ADMIN ROUTES */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminProducts />} />
-            <Route path="create" element={<AdminCreateProduct />} />
+            <Route path="bulk-products" element={<AdminBulkProducts />} />
             <Route path="products/:id/edit" element={<AdminEditProduct />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="users" element={<AdminUsers />} />
