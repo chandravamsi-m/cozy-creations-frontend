@@ -15,14 +15,13 @@ export function ProductsProvider({ children }) {
   });
 
   const loadProducts = useCallback(
-    async (category = "", silent = false) => {
+    async (category = "", silent = false, includeInactive = false, force = false) => {
       try {
         if (!silent) setLoading(true);
         setError(null);
 
-        // 1️⃣ If category exists in cache → return instantly
-        // Skip cache if silent refresh is requested (usually by admin)
-        if (!silent) {
+        // 1️⃣ Cache handling: Skip if force=true or includeInactive=true (admin mode)
+        if (!force && !includeInactive && !silent) {
           if (category && cache.categories[category]) {
             setProducts(cache.categories[category]);
             setLoading(false);
@@ -37,24 +36,28 @@ export function ProductsProvider({ children }) {
         }
 
         // 2️⃣ Fetch from Firestore
-        const result = await fetchFirestoreProducts(category);
+        const result = await fetchFirestoreProducts(category, includeInactive);
 
-        setProducts(result);
+        // Only set global context products if we are fetching the standard active list
+        // (to avoid breaking public-facing pages that rely on 'products' state)
+        if (!includeInactive) {
+          setProducts(result);
 
-        // Update cache
-        setCache((prev) => ({
-          all: category === "" ? result : prev.all,
-          categories: {
-            ...prev.categories,
-            ...(category && { [category]: result }),
-          },
-        }));
+          // Only cache standard active views
+          setCache((prev) => ({
+            all: category === "" ? result : prev.all,
+            categories: {
+              ...prev.categories,
+              ...(category && { [category]: result }),
+            },
+          }));
+        }
 
         return result;
       } catch (err) {
         console.error("Product Load Error:", err);
         setError("Failed to load products");
-        setProducts([]);
+        if (!includeInactive) setProducts([]);
       } finally {
         if (!silent) setLoading(false);
       }

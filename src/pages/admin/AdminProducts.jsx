@@ -405,7 +405,7 @@ export default function AdminProducts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Products</h2>
           <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
@@ -454,7 +454,7 @@ export default function AdminProducts() {
         <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
             {products.map((p) => (
-              <div key={p.id} className="bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300">
+              <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
                 {/* Product Image */}
                 <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50">
                   <img
@@ -859,18 +859,18 @@ const ProductForm = ({
     </div>
 
     {/* Action Buttons */}
-    <div className="flex gap-3 pt-6 border-t border-gray-100 mt-2">
+    <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">
       <button
         type="submit"
         disabled={formLoading}
-        className="flex-1 bg-black text-white px-6 py-3 rounded-lg font-bold uppercase tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]"
+        className="flex-1 bg-black text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]"
       >
         {formLoading ? (isEdit ? "Saving..." : "Creating...") : (isEdit ? "Update Product" : "Create Product")}
       </button>
       <button
         type="button"
         onClick={isEdit ? handleCloseEditModal : handleCloseAddModal}
-        className="px-6 py-3 rounded-lg font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95"
+        className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95 flex items-center justify-center"
       >
         Cancel
       </button>

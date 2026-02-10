@@ -1,15 +1,17 @@
 import { collection, query, where, orderBy, getDocs, limit, startAfter, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-export async function fetchFirestoreProducts(category = "") {
+export async function fetchFirestoreProducts(category = "", includeInactive = false) {
   try {
-    const constraints = [where("isActive", "==", true)];
+    const constraints = [];
+
+    if (!includeInactive) {
+      constraints.push(where("isActive", "==", true));
+    }
 
     if (category) {
       constraints.push(where("category", "==", category));
     }
-
-    // constraints.push(orderBy("createdAt", "desc"));
 
     const q = query(collection(db, "products"), ...constraints);
 

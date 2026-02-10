@@ -96,7 +96,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-4 sm:p-6 h-full overflow-y-auto pt-20 md:pt-6 w-full">
+      <main className="flex-1 p-4 sm:p-6 h-full overflow-y-auto pt-20 md:pt-6">
         <Outlet />
       </main>
     </div>

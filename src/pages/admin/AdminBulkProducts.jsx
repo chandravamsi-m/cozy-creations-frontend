@@ -56,14 +56,27 @@ export default function AdminBulkProducts() {
   };
 
   // Load bulk products
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const refreshLocalProducts = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      // Fetch including inactive products and bypass cache (force=true)
+      const all = await loadProducts("", silent, true, true);
+      if (all) {
+        const filtered = all.filter(p => p.isBulk === true);
+        setBulkProducts(filtered);
+      }
+    } catch (error) {
+      console.error("Error refreshing bulk products:", error);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const filtered = allProducts.filter(p => p.isBulk === true);
-    setBulkProducts(filtered);
-  }, [allProducts]);
+    refreshLocalProducts();
+  }, [loadProducts]);
+
+  // Remove the old allProducts listener to avoid stale/filtered data conflicts
 
   // Escape key handler
   useEffect(() => {
@@ -295,7 +308,7 @@ export default function AdminBulkProducts() {
       }
 
       // Reset and reload
-      await loadProducts();
+      await refreshLocalProducts(true);
       handleCancel();
     } catch (err) {
       setMsg(`❌ ${err.message}`);
@@ -305,12 +318,11 @@ export default function AdminBulkProducts() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this bulk product?")) return;
+    if (!confirm("Are you sure you want to deactivate this bulk product?")) return;
     try {
       await deleteProduct(id, idToken);
       setMsg("✅ Bulk product deactivated successfully!");
-      // Silent reload to avoid flickering
-      await loadProducts("", true);
+      await refreshLocalProducts(true);
     } catch (err) {
       setMsg(`❌ ${err.message}`);
     }
@@ -321,8 +333,7 @@ export default function AdminBulkProducts() {
     try {
       await updateProduct(id, { isActive: true }, idToken);
       setMsg("✅ Bulk product activated successfully!");
-      // Silent reload to avoid flickering
-      await loadProducts("", true);
+      await refreshLocalProducts(true);
     } catch (err) {
       setMsg(`❌ ${err.message}`);
     }
@@ -333,8 +344,7 @@ export default function AdminBulkProducts() {
     try {
       await permanentlyDeleteProduct(id, idToken);
       setMsg("✅ Bulk product permanently deleted!");
-      // Silent reload to avoid flickering
-      await loadProducts("", true);
+      await refreshLocalProducts(true);
     } catch (err) {
       setMsg(`❌ ${err.message}`);
     }
@@ -352,8 +362,8 @@ export default function AdminBulkProducts() {
   const discountInfo = calculateDiscount();
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 shrink-0">
+    <div className="space-y-4">
+      <div className="flex flex-row justify-between items-center gap-2 mb-4 shrink-0">
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Bulk Products</h2>
           <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
@@ -363,14 +373,14 @@ export default function AdminBulkProducts() {
 
         <button
           onClick={handleAddNew}
-          className="w-fit sm:w-auto px-4 sm:px-6 py-2 bg-black text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 shadow-md self-end sm:self-auto"
+          className="px-3 sm:px-6 py-2 bg-black text-white rounded-xl font-bold text-[9px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 shadow-md flex items-center justify-center min-h-[36px]"
         >
           + New Bulk Product
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 sm:mx-0 px-4 sm:px-0">
-        <div className="bg-white/50 rounded-3xl p-1 sm:bg-transparent sm:p-0">
+      <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="bg-transparent">
 
           {bulkProducts.length === 0 ? (
             <p className="text-gray-400 text-center py-12 font-medium">No bulk products yet.</p>
@@ -382,14 +392,18 @@ export default function AdminBulkProducts() {
                   : 0;
 
                 return (
-                  <div key={p.id} className="bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300">
+                  <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
                     {/* Product Image */}
-                    <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50">
+                    <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative group">
                       <img
                         src={toCloudinaryThumb(p.imageUrl)}
                         alt={p.name}
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                       />
+                      {/* Bulk Quantity Badge */}
+                      <div className="absolute bottom-0 right-0 bg-gray-900 text-white text-[10px] sm:text-[11px] font-black px-2.5 py-1.5 rounded-tl-xl z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.5)] border-l border-t border-white/5 transition-transform group-hover:scale-105 origin-bottom-right">
+                        x{p.bulkQuantity}
+                      </div>
                     </div>
 
                     {/* Product Info */}
@@ -402,7 +416,6 @@ export default function AdminBulkProducts() {
                     </div>
 
                     <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
-                      <p className="shrink-0">Bulk: <span className="text-gray-900 font-medium">{p.bulkQuantity}</span></p>
                       <p className="shrink-0">Cat: <span className="text-gray-900 font-medium uppercase">{p.category}</span></p>
                       <p className="shrink-0">Wax: <span className="text-gray-900 font-medium capitalize">{p.waxType}</span></p>
                       {p.dimensions && <p className="shrink-0">Size: <span className="text-gray-900 font-medium">{p.dimensions}</span></p>}
@@ -778,18 +791,18 @@ export default function AdminBulkProducts() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 pt-6 border-t border-gray-100 mt-2">
+                  <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex-1 bg-black text-white px-6 py-3 rounded-lg font-bold uppercase tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]"
+                      className="flex-1 bg-black text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]"
                     >
                       {loading ? "Saving..." : editMode ? "Update Product" : "Create Product"}
                     </button>
                     <button
                       type="button"
                       onClick={handleCancel}
-                      className="px-6 py-3 rounded-lg font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95"
+                      className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95 flex items-center justify-center"
                     >
                       Cancel
                     </button>

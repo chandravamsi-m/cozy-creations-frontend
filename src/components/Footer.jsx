@@ -62,7 +62,7 @@ export default function Footer() {
                 <div className="w-full h-[1px] bg-white my-8"></div>
 
 
-                <div className="text-center text-xs text-white">© 2025 Cozy Creations. All rights reserved.</div>
+                <div className="text-center text-xs text-white">© 2026 Cozy Creations. All rights reserved.</div>
             </div>
         </div>
     );
