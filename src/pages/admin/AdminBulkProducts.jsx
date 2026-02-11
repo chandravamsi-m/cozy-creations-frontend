@@ -306,7 +306,7 @@ export default function AdminBulkProducts() {
         waxType: product.waxType === "other" ? product.waxTypeOther : product.waxType,
         waxTypeOther: product.waxType === "other" ? product.waxTypeOther : "",
         weightGrams: Number(product.weightGrams) || 0,
-        burnTimeHours: Number(product.burnTimeHours) || 0,
+        burnTimeHours: String(product.burnTimeHours).trim(),
         dimensions: product.dimensions
           ? `${product.dimensions}${product.dimensionUnit}`
           : "",
@@ -670,7 +670,7 @@ export default function AdminBulkProducts() {
                       </label>
                       <div className="relative">
                         <input
-                          type="number"
+                          type="text"
                           value={product.burnTimeHours}
                           onChange={(e) => updateField("burnTimeHours", e.target.value)}
                           placeholder="Burn Time"

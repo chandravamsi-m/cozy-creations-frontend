@@ -679,7 +679,7 @@ const ProductForm = ({
         <div className="relative">
           <input
             id="product-burn-time"
-            type="number"
+            type="text"
             value={product.burnTimeHours}
             onChange={(e) => updateField("burnTimeHours", e.target.value)}
             placeholder="Burn Time"
