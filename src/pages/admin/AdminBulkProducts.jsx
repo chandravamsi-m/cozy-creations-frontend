@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useProducts } from "../../contexts/ProductsContext";
-import { createProduct, updateProduct, deleteProduct, permanentlyDeleteProduct } from "../../api/adminProducts";
+import { createProduct, updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue } from "../../api/adminProducts";
 import { getImageSrc } from "../../utils/image";
 
 // Cloudinary config
@@ -21,6 +21,7 @@ export default function AdminBulkProducts() {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [catalogueLoading, setCatalogueLoading] = useState(false);
 
   // Form state
   const [product, setProduct] = useState({
@@ -231,6 +232,27 @@ export default function AdminBulkProducts() {
     setMsg("");
   };
 
+  const handleGenerateCatalogue = async () => {
+    if (!window.confirm("Generate and download the bulk catalogue PDF?")) return;
+    setCatalogueLoading(true);
+    try {
+      const blob = await generateBulkCatalogue(idToken);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cozy-bulk-catalogue.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Bulk Catalogue Generation Error:", error);
+      alert("Error generating bulk catalogue: " + error.message);
+    } finally {
+      setCatalogueLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -254,10 +276,12 @@ export default function AdminBulkProducts() {
         throw new Error("Burn Time is required and must be greater than 0");
       }
       if (!product.price || !product.bulkPrice) {
-        throw new Error("Both regular price and bulk price are required");
+        throw new Error("Both unit price and bulk price are required");
       }
-      if (Number(product.bulkPrice) >= Number(product.price)) {
-        throw new Error("Bulk price should be less than regular price for discount");
+
+      const totalMRP = Number(product.price) * Number(product.bulkQuantity);
+      if (Number(product.bulkPrice) >= totalMRP) {
+        throw new Error("Bulk price should be less than the total Regular MRP to offer a discount");
       }
 
       let imageUrl = editMode ? currentProduct.imageUrl : null;
@@ -351,11 +375,17 @@ export default function AdminBulkProducts() {
   };
 
   const calculateDiscount = () => {
-    const price = Number(product.price);
+    const unitPrice = Number(product.price);
+    const bulkQty = Number(product.bulkQuantity);
     const bulkPrice = Number(product.bulkPrice);
-    if (!price || !bulkPrice || bulkPrice >= price) return null;
-    const discount = Math.round((1 - bulkPrice / price) * 100);
-    const savings = price - bulkPrice;
+
+    if (!unitPrice || !bulkQty || !bulkPrice) return null;
+
+    const totalMRP = unitPrice * bulkQty;
+    if (bulkPrice >= totalMRP) return null;
+
+    const discount = Math.round((1 - bulkPrice / totalMRP) * 100);
+    const savings = totalMRP - bulkPrice;
     return { discount, savings };
   };
 
@@ -363,7 +393,46 @@ export default function AdminBulkProducts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-row justify-between items-center gap-2 mb-4 shrink-0">
+      <style>
+        {`
+          .diagonal-strike {
+            position: relative;
+            display: inline-block;
+          }
+          .diagonal-strike::after {
+            content: "";
+            position: absolute;
+            top: 45%;
+            left: -2%;
+            width: 104%;
+            height: 1px;
+            background: currentColor;
+            transform: rotate(-12deg);
+          }
+          .star-qty-badge {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 48px;
+            height: 48px;
+            background-image: url('https://res.cloudinary.com/dumkblp3v/image/upload/v1770800754/Star-badge_ttci0q.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 900;
+            z-index: 30;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            padding-bottom: 2px;
+            transition: transform 0.3s ease;
+          }
+        `}
+      </style>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 shrink-0">
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Bulk Products</h2>
           <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
@@ -371,12 +440,28 @@ export default function AdminBulkProducts() {
           </p>
         </div>
 
-        <button
-          onClick={handleAddNew}
-          className="px-3 sm:px-6 py-2 bg-black text-white rounded-xl font-bold text-[9px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 shadow-md flex items-center justify-center min-h-[36px]"
-        >
-          + New Bulk Product
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div className="flex gap-2 w-full sm:w-auto shrink-0">
+            <button
+              onClick={handleGenerateCatalogue}
+              disabled={loading || catalogueLoading}
+              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10"
+            >
+              {catalogueLoading ? (
+                <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : "📄 Catalogue"}
+            </button>
+            <button
+              onClick={handleAddNew}
+              className="flex-1 sm:flex-none px-4 py-2 bg-black text-white rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 h-10"
+            >
+              + New Bulk Product
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
@@ -387,21 +472,22 @@ export default function AdminBulkProducts() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
               {bulkProducts.map((p) => {
-                const discount = p.bulkPrice && p.price
-                  ? Math.round((1 - p.bulkPrice / p.price) * 100)
+                const totalMRP = (Number(p.price) || 0) * (Number(p.bulkQuantity) || 1);
+                const discount = p.bulkPrice && totalMRP
+                  ? Math.round((1 - p.bulkPrice / totalMRP) * 100)
                   : 0;
 
                 return (
                   <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
                     {/* Product Image */}
-                    <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative group">
+                    <div className="w-full aspect-[4/3] rounded-xl overflow-visible mb-2 bg-gray-50 relative group">
                       <img
                         src={toCloudinaryThumb(p.imageUrl)}
                         alt={p.name}
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110 rounded-xl"
                       />
-                      {/* Bulk Quantity Badge */}
-                      <div className="absolute bottom-0 right-0 bg-gray-900 text-white text-[10px] sm:text-[11px] font-black px-2.5 py-1.5 rounded-tl-xl z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.5)] border-l border-t border-white/5 transition-transform group-hover:scale-105 origin-bottom-right">
+                      {/* Star Qty Badge */}
+                      <div className="star-qty-badge group-hover:scale-110 group-hover:rotate-12">
                         x{p.bulkQuantity}
                       </div>
                     </div>
@@ -410,8 +496,8 @@ export default function AdminBulkProducts() {
                     <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
                       <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal">{p.name}</h3>
                       <p className="text-xs">
-                        <span className="text-gray-400 line-through mr-1.5 font-medium">₹{p.price}</span>
-                        <span className="text-green-600 font-semibold italic">₹{p.bulkPrice} ({discount}%)</span>
+                        <span className="text-gray-400 diagonal-strike mr-1.5 font-medium">₹{totalMRP.toLocaleString()}</span>
+                        <span className="text-green-600 font-semibold italic">₹{(Number(p.bulkPrice) || 0).toLocaleString()} ({discount}%)</span>
                       </p>
                     </div>
 
@@ -632,17 +718,20 @@ export default function AdminBulkProducts() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-800">
-                        Reg. Price (₹) <span className="text-red-500">*</span>
+                        Unit Price (₹) <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
                         value={product.price}
                         onChange={(e) => updateField("price", e.target.value)}
-                        placeholder="Price"
+                        placeholder="Price per unit"
                         className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
                         min="0"
                         required
                       />
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        Price of a single product
+                      </p>
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-800">
@@ -652,18 +741,41 @@ export default function AdminBulkProducts() {
                         type="number"
                         value={product.bulkPrice}
                         onChange={(e) => updateField("bulkPrice", e.target.value)}
-                        placeholder="Bulk Price"
+                        placeholder="Discounted bulk price"
                         className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
                         min="0"
                         required
                       />
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        Discounted price for bulk order
+                      </p>
                     </div>
                   </div>
 
+                  {/* Calculated Regular MRP Display */}
+                  {product.price && product.bulkQuantity && (
+                    <div className="bg-blue-50 border border-blue-200 rounded px-3 py-1.5 text-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-1">
+                        <span className="text-gray-700 font-medium">Regular MRP (will be shown striked):</span>
+                        <span className="text-blue-900 font-bold text-base">
+                          ₹{(Number(product.price) * Number(product.bulkQuantity)).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-gray-500">
+                        Unit Price (₹{product.price}) × Bulk Qty ({product.bulkQuantity}) = ₹{(Number(product.price) * Number(product.bulkQuantity)).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+
+
+
                   {/* Discount Banner */}
                   {discountInfo && (
-                    <div className="bg-green-50 border border-green-200 rounded p-3 text-sm font-semibold text-green-800 animate-in fade-in slide-in-from-top-1">
-                      Special Offer: {discountInfo.discount}% OFF (Save ₹{discountInfo.savings})
+                    <div className="bg-green-50 border border-green-200 rounded px-3 py-1 text-sm font-semibold text-green-800 animate-in fade-in slide-in-from-top-1 flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-1">
+                      <span className="text-[11px] uppercase tracking-wider">Special Offer</span>
+                      <span className="text-sm">
+                        {discountInfo.discount}% OFF (Save ₹{discountInfo.savings.toLocaleString()})
+                      </span>
                     </div>
                   )}
 

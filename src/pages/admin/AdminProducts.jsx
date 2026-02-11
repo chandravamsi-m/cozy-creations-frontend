@@ -405,7 +405,7 @@ export default function AdminProducts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Products</h2>
           <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
@@ -413,25 +413,27 @@ export default function AdminProducts() {
           </p>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={handleGenerateCatalogue}
-            disabled={loading || catalogueLoading}
-            className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {catalogueLoading ? (
-              <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : "📄 Catalogue"}
-          </button>
-          <button
-            onClick={handleOpenAddModal}
-            className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-black text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 shadow-md"
-          >
-            + New Product
-          </button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div className="flex gap-2 w-full sm:w-auto shrink-0">
+            <button
+              onClick={handleGenerateCatalogue}
+              disabled={loading || catalogueLoading}
+              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10"
+            >
+              {catalogueLoading ? (
+                <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : "📄 Catalogue"}
+            </button>
+            <button
+              onClick={handleOpenAddModal}
+              className="flex-1 sm:flex-none px-4 py-2 bg-black text-white rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 h-10"
+            >
+              + New Product
+            </button>
+          </div>
         </div>
       </div>
 

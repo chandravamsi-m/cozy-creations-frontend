@@ -62,3 +62,14 @@ export async function generateCatalogue(idToken) {
   if (!res.ok) throw new Error("Failed to generate catalogue");
   return res.blob();
 }
+
+export async function generateBulkCatalogue(idToken) {
+  const res = await fetch(`${BACKEND_URL}/admin/generate-bulk-catalogue`, {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to generate bulk catalogue");
+  return res.blob();
+}
