@@ -1,16 +1,28 @@
 // src/pages/admin/AdminUsers.jsx
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, getDocs, doc, updateDoc, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { deleteUser, createUser } from "../../api/adminUsers";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
+  const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
+
+  const scrollToTop = () => {
+    setTimeout(() => {
+      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+      if (scrollable) {
+        scrollable.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   // MODAL STATE
   const [selectedUser, setSelectedUser] = useState(null);
@@ -32,14 +44,13 @@ export default function AdminUsers() {
 
   const loadUsers = async (silent = false) => {
     if (!silent) setLoading(true);
-    setMsg("");
     try {
       const snap = await getDocs(collection(db, "users"));
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setUsers(list);
     } catch (err) {
       console.error("Error loading users:", err);
-      setMsg("Failed to load users. Check permissions.");
+      showToast("Failed to load users", "error");
     }
     if (!silent) setLoading(false);
   };
@@ -95,7 +106,6 @@ export default function AdminUsers() {
   const toggleAdmin = async (targetUser) => {
     if (confirm(`Are you sure you want to ${targetUser.role === "admin" ? "remove" : "make"} ${targetUser.email} an admin?`)) {
       setUpdatingId(targetUser.id);
-      setMsg("");
       try {
         const newRole = targetUser.role === "admin" ? "user" : "admin";
         const ref = doc(db, "users", targetUser.id);
@@ -112,10 +122,11 @@ export default function AdminUsers() {
           setSelectedUser(prev => ({ ...prev, role: newRole }));
         }
 
-        setMsg(`Updated ${targetUser.email} to ${newRole} ✔`);
+        showToast(`User role updated to ${newRole}`);
+        scrollToTop();
       } catch (err) {
         console.error("Error updating role:", err);
-        setMsg("Failed to update role. Permission denied?");
+        showToast("Failed to update role", "error");
       }
       setUpdatingId(null);
     }
@@ -159,17 +170,18 @@ export default function AdminUsers() {
       );
 
       setIsEditing(false);
-      alert("User details updated successfully!"); // Simple feedback
+      showToast("User details updated successfully!");
+      scrollToTop();
     } catch (err) {
       console.error("Error saving user:", err);
-      alert("Failed to save changes: " + err.message);
+      showToast("Failed to save changes", "error");
     }
     setSavingUser(false);
   };
 
   const handleDeleteUser = async (targetUser) => {
     if (targetUser.uid === currentUser?.uid) {
-      alert("You cannot delete yourself.");
+      showToast("You cannot delete yourself", "error");
       return;
     }
 
@@ -183,12 +195,13 @@ export default function AdminUsers() {
       const idToken = await currentUser.getIdToken();
       await deleteUser(targetUser.uid, idToken);
 
-      setMsg(`User ${targetUser.email} deleted successfully ✔`);
+      showToast(`User deleted successfully`);
       setSelectedUser(null);
       loadUsers(true);
+      scrollToTop();
     } catch (err) {
       console.error("Error deleting user:", err);
-      alert("Failed to delete user: " + err.message);
+      showToast("Failed to delete user", "error");
     }
     setUpdatingId(null);
   };
@@ -196,46 +209,32 @@ export default function AdminUsers() {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setCreatingUser(true);
-    setMsg("");
     try {
       const idToken = await currentUser.getIdToken();
       await createUser(createFormData, idToken);
-      setMsg(`User ${createFormData.email} created successfully ✔`);
+      showToast("User created successfully!");
       setShowCreateModal(false);
       setCreateFormData({ email: "", password: "", displayName: "", role: "user" });
       loadUsers(true);
+      scrollToTop();
     } catch (err) {
       console.error("Error creating user:", err);
-      alert("Failed to create user: " + err.message);
+      showToast(err.message || "Failed to create user", "error");
     }
     setCreatingUser(false);
   };
 
   return (
     <div className="p-4 sm:p-5 relative">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <h2 className="text-2xl font-semibold text-gray-800">User Management</h2>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex-1 sm:flex-none text-sm bg-black text-white hover:bg-gray-800 px-4 py-2 rounded-lg font-bold shadow-sm transition-all active:scale-95"
-          >
-            + Add New User
-          </button>
-          <button
-            onClick={loadUsers}
-            className="flex-1 sm:flex-none text-sm bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-gray-700 font-medium transition-all active:scale-95"
-          >
-            Refresh
-          </button>
-        </div>
+      <div className="flex flex-row justify-between items-center gap-2 mb-8">
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 truncate">User Management</h2>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="shrink-0 text-[11px] sm:text-sm bg-black text-white hover:bg-gray-800 px-3 sm:px-4 py-1.5 rounded-lg font-bold shadow-sm transition-all active:scale-95 whitespace-nowrap"
+        >
+          + Add User
+        </button>
       </div>
-
-      {msg && (
-        <div className={`p-3 rounded mb-4 text-sm ${msg.includes("Failed") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
-          {msg}
-        </div>
-      )}
 
       {loading ? (
         <p className="text-gray-500 text-center py-10">Loading users...</p>
@@ -266,7 +265,7 @@ export default function AdminUsers() {
                   onClick={() => setSelectedUser(u)}
                   className="w-full text-center text-sm font-semibold text-white bg-black hover:bg-gray-800 py-2.5 rounded-lg transition-colors"
                 >
-                  Manage User
+                  Manage
                 </button>
               </div>
             ))}
@@ -362,7 +361,6 @@ export default function AdminUsers() {
             </div>
 
             <div className="p-4 sm:p-6 space-y-8 flex-1">
-
               {/* BASIC INFO */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -558,7 +556,6 @@ export default function AdminUsers() {
                   </div>
                 </div>
               )}
-
             </div>
 
             <div className="p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0 z-10 sm:rounded-b-2xl flex flex-col sm:flex-row justify-end gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">

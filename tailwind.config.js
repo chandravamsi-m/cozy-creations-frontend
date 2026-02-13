@@ -9,6 +9,9 @@ export default {
       fontFamily: {
         'montserrat': ['Montserrat', 'sans-serif'],
       },
+      screens: {
+        'xs': '375px',
+      },
       colors: {
         'yellow-accent': '#ffd34d',
         'dark-bg': '#191816',

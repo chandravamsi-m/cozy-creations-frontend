@@ -6,6 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useLoginModal } from "../../contexts/LoginModalContext";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
+import { calculateProductDiscount } from "../../utils/offerUtils";
 
 const FRAGRANCE_OPTIONS = [
   "Rose",
@@ -58,6 +59,8 @@ export default function CartPage() {
     colourHex: "",
     colourName: "",
   });
+  const [itemDiscounts, setItemDiscounts] = React.useState({});
+  const [loadingDiscounts, setLoadingDiscounts] = React.useState(true);
 
   React.useEffect(() => {
     try {
@@ -66,6 +69,43 @@ export default function CartPage() {
       // ignore storage write failures
     }
   }, [customizations]);
+
+  // Fetch discounts for all items in cart
+  React.useEffect(() => {
+    const fetchDiscounts = async () => {
+      setLoadingDiscounts(true);
+      const discounts = {};
+
+      try {
+        await Promise.all(
+          cart.map(async (item) => {
+            // Only fetch for non-bulk products (assuming bulk products handle their own separate pricing logic)
+            // We'll check if it already has a bulk price/isBulk flag if it was in the cart
+            // For now, let's treat cart items that have normal price as candidates for offer discounts
+            const result = await calculateProductDiscount({
+              id: item.productId,
+              price: item.price,
+              category: item.category // ensure category is passed if available in cart item
+            });
+            if (result.hasDiscount) {
+              discounts[item.productId] = result;
+            }
+          })
+        );
+        setItemDiscounts(discounts);
+      } catch (err) {
+        console.error("Error fetching cart discounts:", err);
+      } finally {
+        setLoadingDiscounts(false);
+      }
+    };
+
+    if (cart.length > 0) {
+      fetchDiscounts();
+    } else {
+      setLoadingDiscounts(false);
+    }
+  }, [cart]);
 
   const openCustomize = (item) => {
     const saved = customizations[item.productId] || {};
@@ -96,11 +136,21 @@ export default function CartPage() {
     closeCustomize();
   };
 
-  // calculate total
-  const totalAmount = cart.reduce(
+  // calculate totals
+  const totalOriginalAmount = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const totalDiscountAmount = cart.reduce((sum, item) => {
+    const discount = itemDiscounts[item.productId];
+    if (discount && discount.hasDiscount) {
+      return sum + (discount.savedAmount * item.quantity);
+    }
+    return sum;
+  }, 0);
+
+  const finalTotalAmount = totalOriginalAmount - totalDiscountAmount;
 
   // handlers mapped correctly to your hook functions
   const decreaseQuantity = (id) => {
@@ -204,9 +254,20 @@ export default function CartPage() {
                           <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 leading-tight line-clamp-2">
                             {item.name}
                           </h2>
-                          <p className="text-xs sm:text-sm text-gray-600">
-                            ₹{item.price.toLocaleString()} <span className="text-gray-400">each</span>
-                          </p>
+                          {itemDiscounts[item.productId]?.hasDiscount ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-400 line-through">
+                                ₹{item.price.toLocaleString()}
+                              </span>
+                              <span className="text-sm font-bold text-green-600">
+                                ₹{itemDiscounts[item.productId].discountedPrice.toLocaleString()}
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="text-xs sm:text-sm text-gray-600">
+                              ₹{item.price.toLocaleString()} <span className="text-gray-400">each</span>
+                            </p>
+                          )}
                           {item.quantityPack && (
                             <p className="text-xs text-gray-500 mt-0.5">
                               Pack of {item.quantityPack}
@@ -217,7 +278,7 @@ export default function CartPage() {
                         <div className="text-right shrink-0">
                           <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Subtotal</p>
                           <p className="text-lg font-bold text-gray-900">
-                            ₹{(item.price * item.quantity).toLocaleString()}
+                            ₹{((itemDiscounts[item.productId]?.discountedPrice || item.price) * item.quantity).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -323,15 +384,21 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Subtotal</span>
-                    <span className="font-medium">₹{totalAmount}</span>
+                    <span className="font-medium">₹{totalOriginalAmount.toLocaleString()}</span>
                   </div>
+                  {totalDiscountAmount > 0 && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Offers Discount</span>
+                      <span>-₹{totalDiscountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-500">
                     <span>Shipping</span>
                     <span>Calculated at checkout</span>
                   </div>
                   <div className="border-t pt-3 flex justify-between text-base font-semibold text-gray-900">
                     <span>Total</span>
-                    <span>₹{totalAmount}</span>
+                    <span>₹{finalTotalAmount.toLocaleString()}</span>
                   </div>
                 </div>
 

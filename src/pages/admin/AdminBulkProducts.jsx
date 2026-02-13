@@ -1,6 +1,7 @@
 // src/pages/admin/AdminBulkProducts.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
 import { createProduct, updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue } from "../../api/adminProducts";
 import { getImageSrc } from "../../utils/image";
@@ -12,7 +13,19 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 
 export default function AdminBulkProducts() {
   const { idToken } = useAuth();
+  const { showToast } = useToast();
   const { products: allProducts, loadProducts } = useProducts();
+
+  const scrollToTop = () => {
+    setTimeout(() => {
+      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+      if (scrollable) {
+        scrollable.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   // Filter only bulk products
   const [bulkProducts, setBulkProducts] = useState([]);
@@ -34,15 +47,15 @@ export default function AdminBulkProducts() {
     dimensions: "",
     dimensionUnit: "cm",
     price: "",
-    bulkPrice: "",
-    bulkQuantity: "",
     quantityPack: "",
     customizableFragrance: true,
     customizableColor: true,
     altText: "",
     inventory: "",
-    isBulk: true,
   });
+
+  // Bulk pricing tiers state
+  const [bulkPricingTiers, setBulkPricingTiers] = useState([]);
 
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -56,14 +69,14 @@ export default function AdminBulkProducts() {
     return `${parts[0]}/image/upload/w_600,h_450,c_fill,q_auto,f_auto/${parts[1]}`;
   };
 
-  // Load bulk products
+  // Load bulk products (products with bulkPricingTiers)
   const refreshLocalProducts = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       // Fetch including inactive products and bypass cache (force=true)
       const all = await loadProducts("", silent, true, true);
       if (all) {
-        const filtered = all.filter(p => p.isBulk === true);
+        const filtered = all.filter(p => p.bulkPricingTiers && p.bulkPricingTiers.length > 0);
         setBulkProducts(filtered);
       }
     } catch (error) {
@@ -167,7 +180,7 @@ export default function AdminBulkProducts() {
     return data.secure_url;
   };
 
-  const handleAddNew = () => {
+  const handleNewProduct = () => {
     setEditMode(false);
     setCurrentProduct(null);
     setProduct({
@@ -180,15 +193,13 @@ export default function AdminBulkProducts() {
       dimensions: "",
       dimensionUnit: "cm",
       price: "",
-      bulkPrice: "",
-      bulkQuantity: "",
       quantityPack: "",
       customizableFragrance: true,
       customizableColor: true,
       altText: "",
       inventory: "",
-      isBulk: true,
     });
+    setBulkPricingTiers([]);
     setImageFile(null);
     setPreview(null);
     setShowForm(true);
@@ -208,15 +219,13 @@ export default function AdminBulkProducts() {
       dimensions: bulkProduct.dimensions || "",
       dimensionUnit: bulkProduct.dimensionUnit || "cm",
       price: bulkProduct.price || "",
-      bulkPrice: bulkProduct.bulkPrice || "",
-      bulkQuantity: bulkProduct.bulkQuantity || "",
       quantityPack: bulkProduct.quantityPack || "",
       customizableFragrance: bulkProduct.customizableFragrance ?? true,
       customizableColor: bulkProduct.customizableColor ?? true,
       altText: bulkProduct.altText || "",
       inventory: bulkProduct.inventory || "",
-      isBulk: true,
     });
+    setBulkPricingTiers(bulkProduct.bulkPricingTiers || []);
     setPreview(bulkProduct.imageUrl);
     setImageFile(null);
     setShowForm(true);
@@ -227,9 +236,25 @@ export default function AdminBulkProducts() {
     setShowForm(false);
     setEditMode(false);
     setCurrentProduct(null);
+    setBulkPricingTiers([]);
     setImageFile(null);
     setPreview(null);
     setMsg("");
+  };
+
+  // Tier management functions
+  const addTier = () => {
+    setBulkPricingTiers([...bulkPricingTiers, { minQty: "", pricePerPc: "" }]);
+  };
+
+  const removeTier = (index) => {
+    setBulkPricingTiers(bulkPricingTiers.filter((_, i) => i !== index));
+  };
+
+  const updateTier = (index, field, value) => {
+    const updated = [...bulkPricingTiers];
+    updated[index][field] = value;
+    setBulkPricingTiers(updated);
   };
 
   const handleGenerateCatalogue = async () => {
@@ -245,9 +270,10 @@ export default function AdminBulkProducts() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      showToast("Bulk catalogue generated and downloaded!");
     } catch (error) {
       console.error("Bulk Catalogue Generation Error:", error);
-      alert("Error generating bulk catalogue: " + error.message);
+      showToast("Failed to generate bulk catalogue", "error");
     } finally {
       setCatalogueLoading(false);
     }
@@ -263,25 +289,41 @@ export default function AdminBulkProducts() {
       if (!product.name || !product.category) {
         throw new Error("Name and category are required");
       }
-      if (!product.bulkQuantity || Number(product.bulkQuantity) <= 1) {
-        throw new Error("Bulk quantity must be greater than 1");
-      }
       if (!product.quantityPack || Number(product.quantityPack) <= 0) {
         throw new Error("Quantity per Pack is required and must be at least 1");
       }
       if (!product.weightGrams || Number(product.weightGrams) <= 0) {
         throw new Error("Weight is required and must be greater than 0");
       }
-      if (!product.burnTimeHours || Number(product.burnTimeHours) <= 0) {
-        throw new Error("Burn Time is required and must be greater than 0");
+      if (!product.burnTimeHours || String(product.burnTimeHours).trim() === "") {
+        throw new Error("Burn Time is required");
       }
-      if (!product.price || !product.bulkPrice) {
-        throw new Error("Both unit price and bulk price are required");
+      if (!product.price || Number(product.price) <= 0) {
+        throw new Error("Unit price is required and must be greater than 0");
       }
 
-      const totalMRP = Number(product.price) * Number(product.bulkQuantity);
-      if (Number(product.bulkPrice) >= totalMRP) {
-        throw new Error("Bulk price should be less than the total Regular MRP to offer a discount");
+      // Validate bulk pricing tiers
+      if (!bulkPricingTiers || bulkPricingTiers.length === 0) {
+        throw new Error("Please add at least one bulk pricing tier");
+      }
+
+      // Validate each tier
+      for (let i = 0; i < bulkPricingTiers.length; i++) {
+        const tier = bulkPricingTiers[i];
+        if (!tier.minQty || Number(tier.minQty) <= 0) {
+          throw new Error(`Tier ${i + 1}: Minimum quantity is required and must be greater than 0`);
+        }
+        if (!tier.pricePerPc || Number(tier.pricePerPc) <= 0) {
+          throw new Error(`Tier ${i + 1}: Price per piece is required and must be greater than 0`);
+        }
+      }
+
+      // Check for ascending minQty
+      const sortedTiers = [...bulkPricingTiers].sort((a, b) => Number(a.minQty) - Number(b.minQty));
+      for (let i = 0; i < sortedTiers.length - 1; i++) {
+        if (Number(sortedTiers[i].minQty) === Number(sortedTiers[i + 1].minQty)) {
+          throw new Error("Tier quantities must be unique");
+        }
       }
 
       let imageUrl = editMode ? currentProduct.imageUrl : null;
@@ -312,30 +354,33 @@ export default function AdminBulkProducts() {
           : "",
         dimensionUnit: product.dimensionUnit,
         price: Number(product.price),
-        bulkPrice: Number(product.bulkPrice),
-        bulkQuantity: Number(product.bulkQuantity),
         quantityPack: Number(product.quantityPack) || 1,
         customizableFragrance: product.customizableFragrance,
         customizableColor: product.customizableColor,
         altText: product.name,
         inventory: Number(product.inventory) || 0,
         imageUrl,
-        isBulk: true,
+        bulkPricingTiers: bulkPricingTiers.map(tier => ({
+          minQty: Number(tier.minQty),
+          pricePerPc: Number(tier.pricePerPc)
+        })),
       };
 
       if (editMode) {
         await updateProduct(currentProduct.id, productData, idToken);
-        setMsg("✅ Bulk product updated successfully!");
+        showToast("Bulk product updated successfully!");
       } else {
         await createProduct(productData, idToken);
-        setMsg("✅ Bulk product created successfully!");
+        showToast("Bulk product created successfully!");
       }
 
       // Reset and reload
       await refreshLocalProducts(true);
+      scrollToTop();
       handleCancel();
     } catch (err) {
-      setMsg(`❌ ${err.message}`);
+      setMsg(err.message);
+      showToast(err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -345,10 +390,11 @@ export default function AdminBulkProducts() {
     if (!confirm("Are you sure you want to deactivate this bulk product?")) return;
     try {
       await deleteProduct(id, idToken);
-      setMsg("✅ Bulk product deactivated successfully!");
+      showToast("Bulk product deactivated successfully");
       await refreshLocalProducts(true);
+      scrollToTop();
     } catch (err) {
-      setMsg(`❌ ${err.message}`);
+      showToast(err.message, "error");
     }
   };
 
@@ -356,10 +402,11 @@ export default function AdminBulkProducts() {
     if (!confirm("Activate this product?")) return;
     try {
       await updateProduct(id, { isActive: true }, idToken);
-      setMsg("✅ Bulk product activated successfully!");
+      showToast("Bulk product activated successfully");
       await refreshLocalProducts(true);
+      scrollToTop();
     } catch (err) {
-      setMsg(`❌ ${err.message}`);
+      showToast(err.message, "error");
     }
   };
 
@@ -367,29 +414,15 @@ export default function AdminBulkProducts() {
     if (!confirm("WARNING: This will PERMANENTLY delete this bulk product. This action cannot be undone. Proceed?")) return;
     try {
       await permanentlyDeleteProduct(id, idToken);
-      setMsg("✅ Bulk product permanently deleted!");
+      showToast("Bulk product permanently deleted");
       await refreshLocalProducts(true);
+      scrollToTop();
     } catch (err) {
-      setMsg(`❌ ${err.message}`);
+      showToast(err.message, "error");
     }
   };
 
-  const calculateDiscount = () => {
-    const unitPrice = Number(product.price);
-    const bulkQty = Number(product.bulkQuantity);
-    const bulkPrice = Number(product.bulkPrice);
 
-    if (!unitPrice || !bulkQty || !bulkPrice) return null;
-
-    const totalMRP = unitPrice * bulkQty;
-    if (bulkPrice >= totalMRP) return null;
-
-    const discount = Math.round((1 - bulkPrice / totalMRP) * 100);
-    const savings = totalMRP - bulkPrice;
-    return { discount, savings };
-  };
-
-  const discountInfo = calculateDiscount();
 
   return (
     <div className="space-y-4">
@@ -455,7 +488,7 @@ export default function AdminBulkProducts() {
               ) : "📄 Catalogue"}
             </button>
             <button
-              onClick={handleAddNew}
+              onClick={handleNewProduct}
               className="flex-1 sm:flex-none px-4 py-2 bg-black text-white rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 h-10"
             >
               + New Bulk Product
@@ -472,10 +505,7 @@ export default function AdminBulkProducts() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
               {bulkProducts.map((p) => {
-                const totalMRP = (Number(p.price) || 0) * (Number(p.bulkQuantity) || 1);
-                const discount = p.bulkPrice && totalMRP
-                  ? Math.round((1 - p.bulkPrice / totalMRP) * 100)
-                  : 0;
+                const firstTier = p.bulkPricingTiers && p.bulkPricingTiers.length > 0 ? p.bulkPricingTiers[0] : null;
 
                 return (
                   <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
@@ -486,19 +516,20 @@ export default function AdminBulkProducts() {
                         alt={p.name}
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-110 rounded-xl"
                       />
-                      {/* Star Qty Badge */}
-                      <div className="star-qty-badge group-hover:scale-110 group-hover:rotate-12">
-                        x{p.bulkQuantity}
-                      </div>
+
                     </div>
 
                     {/* Product Info */}
                     <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
                       <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal">{p.name}</h3>
-                      <p className="text-xs">
-                        <span className="text-gray-400 diagonal-strike mr-1.5 font-medium">₹{totalMRP.toLocaleString()}</span>
-                        <span className="text-green-600 font-semibold italic">₹{(Number(p.bulkPrice) || 0).toLocaleString()} ({discount}%)</span>
-                      </p>
+                      {firstTier ? (
+                        <p className="text-xs">
+                          <span className="text-gray-600 font-medium">From {firstTier.minQty} pcs:</span>{' '}
+                          <span className="text-green-600 font-semibold">₹{firstTier.pricePerPc}/pc</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400">No tiers set</p>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
@@ -682,7 +713,7 @@ export default function AdminBulkProducts() {
                     </div>
                   </div>
 
-                  {/* Row 3: Qty per Pack & Bulk Qty */}
+                  {/* Row 3: Qty per Pack & Unit Price */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-800">
@@ -700,84 +731,107 @@ export default function AdminBulkProducts() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-800">
-                        Bulk Qty (units) <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        value={product.bulkQuantity}
-                        onChange={(e) => updateField("bulkQuantity", e.target.value)}
-                        placeholder="e.g. 50"
-                        className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
-                        min="2"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 4: Prices */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-800">
-                        Unit Price (₹) <span className="text-red-500">*</span>
+                        Pack Price (₹) <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
                         value={product.price}
                         onChange={(e) => updateField("price", e.target.value)}
-                        placeholder="Price per unit"
+                        placeholder="Price per pack"
                         className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
                         min="0"
                         required
                       />
-                      <p className="text-[10px] text-gray-500 mt-1">
+                      <p className="text-[10px] text-gray-500">
                         Price of a single product
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-800">
-                        Bulk Price (₹) <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        value={product.bulkPrice}
-                        onChange={(e) => updateField("bulkPrice", e.target.value)}
-                        placeholder="Discounted bulk price"
-                        className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
-                        min="0"
-                        required
-                      />
-                      <p className="text-[10px] text-gray-500 mt-1">
-                        Discounted price for bulk order
                       </p>
                     </div>
                   </div>
 
-                  {/* Calculated Regular MRP Display */}
-                  {product.price && product.bulkQuantity && (
-                    <div className="bg-blue-50 border border-blue-200 rounded px-3 py-1.5 text-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-1">
-                        <span className="text-gray-700 font-medium">Regular MRP (will be shown striked):</span>
-                        <span className="text-blue-900 font-bold text-base">
-                          ₹{(Number(product.price) * Number(product.bulkQuantity)).toLocaleString()}
-                        </span>
+                  {/* Bulk Pricing Tiers Section */}
+                  <div className="space-y-3 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-sm font-bold text-gray-900 block">
+                          Bulk Pricing Tiers <span className="text-red-500">*</span>
+                        </label>
+                        <p className="text-[10px] text-gray-500 mt-0.5">
+                          Add multiple quantity-based pricing options
+                        </p>
                       </div>
-                      <p className="text-[9px] text-gray-500">
-                        Unit Price (₹{product.price}) × Bulk Qty ({product.bulkQuantity}) = ₹{(Number(product.price) * Number(product.bulkQuantity)).toLocaleString()}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={addTier}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-blue-700 transition-all"
+                      >
+                        + Add Tier
+                      </button>
                     </div>
-                  )}
 
+                    {bulkPricingTiers.length === 0 ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                        <p className="text-xs text-gray-500 font-medium">
+                          No tiers yet. Click "+ Add Tier" to create pricing options.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {bulkPricingTiers.map((tier, index) => {
+                          const totalPrice = (Number(tier.minQty) || 0) * (Number(tier.pricePerPc) || 0);
+                          const regularTotal = (Number(tier.minQty) || 0) * (Number(product.price) || 0);
+                          const savings = regularTotal > 0 && totalPrice > 0 ? regularTotal - totalPrice : 0;
+                          const savingsPercent = regularTotal > 0 ? Math.round((savings / regularTotal) * 100) : 0;
 
+                          return (
+                            <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-gray-700">Tier {index + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeTier(index)}
+                                  className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] text-gray-600 font-medium block mb-1">
+                                    Quantity
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={tier.minQty}
+                                    onChange={(e) => updateTier(index, "minQty", e.target.value)}
+                                    placeholder="e.g. 15"
+                                    className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-blue-500 outline-none h-9 text-sm"
+                                    min="1"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] text-gray-600 font-medium block mb-1">
+                                    Price per Piece (₹)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={tier.pricePerPc}
+                                    onChange={(e) => updateTier(index, "pricePerPc", e.target.value)}
+                                    placeholder="e.g. 54"
+                                    className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-blue-500 outline-none h-9 text-sm"
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
-                  {/* Discount Banner */}
-                  {discountInfo && (
-                    <div className="bg-green-50 border border-green-200 rounded px-3 py-1 text-sm font-semibold text-green-800 animate-in fade-in slide-in-from-top-1 flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-1">
-                      <span className="text-[11px] uppercase tracking-wider">Special Offer</span>
-                      <span className="text-sm">
-                        {discountInfo.discount}% OFF (Save ₹{discountInfo.savings.toLocaleString()})
-                      </span>
-                    </div>
-                  )}
 
                   {/* Row: Dimensions & Inventory (Optional) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

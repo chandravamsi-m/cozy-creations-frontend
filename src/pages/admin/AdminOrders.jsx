@@ -3,17 +3,30 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, orderBy, query, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { updateAdminOrderStatus } from "../../api/adminOrders";
 import { sendOrderStatusUpdate } from "../../api/email";
 
 export default function AdminOrders() {
   const { idToken } = useAuth();
+  const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [savingId, setSavingId] = useState(null);
   const [statusDraft, setStatusDraft] = useState({});
+
+  const scrollToTop = () => {
+    setTimeout(() => {
+      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+      if (scrollable) {
+        scrollable.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   const parseTimestamp = (ts) => {
     if (!ts) return null;
@@ -46,7 +59,7 @@ export default function AdminOrders() {
       setOrders(list);
     } catch (err) {
       console.error("Error loading orders:", err);
-      setMsg("Failed to load orders.");
+      showToast("Failed to load orders", "error");
     }
     setLoading(false);
   };
@@ -69,7 +82,7 @@ export default function AdminOrders() {
     const nextStatus = statusDraft[orderId];
     if (!nextStatus) return;
     if (!idToken) {
-      setMsg("Not authenticated. Please login again to update status.");
+      showToast("Not authenticated. Please login again.", "error");
       return;
     }
 
@@ -77,9 +90,13 @@ export default function AdminOrders() {
     setMsg("");
     try {
       await updateAdminOrderStatus(orderId, nextStatus, idToken);
-      // Refresh list (keeps UI consistent)
-      setMsg("Status updated ✔");
+      // Update local state instantly so the badge updates without refresh
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
+      );
+      showToast("Status updated successfully");
       setExpandedId(null); // Close the details view on success
+      scrollToTop();
 
       // Send Status Update Email (Non-blocking)
       let targetEmail = order.userEmail;
@@ -103,7 +120,7 @@ export default function AdminOrders() {
       }
     } catch (err) {
       console.error("Failed to update status:", err);
-      setMsg("Failed to update status.");
+      showToast("Failed to update status", "error");
     } finally {
       setSavingId(null);
     }
@@ -123,8 +140,6 @@ export default function AdminOrders() {
 
       <h2 className="text-xl font-semibold mb-4">All Orders</h2>
 
-      {msg && <p className="mb-2 text-sm text-red-600">{msg}</p>}
-
       {loading && <p>Loading orders...</p>}
 
       {!loading && orders.length === 0 && (
@@ -143,9 +158,8 @@ export default function AdminOrders() {
               </p>
 
               <span
-                className={`px-2 py-1 rounded text-xs font-medium ${
-                  statusColors[order.status] || "bg-gray-200 text-gray-800"
-                }`}
+                className={`px-2 py-1 rounded text-xs font-medium ${statusColors[order.status] || "bg-gray-200 text-gray-800"
+                  }`}
               >
                 {order.status}
               </span>
@@ -160,11 +174,10 @@ export default function AdminOrders() {
 
             <div className="text-sm text-gray-600 flex items-center gap-2 mt-1">
               <span>Total Amount: <span className="font-bold text-gray-900">₹{order.total}</span></span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                order.paymentMethod === 'cod' 
-                  ? 'bg-orange-100 text-orange-700 border-orange-200' 
-                  : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-              }`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${order.paymentMethod === 'cod'
+                ? 'bg-orange-100 text-orange-700 border-orange-200'
+                : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                }`}>
                 {order.paymentMethod || "online"}
               </span>
             </div>

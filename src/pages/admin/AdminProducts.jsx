@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue } from "../../api/adminProducts";
 
 // Cloudinary config
@@ -12,7 +13,19 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export default function AdminProducts() {
   const { idToken } = useAuth();
+  const { showToast } = useToast();
   const [products, setProducts] = useState([]);
+
+  const scrollToTop = () => {
+    setTimeout(() => {
+      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+      if (scrollable) {
+        scrollable.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
   const [loading, setLoading] = useState(true);
   const [catalogueLoading, setCatalogueLoading] = useState(false);
 
@@ -23,7 +36,7 @@ export default function AdminProducts() {
 
   // Form states
   const [formLoading, setFormLoading] = useState(false);
-  const [formMsg, setFormMsg] = useState("");
+  const [formMsg, setFormMsg] = useState(""); // Keeping for inline validation/errors
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [product, setProduct] = useState({
@@ -87,10 +100,12 @@ export default function AdminProducts() {
     if (!window.confirm("Deactivate this product?")) return;
     try {
       await deleteProduct(id, idToken);
+      showToast("Product deactivated successfully");
       await loadProducts(true);
+      scrollToTop();
     } catch (error) {
       console.error("Failed to deactivate:", error);
-      alert("Error: " + error.message);
+      showToast(error.message, "error");
     }
   };
 
@@ -98,10 +113,12 @@ export default function AdminProducts() {
     if (!window.confirm("Activate this product?")) return;
     try {
       await updateProduct(id, { isActive: true }, idToken);
+      showToast("Product activated successfully");
       await loadProducts(true);
+      scrollToTop();
     } catch (error) {
       console.error("Failed to activate:", error);
-      alert("Error: " + error.message);
+      showToast(error.message, "error");
     }
   };
 
@@ -112,10 +129,12 @@ export default function AdminProducts() {
     if (!confirmed) return;
     try {
       await permanentlyDeleteProduct(id, idToken);
+      showToast("Product deleted permanently");
       loadProducts();
+      scrollToTop();
     } catch (error) {
       console.error("Failed to permanent delete:", error);
-      alert("Error: " + error.message);
+      showToast(error.message, "error");
     }
   };
 
@@ -132,9 +151,10 @@ export default function AdminProducts() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      showToast("Catalogue generated and downloaded!");
     } catch (error) {
       console.error("Catalogue Generation Error:", error);
-      alert("Error generating catalogue: " + error.message);
+      showToast("Failed to generate catalogue", "error");
     } finally {
       setCatalogueLoading(false);
     }
@@ -337,11 +357,13 @@ export default function AdminProducts() {
         thumbnailUrl: imageUrl,
       };
       await createProduct(payload, idToken);
-      setFormMsg("Product created successfully ✔");
+      showToast("Product created successfully!");
       await loadProducts();
+      scrollToTop();
       setTimeout(() => handleCloseAddModal(), 1500);
     } catch (err) {
       setFormMsg("Error: " + err.message);
+      showToast("Failed to create product", "error");
     }
     setFormLoading(false);
   };
@@ -393,11 +415,13 @@ export default function AdminProducts() {
         thumbnailUrl: imageUrl,
       };
       await updateProduct(editingProductId, payload, idToken);
-      setFormMsg("Product updated successfully ✔");
+      showToast("Product updated successfully!");
       await loadProducts();
+      scrollToTop();
       setTimeout(() => handleCloseEditModal(), 1500);
     } catch (err) {
       setFormMsg("Error: " + err.message);
+      showToast("Failed to update product", "error");
     }
     setFormLoading(false);
   };

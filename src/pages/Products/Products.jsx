@@ -15,6 +15,7 @@ import AnimalIcon from "../../assets/svgs/animal-icon.svg";
 import FestiveIcon from "../../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../../assets/svgs/glass-jar-icon.svg";
+import BulkIcon from "../../assets/svgs/bulk-icon.svg";
 
 // COLLECTIONS LIST
 const COLLECTIONS = {
@@ -23,6 +24,7 @@ const COLLECTIONS = {
   festive: { label: "Festive", icon: FestiveIcon },
   special: { label: "Special", icon: SpecialIcon },
   glassJar: { label: "Glass Jar", icon: GlassJarIcon },
+  bulk: { label: "Bulk Products", icon: BulkIcon },
 };
 
 // SORT OPTIONS
@@ -185,6 +187,33 @@ export default function ProductsPage() {
     const s = search.trim().toLowerCase();
 
     let list = products.filter((p) => {
+      // Use the proper isBulk field (consistent with backend and admin)
+      const isBulkProduct = p.isBulk === true;
+
+      // Special handling for "bulk" category
+      if (category === "bulk") {
+        // Only show bulk products, but still apply search and price filters
+        if (!isBulkProduct) return false;
+
+        const matchesSearch =
+          s
+            ? p.name?.toLowerCase().includes(s) ||
+            p.productName?.toLowerCase().includes(s)
+            : true;
+
+        const matchesPrice =
+          (!priceRange.min || p.price >= Number(priceRange.min)) &&
+          (!priceRange.max || p.price <= Number(priceRange.max));
+
+        return matchesSearch && matchesPrice;
+      }
+
+      // For regular categories, EXCLUDE bulk products
+      if (category && category !== "bulk") {
+        if (isBulkProduct) return false;
+      }
+
+      // For "All Products" (no category), show everything including bulk
       const matchesCategory = category ? p.category === category : true;
       const matchesSearch =
         s
@@ -223,7 +252,13 @@ export default function ProductsPage() {
 
   // Firestore reload when category changes
   useEffect(() => {
-    refreshProducts(category || "");
+    // When "bulk" is selected, we need all products so we can filter for isBulk:true
+    // since bulk products are spread across different actual categories.
+    if (category === "bulk") {
+      refreshProducts("");
+    } else {
+      refreshProducts(category || "");
+    }
     setSearch("");
   }, [category]);
 

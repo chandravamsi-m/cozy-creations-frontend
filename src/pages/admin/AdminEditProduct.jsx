@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { updateProduct } from "../../api/adminProducts";
 
 // You can override these via Vite env vars:
@@ -20,6 +21,18 @@ export default function AdminEditProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { idToken } = useAuth();
+  const { showToast } = useToast();
+
+  const scrollToTop = () => {
+    setTimeout(() => {
+      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+      if (scrollable) {
+        scrollable.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   const [product, setProduct] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -34,7 +47,7 @@ export default function AdminEditProduct() {
       const snap = await getDoc(ref);
 
       if (!snap.exists()) {
-        setMsg("Product not found");
+        showToast("Product not found", "error");
         return;
       }
 
@@ -190,10 +203,11 @@ export default function AdminEditProduct() {
 
       await updateProduct(id, payload, idToken);
 
-      setMsg("Product updated ✔");
+      showToast("Product updated successfully");
+      scrollToTop();
       setTimeout(() => navigate("/admin"), 800);
     } catch (err) {
-      setMsg("Error: " + err.message);
+      showToast(err.message || "Failed to update product", "error");
     }
 
     setLoading(false);
@@ -204,8 +218,6 @@ export default function AdminEditProduct() {
   return (
     <div className="p-4 sm:p-5 max-w-xl">
       <h2 className="text-xl font-semibold mb-3">Edit Product</h2>
-
-      {msg && <p className="my-2">{msg}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1">

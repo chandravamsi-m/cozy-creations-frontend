@@ -30,6 +30,7 @@ const AdminBulkProducts = lazy(() =>
 const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
 const Profile = lazy(() => import("./pages/Profile/Profile"));
 const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
 
@@ -43,14 +44,15 @@ function AppContent({
 }) {
   const { openLoginModal } = useLoginModal();
   const location = useLocation();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const NAV_HEIGHT = 72;
   useEffect(() => {
-    if (user && isAdmin) {
+    if (loading) return;
+    if (user && isAdmin && !location.pathname.startsWith("/admin")) {
       navigate("/admin");
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, loading, location.pathname, navigate]);
 
   // GSAP logic (unchanged)
   useEffect(() => {
@@ -187,6 +189,7 @@ function AppContent({
             <Route path="products/:id/edit" element={<AdminEditProduct />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="offers" element={<AdminOffers />} />
           </Route>
         </Routes>
       </Suspense>
