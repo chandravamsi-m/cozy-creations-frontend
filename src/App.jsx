@@ -13,6 +13,8 @@ import { CartProvider } from "./hooks/useCart";
 import { useAuth } from "./contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+import { ToastProvider } from "./contexts/ToastContext";
+
 // Lazy pages
 const Home = lazy(() => import("./pages/Home/Home"));
 const About = lazy(() => import("./pages/About/About"));
@@ -33,6 +35,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
 const Profile = lazy(() => import("./pages/Profile/Profile"));
 const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
+const SavedAddresses = lazy(() => import("./pages/SavedAddresses/SavedAddresses"));
 
 // Component with routing
 function AppContent({
@@ -177,6 +180,7 @@ function AppContent({
             {/* User Account Routes */}
             <Route path="/profile" element={<Profile />} />
             <Route path="/my-orders" element={<MyOrders />} />
+            <Route path="/addresses" element={<SavedAddresses />} />
 
 // Redundant Route Removed
             <Route path="*" element={<NotFound />} />
@@ -206,21 +210,23 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <LoginModalProvider>
-        <CartProvider>
-          <ProductsProvider>
-            <BrowserRouter>
-              <AppContent
-                heroRef={heroRef}
-                productSectionRef={productSectionRef}
-                stickyNavRef={stickyNavRef}
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-              />
-            </BrowserRouter>
-          </ProductsProvider>
-        </CartProvider>
-      </LoginModalProvider>
+      <ToastProvider>
+        <LoginModalProvider>
+          <CartProvider>
+            <ProductsProvider>
+              <BrowserRouter>
+                <AppContent
+                  heroRef={heroRef}
+                  productSectionRef={productSectionRef}
+                  stickyNavRef={stickyNavRef}
+                  menuOpen={menuOpen}
+                  setMenuOpen={setMenuOpen}
+                />
+              </BrowserRouter>
+            </ProductsProvider>
+          </CartProvider>
+        </LoginModalProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

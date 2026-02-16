@@ -18,6 +18,10 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("online"); // 'online' or 'cod'
 
   // Address State
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [showManualForm, setShowManualForm] = useState(false);
+
   const [address, setAddress] = useState({
     fullName: "",
     phone: "",
@@ -30,36 +34,51 @@ export default function Checkout() {
   const [errors, setErrors] = useState({});
 
   // Redirect if cart empty or not logged in (double check)
-  // Redirect if cart empty or not logged in (double check)
   React.useEffect(() => {
     if (!user) {
-      navigate("/cart"); // Go back if no user (should rely on Cart's check, but safety net)
+      navigate("/cart");
     } else if (cart.length === 0 && !isOrderComplete) {
       navigate("/products");
     }
   }, [user, cart, navigate, isOrderComplete]);
 
-  // Pre-fill name if available
-  // Fetch saved address on mount
+  // Fetch saved addresses on mount
   React.useEffect(() => {
-    const fetchSavedAddress = async () => {
+    const fetchSavedAddresses = async () => {
       if (user?.uid) {
         try {
-          // Changed from emailDocId to user.uid
           const userRef = doc(db, "users", user.uid);
           const snap = await getDoc(userRef);
 
-          if (snap.exists() && snap.data().shippingAddress) {
-            setAddress(snap.data().shippingAddress);
-          } else if (user.displayName && !address.fullName) {
-            setAddress((prev) => ({ ...prev, fullName: user.displayName }));
+          if (snap.exists()) {
+            const data = snap.data();
+            const primaryAddress = data.shippingAddress;
+            const multiAddresses = data.addresses || [];
+
+            setSavedAddresses(multiAddresses);
+
+            // Logic to pick initial selection
+            if (multiAddresses.length > 0) {
+              const defaultAddr = multiAddresses.find(a => a.isDefault) || multiAddresses[0];
+              setSelectedAddressId(defaultAddr.id);
+              setShowManualForm(false);
+            } else if (primaryAddress) {
+              // Fallback for legacy data
+              setAddress(primaryAddress);
+              setShowManualForm(true);
+            } else {
+              if (user.displayName && !address.fullName) {
+                setAddress((prev) => ({ ...prev, fullName: user.displayName }));
+              }
+              setShowManualForm(true);
+            }
           }
         } catch (err) {
-          console.error("Failed to fetch address:", err);
+          console.error("Failed to fetch addresses:", err);
         }
       }
     };
-    fetchSavedAddress();
+    fetchSavedAddresses();
   }, [user]);
 
   const updateField = (field, value) => {
@@ -88,7 +107,19 @@ export default function Checkout() {
   );
 
   const handlePlaceOrder = async () => {
-    if (!validate()) return;
+    // Determine which address to use
+    let finalAddress = null;
+    if (showManualForm) {
+      if (!validate()) return;
+      finalAddress = address;
+    } else {
+      finalAddress = savedAddresses.find(a => a.id === selectedAddressId);
+      if (!finalAddress) {
+        alert("Please select a shipping address.");
+        return;
+      }
+    }
+
     if (!idToken) {
       alert("Session expired. Please login again.");
       return;
@@ -111,13 +142,13 @@ export default function Checkout() {
           productId: item.productId,
           name: item.name,
           quantity: item.quantity,
-          price: item.price, // Include price for easier subtotaling in email
-          image: item.thumbnailUrl || item.imageUrl, // Include image for professional email
+          price: item.price,
+          image: item.thumbnailUrl || item.imageUrl,
           customization: customizations[item.productId] || null,
         })),
         total: totalAmount,
-        shippingAddress: address,
-        customerName: address.fullName, // Explicitly pass name for personalized greeting
+        shippingAddress: finalAddress,
+        customerName: finalAddress.fullName,
         userEmail: user.email,
       };
 
@@ -144,7 +175,24 @@ export default function Checkout() {
         // Save address to user profile for future use
         try {
           const userRef = doc(db, "users", user.uid);
-          await setDoc(userRef, { shippingAddress: address }, { merge: true });
+
+          if (showManualForm) {
+            // Add NEW address to the array
+            const newAddress = {
+              ...address,
+              id: Date.now().toString(),
+              type: "Home", // Default for manual entry
+              isDefault: savedAddresses.length === 0
+            };
+
+            await setDoc(userRef, {
+              addresses: [...savedAddresses, newAddress],
+              shippingAddress: address
+            }, { merge: true });
+          } else {
+            // Just update the primary shipping address field for checkout compatibility
+            await setDoc(userRef, { shippingAddress: finalAddress }, { merge: true });
+          }
         } catch (err) {
           console.error("Failed to save address:", err);
         }
@@ -214,7 +262,24 @@ export default function Checkout() {
               const result = await verifyRes.json();
               try {
                 const userRef = doc(db, "users", user.uid);
-                await setDoc(userRef, { shippingAddress: address }, { merge: true });
+
+                if (showManualForm) {
+                  // Add NEW address to the array
+                  const newAddress = {
+                    ...address,
+                    id: Date.now().toString(),
+                    type: "Home",
+                    isDefault: savedAddresses.length === 0
+                  };
+
+                  await setDoc(userRef, {
+                    addresses: [...savedAddresses, newAddress],
+                    shippingAddress: address
+                  }, { merge: true });
+                } else {
+                  // Just update the primary shipping address field for checkout compatibility
+                  await setDoc(userRef, { shippingAddress: orderData.shippingAddress }, { merge: true });
+                }
               } catch (err) {
                 console.error("Failed to save address:", err);
               }
@@ -270,78 +335,121 @@ export default function Checkout() {
           {/* LEFT: ADDRESS FORM */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-sm font-medium text-gray-700">Full Name</label>
-                  <input
-                    value={address.fullName}
-                    onChange={(e) => updateField("fullName", e.target.value)}
-                    className="w-full border p-2 rounded-lg"
-                    placeholder="John Doe"
-                  />
-                  {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName}</p>}
-                </div>
-
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-sm font-medium text-gray-700">Phone Number</label>
-                  <input
-                    value={address.phone}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "");
-                      if (val.length <= 10) updateField("phone", val);
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">Shipping Address</h2>
+                {savedAddresses.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setShowManualForm(!showManualForm);
+                      if (!showManualForm) setSelectedAddressId(null);
+                      else if (savedAddresses.length > 0) setSelectedAddressId(savedAddresses[0].id);
                     }}
-                    type="tel"
-                    className="w-full border p-2 rounded-lg"
-                    placeholder="9876543210"
-                  />
-                  {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
-                </div>
-
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-sm font-medium text-gray-700">Address (House No, Building, Street)</label>
-                  <textarea
-                    value={address.street}
-                    onChange={(e) => updateField("street", e.target.value)}
-                    className="w-full border p-2 rounded-lg h-20 resize-none"
-                    placeholder="Flat 101, Galaxy Apts..."
-                  />
-                  {errors.street && <p className="text-red-500 text-xs">{errors.street}</p>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">City</label>
-                  <input
-                    value={address.city}
-                    onChange={(e) => updateField("city", e.target.value)}
-                    className="w-full border p-2 rounded-lg"
-                    placeholder="Mumbai"
-                  />
-                  {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">State</label>
-                  <input
-                    value={address.state}
-                    onChange={(e) => updateField("state", e.target.value)}
-                    className="w-full border p-2 rounded-lg"
-                    placeholder="Maharashtra"
-                  />
-                  {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Pin Code</label>
-                  <input
-                    value={address.pincode}
-                    onChange={(e) => updateField("pincode", e.target.value)}
-                    className="w-full border p-2 rounded-lg"
-                    placeholder="400001"
-                  />
-                  {errors.pincode && <p className="text-red-500 text-xs">{errors.pincode}</p>}
-                </div>
+                    className="text-xs font-bold text-yellow-600 hover:text-yellow-700 underline"
+                  >
+                    {showManualForm ? "Use Saved Address" : "+ Add New Address"}
+                  </button>
+                )}
               </div>
+
+              {!showManualForm && savedAddresses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {savedAddresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      onClick={() => setSelectedAddressId(addr.id)}
+                      className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${selectedAddressId === addr.id
+                        ? "border-yellow-accent bg-yellow-accent/5"
+                        : "border-gray-50 bg-white hover:border-gray-200"
+                        }`}
+                    >
+                      {selectedAddressId === addr.id && (
+                        <div className="absolute top-3 right-3 w-5 h-5 bg-yellow-accent rounded-full flex items-center justify-center shadow-sm">
+                          <span className="text-black text-[10px] font-black">✓</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{addr.type === "Home" ? "🏠" : "💼"}</span>
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{addr.type}</span>
+                      </div>
+                      <p className="font-bold text-gray-900 text-sm">{addr.fullName}</p>
+                      <p className="text-gray-500 text-xs mt-1 line-clamp-2">{addr.street}</p>
+                      <p className="text-gray-500 text-xs">{addr.city}, {addr.state} - {addr.pincode}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Full Name</label>
+                    <input
+                      value={address.fullName}
+                      onChange={(e) => updateField("fullName", e.target.value)}
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="John Doe"
+                    />
+                    {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName}</p>}
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Phone Number</label>
+                    <input
+                      value={address.phone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        if (val.length <= 10) updateField("phone", val);
+                      }}
+                      type="tel"
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="9876543210"
+                    />
+                    {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
+                  </div>
+
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Address (House No, Building, Street)</label>
+                    <textarea
+                      value={address.street}
+                      onChange={(e) => updateField("street", e.target.value)}
+                      className="w-full border p-2 rounded-lg h-20 resize-none"
+                      placeholder="Flat 101, Galaxy Apts..."
+                    />
+                    {errors.street && <p className="text-red-500 text-xs">{errors.street}</p>}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">City</label>
+                    <input
+                      value={address.city}
+                      onChange={(e) => updateField("city", e.target.value)}
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="Mumbai"
+                    />
+                    {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">State</label>
+                    <input
+                      value={address.state}
+                      onChange={(e) => updateField("state", e.target.value)}
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="Maharashtra"
+                    />
+                    {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Pin Code</label>
+                    <input
+                      value={address.pincode}
+                      onChange={(e) => updateField("pincode", e.target.value)}
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="400001"
+                    />
+                    {errors.pincode && <p className="text-red-500 text-xs">{errors.pincode}</p>}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

@@ -4,12 +4,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { updateUserProfile } from "../../api/userProfile";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "../../contexts/ToastContext";
+import UserSidebar from "../../components/UserSidebar";
 
 export default function Profile() {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+
+  const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -56,41 +62,25 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Error loading user data:", error);
-      setMessage({ type: "error", text: "Failed to load profile data" });
+      showToast("Failed to load profile data", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith("address.")) {
-      const addressField = name.split(".")[1];
-      setFormData(prev => ({
-        ...prev,
-        address: { ...prev.address, [addressField]: value }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage({ type: "", text: "" });
+  const handleUpdateProfile = async () => {
     setSaving(true);
-
     try {
       await updateUserProfile(user.uid, {
         displayName: formData.displayName,
         phone: formData.phone,
-        shippingAddress: formData.address,
+        // We don't update shippingAddress here as that's handled in Saved Addresses
       });
-
-      setMessage({ type: "success", text: "Profile updated successfully!" });
+      showToast("Profile updated successfully!");
+      setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      setMessage({ type: "error", text: "Failed to update profile" });
+      showToast("Failed to update profile", "error");
     } finally {
       setSaving(false);
     }
@@ -98,191 +88,108 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FBFAF9] pt-24 px-4 flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-accent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FBFAF9] pt-24 px-4 pb-12 font-montserrat">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-2">My Profile</h1>
-        <p className="text-gray-600 mb-8">Manage your account information</p>
+    <div className="min-h-screen bg-[#F8F9FA] pt-20 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Reusable Sticky Sidebar */}
+          <UserSidebar userData={formData} />
 
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === "success"
-            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-            : "bg-red-50 text-red-700 border border-red-200"
-            }`}>
-            {message.text}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-8 space-y-6">
-          {/* Profile Avatar */}
-          <div className="flex items-center gap-4 pb-6 border-b">
-            <div className="w-20 h-20 flex-shrink-0 rounded-full bg-yellow-accent flex items-center justify-center">
-              <span className="text-3xl font-bold text-black">
-                {formData.email ? formData.email.charAt(0).toUpperCase() : "U"}
-              </span>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{formData.displayName || "User"}</p>
-              <p className="text-sm text-gray-500">{formData.email}</p>
-            </div>
-          </div>
-
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="displayName"
-                value={formData.displayName}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                placeholder="Your name"
-              />
+          {/* Main Content */}
+          <div className="flex-1 w-full scale-in">
+            <div className="mb-4">
+              <h1 className="text-4xl font-bold mb-2 font-serif">Personal Profile</h1>
+              <p className="text-gray-500 font-medium font-serif">Manage your basic details and contact info.</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-              />
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-            </div>
+            <div className="bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-gray-50 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-accent/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                placeholder="Your phone number"
-              />
-            </div>
-          </div>
-
-          {/* Shipping Address */}
-          <div className="space-y-4 pt-6 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">Shipping Address</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="address.fullName"
-                  value={formData.address.fullName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                  placeholder="Recipient name"
-                />
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 relative z-10">
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-gray-900 leading-tight">Account Information</h3>
+                  <p className="text-xs text-gray-400 font-medium">Update your name and primary contact details.</p>
+                </div>
+                <div className="flex gap-2">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="px-5 py-2.5 bg-gray-50 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-100 transition-all active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleUpdateProfile}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-yellow-accent text-black font-bold rounded-xl text-xs shadow-lg shadow-yellow-accent/10 hover:scale-105 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {saving ? "Saving..." : "Save Changes"}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl text-xs shadow-lg hover:scale-105 transition-all active:scale-95"
+                    >
+                      Edit Profile
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  name="address.phone"
-                  value={formData.address.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                  placeholder="Contact number"
-                />
-              </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-10 relative z-10">
+                <div className="space-y-1.5 border-b border-gray-50 pb-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Full Name</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.displayName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                      className="w-full text-base font-bold text-gray-900 bg-gray-50 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-yellow-accent placeholder:text-gray-300"
+                      placeholder="Set your name"
+                    />
+                  ) : (
+                    <p className="text-base font-bold text-gray-900">{formData.displayName || "Not set"}</p>
+                  )}
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Street Address
-              </label>
-              <input
-                type="text"
-                name="address.street"
-                value={formData.address.street}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                placeholder="House no., Street name"
-              />
-            </div>
+                <div className="space-y-1.5 border-b border-gray-50 pb-3 font-serif">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</p>
+                  <p className="text-base font-bold text-gray-500">{formData.email}</p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  name="address.city"
-                  value={formData.address.city}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                  placeholder="City"
-                />
-              </div>
+                <div className="space-y-1.5 border-b border-gray-50 pb-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Phone Number</p>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full text-base font-bold text-gray-900 bg-gray-50 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-yellow-accent placeholder:text-gray-300"
+                      placeholder="+91 00000 00000"
+                    />
+                  ) : (
+                    <p className="text-base font-bold text-gray-900">{formData.phone || "Not provided"}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  name="address.state"
-                  value={formData.address.state}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                  placeholder="State"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pincode
-                </label>
-                <input
-                  type="text"
-                  name="address.pincode"
-                  value={formData.address.pincode}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-accent focus:border-transparent outline-none"
-                  placeholder="Pincode"
-                />
+                <div className="space-y-1.5 border-b border-gray-50 pb-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Default Shipping City</p>
+                  <p className="text-base font-bold text-gray-900">
+                    {formData.address.city ? `${formData.address.city}, ${formData.address.state}` : "No default address"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Submit Button */}
-          <div className="pt-6">
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full md:w-auto px-8 py-3 bg-yellow-accent text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

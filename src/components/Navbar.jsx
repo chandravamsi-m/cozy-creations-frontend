@@ -158,16 +158,7 @@ export default function Navbar({
                         }}
                         className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                       >
-                        My Profile
-                      </button>
-                      <button
-                        onClick={() => {
-                          navigate("/my-orders");
-                          setDesktopProfileOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                      >
-                        My Orders
+                        Account Settings
                       </button>
                       <button
                         onClick={() => {
@@ -293,18 +284,7 @@ export default function Navbar({
                     }}
                     className="block w-full text-left py-1 hover:text-yellow-accent"
                   >
-                    My Profile
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigate("/my-orders");
-                      setMenuOpen(false);
-                      setMobileProfileOpen(false);
-                    }}
-                    className="block w-full text-left py-1 hover:text-yellow-accent"
-                  >
-                    My Orders
+                    Account Settings
                   </button>
 
                   <button
