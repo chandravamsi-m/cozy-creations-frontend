@@ -14,10 +14,11 @@ export default function ProductCard({ product }) {
   const [discount, setDiscount] = useState(null);
   const [loadingDiscount, setLoadingDiscount] = useState(true);
 
-  // Use the proper isBulk field (consistent with backend and admin)
-  const isBulk = product.isBulk === true && product.bulkPrice;
-  const totalMRP = isBulk ? product.price * product.bulkQuantity : null;
-  const bulkDiscount = isBulk ? Math.round((1 - product.bulkPrice / totalMRP) * 100) : 0;
+  // Determine if it's a bulk product using the new schema
+  const isBulk = product.isBulk === true || (product.bulkPricingTiers && product.bulkPricingTiers.length > 0);
+  const firstTier = isBulk && product.bulkPricingTiers && product.bulkPricingTiers.length > 0 ? product.bulkPricingTiers[0] : null;
+
+  // Legacy bulk fields are removed as per user feedback
 
   const { addItem, updateQuantity, removeItem, cart } = useCart();
 
@@ -221,10 +222,10 @@ export default function ProductCard({ product }) {
             }}
           />
         </div>
-        {/* Star Qty Badge for Bulk Products */}
-        {isBulk && (
+        {/* Star Qty Badge for Bulk Products - Uses first tier minQty */}
+        {isBulk && firstTier && (
           <div className="star-qty-badge group-hover:scale-110 group-hover:rotate-12 cursor-default pointer-events-none select-none">
-            x{product.bulkQuantity}
+            x{firstTier.minQty}
           </div>
         )}
       </div>
@@ -236,14 +237,14 @@ export default function ProductCard({ product }) {
           <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 w-full sm:w-auto sm:flex-1 leading-tight">
             {product.name}
           </h3>
-          {isBulk ? (
-            <div className="flex items-center gap-1.5 bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-1 rounded-full shadow-sm self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap shrink-0">
-              <span className="text-[10px] text-gray-400 diagonal-strike font-medium leading-none">
-                ₹{totalMRP.toLocaleString()}
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-green-700 leading-none">
-                ₹{product.bulkPrice.toLocaleString()}
-              </span>
+          {isBulk && firstTier ? (
+            <div className="flex flex-col items-end mt-1 sm:mt-0">
+              <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-1 rounded-full shadow-sm whitespace-nowrap shrink-0">
+                <span className="text-[10px] text-gray-500 font-medium mr-1.5 leading-none">From</span>
+                <span className="text-xs sm:text-sm font-bold text-green-700 leading-none">
+                  ₹{firstTier.pricePerPc.toLocaleString()}/pc
+                </span>
+              </div>
             </div>
           ) : discount && discount.hasDiscount ? (
             <div className="flex items-center gap-1.5 bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-1 rounded-full shadow-sm self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap shrink-0">
