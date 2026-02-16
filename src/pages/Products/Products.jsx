@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
+import ProductQuickView from "../../components/ProductQuickView";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useLocation } from "react-router-dom";
@@ -61,6 +62,7 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState("featured");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const heroContentRef = useRef(null);
@@ -585,7 +587,10 @@ export default function ProductsPage() {
                       )
                       .map((p) => (
                         <div key={p.id} data-product-card>
-                          <ProductCard product={p} />
+                          <ProductCard
+                            product={p}
+                            onOpenQuickView={() => setSelectedProduct(p)}
+                          />
                         </div>
                       ))}
                   </div>
@@ -643,6 +648,13 @@ export default function ProductsPage() {
           </div>
         </div>
       </section>
+      {/* QUICK VIEW MODAL */}
+      {selectedProduct && (
+        <ProductQuickView
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </main>
   );
 }

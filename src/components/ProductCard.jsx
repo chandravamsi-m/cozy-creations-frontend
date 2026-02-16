@@ -9,7 +9,7 @@ import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, onOpenQuickView }) {
   const [quantity, setQuantity] = useState(0);
   const [discount, setDiscount] = useState(null);
   const [loadingDiscount, setLoadingDiscount] = useState(true);
@@ -201,7 +201,8 @@ export default function ProductCard({ product }) {
 
       {/* PRODUCT IMAGE */}
       <div
-        className="aspect-[4/3] bg-[#F5F5F0] overflow-visible shrink-0 relative"
+        className="aspect-[4/3] bg-[#F5F5F0] overflow-visible shrink-0 relative cursor-pointer"
+        onClick={onOpenQuickView}
       >
         <div className="w-full h-full overflow-hidden rounded-t-2xl">
           <img
@@ -225,7 +226,10 @@ export default function ProductCard({ product }) {
       <div className="pt-3 px-3 pb-1.5 sm:pt-4 sm:px-4 sm:pb-2 xl:pt-3 xl:px-3 xl:pb-1.5 space-y-3 flex-1 flex flex-col">
         {/* NAME + PRICE */}
         <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-1 sm:gap-2">
-          <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 w-full sm:w-auto sm:flex-1 leading-tight">
+          <h3
+            className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 w-full sm:w-auto sm:flex-1 leading-tight cursor-pointer hover:text-[#8B7355] transition-colors"
+            onClick={onOpenQuickView}
+          >
             {product.name}
           </h3>
           {discount && discount.hasDiscount ? (
@@ -275,9 +279,15 @@ export default function ProductCard({ product }) {
 
             {/* CART BUTTONS */}
             {quantity > 0 ? (
-              <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1">
+              <div
+                className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
-                  onClick={() => handleQuantityChange(-1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuantityChange(-1);
+                  }}
                   className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="Decrease quantity"
                 >
@@ -301,7 +311,10 @@ export default function ProductCard({ product }) {
                 </span>
 
                 <button
-                  onClick={() => handleQuantityChange(1)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuantityChange(1);
+                  }}
                   className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="Increase quantity"
                 >
@@ -322,7 +335,10 @@ export default function ProductCard({ product }) {
               </div>
             ) : (
               <button
-                onClick={handleAddToCart}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart();
+                }}
                 className="w-9 h-9 sm:w-10 sm:h-10 bg-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#7A6345] transition-colors shadow-sm"
                 aria-label="Add to cart"
               >
