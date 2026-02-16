@@ -6,6 +6,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
 import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue } from "../../api/adminProducts";
 import ProductForm from "../../components/admin/ProductForm";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -53,6 +54,18 @@ export default function AdminBulkProducts() {
   const [bulkProducts, setBulkProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [catalogueLoading, setCatalogueLoading] = useState(false);
+
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => { },
+    type: "default",
+    confirmText: "Confirm"
+  });
+
+  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
   const toCloudinaryThumb = (url) => {
     if (!url || typeof url !== "string") return "";
@@ -166,62 +179,94 @@ export default function AdminBulkProducts() {
     }
   };
 
-  const handleGenerateCatalogue = async () => {
-    if (!window.confirm("Generate and download the bulk catalogue PDF?")) return;
-    setCatalogueLoading(true);
-    try {
-      const blob = await generateBulkCatalogue(idToken);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cozy-bulk-catalogue.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast("Bulk catalogue generated and downloaded!");
-    } catch (error) {
-      console.error("Bulk Catalogue Generation Error:", error);
-      showToast("Failed to generate bulk catalogue", "error");
-    } finally {
-      setCatalogueLoading(false);
-    }
+  const handleGenerateCatalogue = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Generate Bulk Catalogue",
+      message: "This will generate and download the bulk products catalogue PDF. Proceed?",
+      type: "default",
+      confirmText: "Download",
+      onConfirm: async () => {
+        setCatalogueLoading(true);
+        try {
+          const blob = await generateBulkCatalogue(idToken);
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cozy-bulk-catalogue.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          showToast("Bulk catalogue generated and downloaded!");
+        } catch (error) {
+          console.error("Bulk Catalogue Generation Error:", error);
+          showToast("Failed to generate bulk catalogue", "error");
+        } finally {
+          setCatalogueLoading(false);
+        }
+      }
+    });
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to deactivate this bulk product?")) return;
-    try {
-      await deleteProduct(id, idToken);
-      showToast("Bulk product deactivated successfully");
-      await refreshLocalProducts(true);
-      scrollToTop();
-    } catch (err) {
-      showToast(err.message, "error");
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Deactivate Bulk Product",
+      message: "Are you sure you want to deactivate this bulk product? It will no longer be visible to customers.",
+      type: "danger",
+      confirmText: "Deactivate",
+      onConfirm: async () => {
+        try {
+          await deleteProduct(id, idToken);
+          showToast("Bulk product deactivated successfully");
+          await refreshLocalProducts(true);
+          scrollToTop();
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      }
+    });
   };
 
-  const handleActivate = async (id) => {
-    if (!confirm("Activate this product?")) return;
-    try {
-      await updateProduct(id, { isActive: true }, idToken);
-      showToast("Bulk product activated successfully");
-      await refreshLocalProducts(true);
-      scrollToTop();
-    } catch (err) {
-      showToast(err.message, "error");
-    }
+  const handleActivate = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Activate Bulk Product",
+      message: "This product will become visible to customers again. Proceed?",
+      type: "success",
+      confirmText: "Activate",
+      onConfirm: async () => {
+        try {
+          await updateProduct(id, { isActive: true }, idToken);
+          showToast("Bulk product activated successfully");
+          await refreshLocalProducts(true);
+          scrollToTop();
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      }
+    });
   };
 
-  const handlePermanentDelete = async (id) => {
-    if (!confirm("WARNING: This will PERMANENTLY delete this bulk product. This action cannot be undone. Proceed?")) return;
-    try {
-      await permanentlyDeleteProduct(id, idToken);
-      showToast("Bulk product permanently deleted");
-      await refreshLocalProducts(true);
-      scrollToTop();
-    } catch (err) {
-      showToast(err.message, "error");
-    }
+  const handlePermanentDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Permanent Delete",
+      message: "WARNING: This will PERMANENTLY delete this bulk product. This action cannot be undone. Proceed?",
+      type: "danger",
+      confirmText: "Delete Permanently",
+      onConfirm: async () => {
+        try {
+          await permanentlyDeleteProduct(id, idToken);
+          showToast("Bulk product permanently deleted");
+          await refreshLocalProducts(true);
+          scrollToTop();
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      }
+    });
   };
 
   return (
@@ -423,6 +468,16 @@ export default function AdminBulkProducts() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue } from "../../api/adminProducts";
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -66,6 +67,18 @@ export default function AdminProducts() {
     inventory: "",
   });
 
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => { },
+    type: "default",
+    confirmText: "Confirm"
+  });
+
+  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
+
   const toCloudinaryThumb = (url) => {
     if (!url || typeof url !== "string") return "";
     if (!url.includes("res.cloudinary.com")) return url;
@@ -88,8 +101,6 @@ export default function AdminProducts() {
       if (!silent) setLoading(false);
     }
   };
-
-
 
   useEffect(() => {
     loadProducts();
@@ -119,68 +130,97 @@ export default function AdminProducts() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [showAddModal, showEditModal]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Deactivate this product?")) return;
-    try {
-      await deleteProduct(id, idToken);
-      showToast("Product deactivated successfully");
-      await loadProducts(true);
-      scrollToTop();
-    } catch (error) {
-      console.error("Failed to deactivate:", error);
-      showToast(error.message, "error");
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Deactivate Product",
+      message: "Are you sure you want to deactivate this product? It will no longer be visible to customers.",
+      type: "danger",
+      confirmText: "Deactivate",
+      onConfirm: async () => {
+        try {
+          await deleteProduct(id, idToken);
+          showToast("Product deactivated successfully");
+          await loadProducts(true);
+          scrollToTop();
+        } catch (error) {
+          console.error("Failed to deactivate:", error);
+          showToast(error.message, "error");
+        }
+      }
+    });
   };
 
-  const handleActivate = async (id) => {
-    if (!window.confirm("Activate this product?")) return;
-    try {
-      await updateProduct(id, { isActive: true }, idToken);
-      showToast("Product activated successfully");
-      await loadProducts(true);
-      scrollToTop();
-    } catch (error) {
-      console.error("Failed to activate:", error);
-      showToast(error.message, "error");
-    }
+  const handleActivate = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Activate Product",
+      message: "This product will become visible to customers again. Proceed?",
+      type: "success",
+      confirmText: "Activate",
+      onConfirm: async () => {
+        try {
+          await updateProduct(id, { isActive: true }, idToken);
+          showToast("Product activated successfully");
+          await loadProducts(true);
+          scrollToTop();
+        } catch (error) {
+          console.error("Failed to activate:", error);
+          showToast(error.message, "error");
+        }
+      }
+    });
   };
 
-  const handlePermanentDelete = async (id) => {
-    const confirmed = window.confirm(
-      "WARNING: This will PERMANENTLY delete this product from the database. This action cannot be undone. Proceed?"
-    );
-    if (!confirmed) return;
-    try {
-      await permanentlyDeleteProduct(id, idToken);
-      showToast("Product deleted permanently");
-      loadProducts();
-      scrollToTop();
-    } catch (error) {
-      console.error("Failed to permanent delete:", error);
-      showToast(error.message, "error");
-    }
+  const handlePermanentDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Permanent Delete",
+      message: "WARNING: This will PERMANENTLY delete this product from the database. This action cannot be undone. Proceed?",
+      type: "danger",
+      confirmText: "Delete Permanently",
+      onConfirm: async () => {
+        try {
+          await permanentlyDeleteProduct(id, idToken);
+          showToast("Product deleted permanently");
+          loadProducts();
+          scrollToTop();
+        } catch (error) {
+          console.error("Failed to permanent delete:", error);
+          showToast(error.message, "error");
+        }
+      }
+    });
   };
 
-  const handleGenerateCatalogue = async () => {
-    if (!window.confirm("Generate and download the product catalogue PDF?")) return;
-    setCatalogueLoading(true);
-    try {
-      const blob = await generateCatalogue(idToken);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cozy-catalogue.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      showToast("Catalogue generated and downloaded!");
-    } catch (error) {
-      console.error("Catalogue Generation Error:", error);
-      showToast("Failed to generate catalogue", "error");
-    } finally {
-      setCatalogueLoading(false);
-    }
+  const handleGenerateCatalogue = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Generate Catalogue",
+      message: "This will generate and download the product catalogue PDF. Proceed?",
+      type: "default",
+      confirmText: "Download",
+      onConfirm: async () => {
+        setCatalogueLoading(true);
+        try {
+          const blob = await generateCatalogue(idToken);
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cozy-catalogue.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          showToast("Catalogue generated and downloaded!");
+        } catch (error) {
+          console.error("Catalogue Generation Error:", error);
+          showToast("Failed to generate catalogue", "error");
+        } finally {
+          setCatalogueLoading(false);
+        }
+      }
+    });
   };
 
   // Modal handlers
@@ -605,6 +645,17 @@ export default function AdminProducts() {
           </div>
         </div>
       )}
+
+      {/* CONFIRMATION MODAL */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+      />
     </div>
   );
 }
@@ -695,4 +746,3 @@ const AdminProductCard = ({
     </div>
   );
 };
-

@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ToastProvider } from "../../contexts/ToastContext";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 export default function AdminLayout() {
   const { user, isAdmin, loading, logoutUser } = useAuth();
@@ -15,6 +16,15 @@ export default function AdminLayout() {
     }
   }, [user, isAdmin, loading, navigate]);
 
+  const [confirmModal, setConfirmModal] = React.useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => { }
+  });
+
+  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
@@ -23,9 +33,16 @@ export default function AdminLayout() {
     );
   }
 
-  const handleLogout = async () => {
-    await logoutUser();
-    navigate("/");
+  const handleLogout = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Confirm Logout",
+      message: "Are you sure you want to sign out of the Admin Panel?",
+      onConfirm: async () => {
+        await logoutUser();
+        navigate("/");
+      }
+    });
   };
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -115,6 +132,14 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </ToastProvider>
   );
 }

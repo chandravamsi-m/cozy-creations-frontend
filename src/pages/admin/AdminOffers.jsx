@@ -86,9 +86,6 @@ export default function AdminOffers() {
     applicableToAll: true,
     applicableCategories: [],
     applicableProducts: [],
-
-    // Constraints
-    minCartValue: 0
   });
 
   useEffect(() => {
@@ -442,18 +439,18 @@ export default function AdminOffers() {
                       {/* Categories */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Select Categories</h4>
-                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
                           {CATEGORIES.map((cat) => (
                             <button
                               key={cat.value}
                               type="button"
                               onClick={() => toggleCategory(cat.value)}
-                              className={`px-3 py-2 rounded-full text-sm transition-colors text-center w-full sm:w-auto ${(offerSettings.applicableCategories || []).includes(cat.value)
-                                ? "bg-blue-600 text-white"
-                                : "bg-white border border-gray-300 hover:border-blue-400"
+                              className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-center w-full sm:w-auto border ${(offerSettings.applicableCategories || []).includes(cat.value)
+                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                : "bg-white border-gray-200 text-gray-700 hover:border-blue-400"
                                 }`}
                             >
-                              <span className="sm:hidden">{cat.label.replace(" Collection", "")}</span>
+                              <span className="sm:hidden">{cat.label.split(" ")[0]}</span>
                               <span className="hidden sm:inline">{cat.label}</span>
                             </button>
                           ))}
@@ -542,29 +539,6 @@ export default function AdminOffers() {
                   )}
                 </div>
 
-                {/* Min Cart Value */}
-                <div className="max-w-md">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Minimum Cart Value (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={offerSettings.minCartValue === 0 && offerSettings.minCartValue !== "0" ? "" : offerSettings.minCartValue}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setOfferSettings((prev) => ({
-                        ...prev,
-                        minCartValue: val === "" ? "" : parseFloat(val) || 0
-                      }));
-                    }}
-                    placeholder="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Leave 0 for no minimum requirement
-                  </p>
-                </div>
               </div>
             )}
           </div>

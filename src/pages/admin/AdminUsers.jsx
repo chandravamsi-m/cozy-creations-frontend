@@ -5,6 +5,7 @@ import { collection, getDocs, doc, updateDoc, query, where } from "firebase/fire
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { deleteUser, createUser } from "../../api/adminUsers";
+import ConfirmModal from "../../components/admin/ConfirmModal";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
@@ -41,6 +42,18 @@ export default function AdminUsers() {
     role: "user"
   });
   const [creatingUser, setCreatingUser] = useState(false);
+
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => { },
+    type: "default",
+    confirmText: "Confirm"
+  });
+
+  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
   const loadUsers = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -103,33 +116,41 @@ export default function AdminUsers() {
     });
   }, [selectedUser]);
 
-  const toggleAdmin = async (targetUser) => {
-    if (confirm(`Are you sure you want to ${targetUser.role === "admin" ? "remove" : "make"} ${targetUser.email} an admin?`)) {
-      setUpdatingId(targetUser.id);
-      try {
-        const newRole = targetUser.role === "admin" ? "user" : "admin";
-        const ref = doc(db, "users", targetUser.id);
+  const toggleAdmin = (targetUser) => {
+    const action = targetUser.role === "admin" ? "remove" : "make";
+    setConfirmModal({
+      isOpen: true,
+      title: "Change User Role",
+      message: `Are you sure you want to ${action} ${targetUser.email} an admin?`,
+      type: "default",
+      confirmText: targetUser.role === "admin" ? "Remove Admin" : "Make Admin",
+      onConfirm: async () => {
+        setUpdatingId(targetUser.id);
+        try {
+          const newRole = targetUser.role === "admin" ? "user" : "admin";
+          const ref = doc(db, "users", targetUser.id);
 
-        await updateDoc(ref, { role: newRole });
+          await updateDoc(ref, { role: newRole });
 
-        // Update local list
-        setUsers((prev) =>
-          prev.map((u) => (u.id === targetUser.id ? { ...u, role: newRole } : u))
-        );
+          // Update local list
+          setUsers((prev) =>
+            prev.map((u) => (u.id === targetUser.id ? { ...u, role: newRole } : u))
+          );
 
-        // Update modal if open
-        if (selectedUser?.id === targetUser.id) {
-          setSelectedUser(prev => ({ ...prev, role: newRole }));
+          // Update modal if open
+          if (selectedUser?.id === targetUser.id) {
+            setSelectedUser(prev => ({ ...prev, role: newRole }));
+          }
+
+          showToast(`User role updated to ${newRole}`);
+          scrollToTop();
+        } catch (err) {
+          console.error("Error updating role:", err);
+          showToast("Failed to update role", "error");
         }
-
-        showToast(`User role updated to ${newRole}`);
-        scrollToTop();
-      } catch (err) {
-        console.error("Error updating role:", err);
-        showToast("Failed to update role", "error");
+        setUpdatingId(null);
       }
-      setUpdatingId(null);
-    }
+    });
   };
 
   const handleEditChange = (section, field, value) => {
@@ -179,31 +200,35 @@ export default function AdminUsers() {
     setSavingUser(false);
   };
 
-  const handleDeleteUser = async (targetUser) => {
+  const handleDeleteUser = (targetUser) => {
     if (targetUser.uid === currentUser?.uid) {
       showToast("You cannot delete yourself", "error");
       return;
     }
 
-    const confirmed = window.confirm(
-      `WARNING: This will PERMANENTLY delete the account for ${targetUser.email}. This cannot be undone. Proceed?`
-    );
-    if (!confirmed) return;
+    setConfirmModal({
+      isOpen: true,
+      title: "Permanent Delete User",
+      message: `WARNING: This will PERMANENTLY delete the account for ${targetUser.email}. This cannot be undone. Proceed?`,
+      type: "danger",
+      confirmText: "Delete User",
+      onConfirm: async () => {
+        setUpdatingId(targetUser.id);
+        try {
+          const idToken = await currentUser.getIdToken();
+          await deleteUser(targetUser.uid, idToken);
 
-    setUpdatingId(targetUser.id);
-    try {
-      const idToken = await currentUser.getIdToken();
-      await deleteUser(targetUser.uid, idToken);
-
-      showToast(`User deleted successfully`);
-      setSelectedUser(null);
-      loadUsers(true);
-      scrollToTop();
-    } catch (err) {
-      console.error("Error deleting user:", err);
-      showToast("Failed to delete user", "error");
-    }
-    setUpdatingId(null);
+          showToast(`User deleted successfully`);
+          setSelectedUser(null);
+          loadUsers(true);
+          scrollToTop();
+        } catch (err) {
+          console.error("Error deleting user:", err);
+          showToast("Failed to delete user", "error");
+        }
+        setUpdatingId(null);
+      }
+    });
   };
 
   const handleCreateUser = async (e) => {
@@ -672,6 +697,16 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+      {/* CONFIRMATION MODAL */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText={confirmModal.confirmText}
+      />
     </div>
   );
 }
