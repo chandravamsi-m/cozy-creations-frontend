@@ -104,25 +104,22 @@ export default function ProductCard({ product }) {
 
   // Fetch discount for this product
   useEffect(() => {
-    // Only fetch discount for non-bulk products
-    if (!isBulk) {
-      setLoadingDiscount(true);
-      calculateProductDiscount(product)
-        .then((discountData) => {
-          if (discountData.hasDiscount) {
-            setDiscount(discountData);
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to fetch discount:', err);
-        })
-        .finally(() => {
-          setLoadingDiscount(false);
-        });
-    } else {
-      setLoadingDiscount(false);
-    }
-  }, [product.id, isBulk]);
+    setLoadingDiscount(true);
+    calculateProductDiscount(product)
+      .then((discountData) => {
+        if (discountData.hasDiscount) {
+          setDiscount(discountData);
+        } else {
+          setDiscount(null);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch discount:', err);
+      })
+      .finally(() => {
+        setLoadingDiscount(false);
+      });
+  }, [product.id]);
 
   const handleAddToCart = () => {
     addItem({
@@ -222,31 +219,16 @@ export default function ProductCard({ product }) {
             }}
           />
         </div>
-        {/* Star Qty Badge for Bulk Products - Uses first tier minQty */}
-        {isBulk && firstTier && (
-          <div className="star-qty-badge group-hover:scale-110 group-hover:rotate-12 cursor-default pointer-events-none select-none">
-            x{firstTier.minQty}
-          </div>
-        )}
       </div>
 
       {/* PRODUCT DETAILS */}
-      <div className="p-3 sm:p-4 xl:p-3 space-y-2 flex-1 flex flex-col">
+      <div className="pt-3 px-3 pb-1.5 sm:pt-4 sm:px-4 sm:pb-2 xl:pt-3 xl:px-3 xl:pb-1.5 space-y-3 flex-1 flex flex-col">
         {/* NAME + PRICE */}
         <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-1 sm:gap-2">
           <h3 className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 w-full sm:w-auto sm:flex-1 leading-tight">
             {product.name}
           </h3>
-          {isBulk && firstTier ? (
-            <div className="flex flex-col items-end mt-1 sm:mt-0">
-              <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-1 rounded-full shadow-sm whitespace-nowrap shrink-0">
-                <span className="text-[10px] text-gray-500 font-medium mr-1.5 leading-none">From</span>
-                <span className="text-xs sm:text-sm font-bold text-green-700 leading-none">
-                  ₹{firstTier.pricePerPc.toLocaleString()}/pc
-                </span>
-              </div>
-            </div>
-          ) : discount && discount.hasDiscount ? (
+          {discount && discount.hasDiscount ? (
             <div className="flex items-center gap-1.5 bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-1 rounded-full shadow-sm self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap shrink-0">
               <span className="text-[10px] text-gray-400 diagonal-strike font-medium leading-none">
                 ₹{product.price.toLocaleString()}
@@ -263,104 +245,104 @@ export default function ProductCard({ product }) {
             </div>
           )}
         </div>
-      </div>
 
-      {/* CHIPS */}
-      <div className="flex flex-wrap gap-1.5">
-        {getDetailChips(product).map((chip) => (
-          <span
-            key={chip.key}
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
-          >
-            {chip.label}
-          </span>
-        ))}
-      </div>
-
-      <div className="border-t border-gray-200 mt-auto mb-3"></div>
-
-      {/* CATEGORY + CART BUTTON */}
-      <div className="flex items-center justify-between pt-1">
-        {/* CATEGORY ICON */}
-        <div className="flex gap-2 items-center">
-          <span className="text-sm text-gray-600">
-            {getCategoryIcon(product.category)}
-          </span>
-          {product.secondaryCategory && (
-            <span className="text-sm text-gray-600">
-              {getCategoryIcon(product.secondaryCategory)}
+        {/* CHIPS */}
+        <div className="flex flex-wrap gap-1.5">
+          {getDetailChips(product).map((chip) => (
+            <span
+              key={chip.key}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-700"
+            >
+              {chip.label}
             </span>
-          )}
+          ))}
         </div>
 
-        {/* CART BUTTONS */}
-        {quantity > 0 ? (
-          <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1">
-            <button
-              onClick={() => handleQuantityChange(-1)}
-              className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="Decrease quantity"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 12H4"
-                />
-              </svg>
-            </button>
+        <div className="border-t border-gray-100 mt-auto pt-2">
+          {/* CATEGORY + CART BUTTON */}
+          <div className="flex items-center justify-between">
+            {/* CATEGORY ICON */}
+            <div className="flex gap-2 items-center">
+              <span className="text-sm text-gray-600">
+                {getCategoryIcon(product.category)}
+              </span>
+              {product.secondaryCategory && (
+                <span className="text-sm text-gray-600">
+                  {getCategoryIcon(product.secondaryCategory)}
+                </span>
+              )}
+            </div>
 
-            <span className="text-sm font-medium text-gray-900 min-w-[20px] text-center">
-              {quantity}
-            </span>
+            {/* CART BUTTONS */}
+            {quantity > 0 ? (
+              <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1">
+                <button
+                  onClick={() => handleQuantityChange(-1)}
+                  className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Decrease quantity"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 12H4"
+                    />
+                  </svg>
+                </button>
 
-            <button
-              onClick={() => handleQuantityChange(1)}
-              className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="Increase quantity"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                <span className="text-sm font-medium text-gray-900 min-w-[20px] text-center">
+                  {quantity}
+                </span>
+
+                <button
+                  onClick={() => handleQuantityChange(1)}
+                  className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Increase quantity"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#7A6345] transition-colors shadow-sm"
+                aria-label="Add to cart"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </button>
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
-        ) : (
-          <button
-            onClick={handleAddToCart}
-            className="w-10 h-10 bg-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#7A6345] transition-colors shadow-sm"
-            aria-label="Add to cart"
-          >
-            <svg
-              className="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );
