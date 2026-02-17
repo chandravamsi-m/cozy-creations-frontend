@@ -106,64 +106,50 @@ export default function ProductQuickView({ product, onClose }) {
             </div>
           )}
 
-          {/* Zoom Overlay (Lightbox) */}
-          {isZoomed && (
-            <div
-              className="fixed inset-0 z-[1100] bg-black/95 flex items-center justify-center p-4 animate-fadeIn cursor-zoom-out"
-              onClick={() => setIsZoomed(false)}
-            >
-              <img
-                src={getImageSrc(product.imageUrl || product.image)}
-                alt={product.name}
-                className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp"
-              />
-              <p className="absolute bottom-10 text-white/60 text-xs font-medium tracking-widest uppercase">Click anywhere to exit</p>
-            </div>
-          )}
         </div>
 
         {/* Right: Content Section */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto bg-white flex flex-col">
+        <div className="w-full md:w-1/2 p-5 md:p-8 overflow-y-auto bg-white flex flex-col">
           {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-yellow-accent/20 rounded-xl flex items-center justify-center text-xl">
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 bg-yellow-accent/20 rounded-xl flex items-center justify-center text-xl">
                 {product.category && categoryIcons[product.category] && (
-                  <img src={categoryIcons[product.category]} className="w-6 h-6" alt={product.category} />
+                  <img src={categoryIcons[product.category]} className="w-5 h-5" alt={product.category} />
                 )}
               </div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                 {product.category} Collection
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-2 font-serif">{product.name}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif">{product.name}</h2>
 
             {/* Price Row */}
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex items-center gap-4 mt-2">
               {discount?.hasDiscount ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
-                  <span className="text-lg text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
+                  <span className="text-2xl sm:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
+                  <span className="text-base text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
                 </div>
               ) : (
-                <span className="text-3xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
+                <span className="text-2xl sm:text-3xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
               )}
             </div>
           </div>
 
           {/* Description */}
           {product.description && (
-            <div className="mb-8">
-              <p className="text-gray-500 leading-relaxed font-medium">
+            <div className="mb-4">
+              <p className="text-gray-500 leading-relaxed font-medium text-sm sm:text-base">
                 {product.description}
               </p>
             </div>
           )}
 
           {/* Specs Chips */}
-          <div className="flex flex-wrap gap-2 mb-8">
+          <div className="flex flex-wrap gap-2 mb-4">
             {getDetailChips(product).map(chip => (
-              <div key={chip.key} className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-full text-[10px] font-bold text-gray-500 tracking-wider">
+              <div key={chip.key} className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-[9px] font-bold text-gray-500 tracking-wider">
                 {chip.label}
               </div>
             ))}
@@ -171,19 +157,19 @@ export default function ProductQuickView({ product, onClose }) {
 
           {/* Bulk Pricing Tiers */}
           {isBulk && product.bulkPricingTiers?.length > 0 && (
-            <div className="mb-8 p-6 bg-yellow-accent/5 rounded-[24px] border border-yellow-accent/10">
-              <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] mb-4">Bulk Buy Savings</h4>
-              <div className="space-y-3">
+            <div className="mb-5 p-4 bg-yellow-accent/5 rounded-[24px] border border-yellow-accent/10">
+              <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em] mb-3">Bulk Buy Savings</h4>
+              <div className="space-y-2">
                 {product.bulkPricingTiers.map((tier, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 border-b border-yellow-accent/10 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-yellow-accent shadow-sm border border-yellow-accent/20">
-                        {tier.minQty}+
+                  <div key={idx} className="flex items-center justify-between py-1.5 border-b border-yellow-accent/10 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[9px] font-black text-yellow-accent shadow-sm border border-yellow-accent/20">
+                        {tier.minQty}
                       </span>
-                      <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Pieces</span>
+                      <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Pieces</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black text-gray-900">₹{tier.pricePerPc}/pc</p>
+                      <p className="text-xs font-black text-gray-900">₹{tier.pricePerPc}/pc</p>
                     </div>
                   </div>
                 ))}
@@ -192,7 +178,7 @@ export default function ProductQuickView({ product, onClose }) {
           )}
 
           {/* Cart Interaction */}
-          <div className="mt-auto pt-4 sm:pt-8 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4">
+          <div className="mt-auto pt-4 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4">
             {/* Quantity Controls */}
             <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[110px] sm:w-auto h-[48px] sm:h-[56px] sm:min-w-[140px]">
               <button
@@ -228,7 +214,25 @@ export default function ProductQuickView({ product, onClose }) {
         </div>
       </div>
 
-      <style jsx>{`
+      {/* Zoom Overlay (Lightbox) - Outside transformed container to ensure true fullscreen */}
+      {isZoomed && (
+        <div
+          className="fixed inset-0 z-[1100] bg-black/95 flex items-center justify-center p-4 animate-fadeIn cursor-zoom-out"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsZoomed(false);
+          }}
+        >
+          <img
+            src={getImageSrc(product.imageUrl || product.image)}
+            alt={product.name}
+            className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp"
+          />
+          <p className="absolute bottom-10 text-white/60 text-xs font-medium tracking-widest uppercase">Click anywhere to exit</p>
+        </div>
+      )}
+
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }

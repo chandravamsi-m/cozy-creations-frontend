@@ -9,7 +9,7 @@ import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useLocation } from "react-router-dom";
 
 // Cloudinary hero image
-const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176386/products-hero-bg_m2tljm.webp";
+const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307257/image_5_ympux0.webp";
 
 import FlowerIcon from "../../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../../assets/svgs/animal-icon.svg";

@@ -15,7 +15,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { useProducts } from "../../contexts/ProductsContext";
 
 // Cloudinary hero image
-const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176496/contactus-hero-bg_z88fyh.webp";
+const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307253/image_3_i18muy.webp";
 
 const COLLECTIONS = [
   { label: "Flower Collection", value: "flower" },

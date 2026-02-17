@@ -64,7 +64,7 @@ export default function Navbar({
   }, [user]);
 
   const navLinkClass = ({ isActive }) =>
-    `hover:text-yellow-accent transition-colors ${isActive ? "text-yellow-accent drop-shadow-[0_0_10px_rgba(250,204,21,0.45)]" : ""
+    `hover:text-yellow-accent transition-colors ${isActive ? "text-yellow-accent" : ""
     }`;
 
   return (
@@ -132,7 +132,7 @@ export default function Navbar({
                   onClick={() => setDesktopProfileOpen((prev) => !prev)}
                   className="flex items-center gap-2 text-white text-xs hover:text-yellow-accent transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-full bg-yellow-accent flex items-center justify-center text-black font-semibold">
+                  <div className="w-7 h-7 rounded-full bg-white/20 border border-white/10 flex items-center justify-center text-white font-semibold">
                     {(user.displayName || user.email).charAt(0).toUpperCase()}
                   </div>
                   <span className="max-w-[90px] truncate">{firstName || "Account"}</span>
@@ -252,7 +252,7 @@ export default function Navbar({
                 className="w-full flex items-center justify-between py-2 px-1 hover:text-yellow-accent"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-yellow-accent flex items-center justify-center text-black font-semibold">
+                  <div className="w-7 h-7 rounded-full bg-white/20 border border-white/10 flex items-center justify-center text-white font-semibold">
                     {(user.displayName || user.email).charAt(0).toUpperCase()}
                   </div>
                   <span className="max-w-[140px] truncate">{firstName || "Account"}</span>

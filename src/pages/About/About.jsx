@@ -12,10 +12,9 @@ import collection5 from '../../assets/images/collection-5.webp';
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 
 // Cloudinary hero image
-const ABOUT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176694/about-hero-bg_wyfk2x.webp";
+const ABOUT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307254/image_6_dal1ii.webp";
 
 export default function About() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const stickyNavRef = useRef(null);
   const afterHeroRef = useRef(null);
   const journeySectionRef = useRef(null);
@@ -67,8 +66,7 @@ export default function About() {
 
   return (
     <div className="w-full bg-white font-montserrat">
-      {/* Navbar */}
-      <Navbar stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      {/* Navbar is rendered by MainLayout */}
 
       {/* Add padding top to account for fixed navbar */}
       <div className="pt-0">
