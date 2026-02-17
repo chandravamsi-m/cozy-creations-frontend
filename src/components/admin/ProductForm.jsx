@@ -34,19 +34,6 @@ const ProductForm = ({
       />
     </div>
 
-    {/* Product Description */}
-    <div className="space-y-1">
-      <label htmlFor="product-description" className="text-sm font-medium text-gray-800">
-        Description <span className="text-gray-500 text-xs">(optional)</span>
-      </label>
-      <textarea
-        id="product-description"
-        value={product.description || ""}
-        onChange={(e) => updateField("description", e.target.value)}
-        placeholder="Tell the story of this candle..."
-        className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none min-h-[80px] text-sm resize-none"
-      />
-    </div>
 
     {/* Category */}
     <div className="space-y-1">

@@ -125,6 +125,14 @@ export default function Navbar({
 
           {/* RIGHT SIDE BUTTONS */}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+            {/* Nav Shop Now Link (Secondary CTA - Hidden on Home Hero) */}
+            <button
+              onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
+              className="nav-shop-now hidden sm:inline-flex border border-white/30 hover:bg-white hover:text-black text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 mr-1"
+            >
+              Shop Now
+            </button>
+
             {/* DESKTOP PROFILE DROPDOWN */}
             {user ? (
               <div className="relative hidden md:block" ref={desktopDropdownRef}>
@@ -163,6 +171,7 @@ export default function Navbar({
                       <button
                         onClick={() => {
                           logoutUser();
+                          navigate("/");
                           setDesktopProfileOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -181,6 +190,14 @@ export default function Navbar({
                 Login
               </button>
             )}
+
+            {/* Mobile Shop Now (Smaller version next to cart) */}
+            <button
+              onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
+              className="nav-shop-now sm:hidden flex items-center justify-center border border-white/30 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition-all active:scale-95 mr-1"
+            >
+              Shop
+            </button>
 
             {/* CART BUTTON (Visible on both Mobile & Desktop) */}
             <button
@@ -290,6 +307,7 @@ export default function Navbar({
                   <button
                     onClick={() => {
                       logoutUser();
+                      navigate("/");
                       setMenuOpen(false);
                       setMobileProfileOpen(false);
                     }}

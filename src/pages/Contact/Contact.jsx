@@ -317,20 +317,21 @@ export default function ContactUs() {
             className={`max-w-3xl transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            <div className="inline-block mb-4">
-              <span className="text-yellow-accent font-semibold text-xs sm:text-sm tracking-widest uppercase bg-yellow-accent/10 px-4 py-2 rounded-full border border-yellow-accent/30">
-                Get In Touch
-              </span>
-            </div>
-            <h1 className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight leading-tight mb-6">
+            <p
+              className={`text-white font-semibold text-xs uppercase tracking-wider mb-4 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                }`}
+            >
+              Get In Touch With Us
+            </p>
+            <h1 className="text-white text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6">
               Let's Create Something
               <span className="block text-yellow-accent mt-2">Beautiful Together</span>
             </h1>
             <p
-              className={`text-white/90 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              className={`text-white/90 text-xs md:text-sm font-semibold leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
-              Have a bulk order, custom request, or a question? Share the details below.
+              Have a bulk order, custom request, or a question? Share the details below and we'll get back to you soon.
             </p>
           </div>
         </div>

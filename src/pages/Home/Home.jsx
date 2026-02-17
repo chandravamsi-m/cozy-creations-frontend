@@ -135,7 +135,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             className="w-full h-full object-cover object-top"
             loading="eager"
           />
-          <div className="absolute inset-0 bg-black/50"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/40"></div>
         </div>
 
         {/* Content Overlay */}

@@ -12,6 +12,7 @@ import LoginModal from "./components/LoginModal";
 import { CartProvider } from "./hooks/useCart";
 import { useAuth } from "./contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import { ToastProvider } from "./contexts/ToastContext";
 
@@ -177,10 +178,10 @@ function AppContent({
             <Route path="cart" element={<CartPage />} />
             {/* Checkout Route */}
             <Route path="/checkout" element={<Checkout />} />
-            {/* User Account Routes */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/my-orders" element={<MyOrders />} />
-            <Route path="/addresses" element={<SavedAddresses />} />
+            {/* User Account Routes - SECURED */}
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+            <Route path="/addresses" element={<ProtectedRoute><SavedAddresses /></ProtectedRoute>} />
 
 // Redundant Route Removed
             <Route path="*" element={<NotFound />} />

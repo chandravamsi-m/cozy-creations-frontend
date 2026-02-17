@@ -80,22 +80,28 @@ export default function About() {
               className="w-full h-full object-cover"
               loading="eager"
             />
-            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/40" />
           </div>
 
           {/* Content */}
-          <div className="relative z-10 h-1/2 flex flex-col justify-center px-2 pt-20 sm:pt-12 sm:px-4 md:px-[150px]">
-            <h1
-              className={`text-white text-2xl sm:text-3xl md:text-4xl font-normal uppercase mb-4 sm:mb-6 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+          <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-[150px]">
+            <p
+              className={`text-white font-semibold text-4xl md:text-6xl uppercase tracking-wider mb-4 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
-              about us
+              About Us
+            </p>
+            <h1
+              className={`text-yellow-accent text-2xl md:text-3xl font-bold leading-tight uppercase mb-6 transition-all duration-700 delay-100 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                }`}
+            >
+              Where Every Flame <br /> Feels Like Home
             </h1>
             <p
-              className={`text-white text-xs sm:text-sm md:text-base leading-5 max-w-full sm:max-w-[543px] capitalize transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              className={`text-white/90 text-md font-semibold leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
-              Cozy Creations is a handcrafted candle brand dedicated to creating premium soy candles, aroma-rich gift candles, and custom candle designs that bring warmth, beauty, and comfort into everyday spaces. Our mission is to offer candles that not only look stunning but also fill your home with soothing fragrances and peaceful energy.
+              Cozy Creations crafts premium soy candles, aroma-rich gifts, and custom designs that elevate everyday spaces with soothing fragrance and timeless beauty.
             </p>
           </div>
 

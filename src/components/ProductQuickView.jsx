@@ -125,26 +125,27 @@ export default function ProductQuickView({ product, onClose }) {
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif">{product.name}</h2>
 
             {/* Price Row */}
-            <div className="flex items-center gap-4 mt-2">
-              {discount?.hasDiscount ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl sm:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
-                  <span className="text-base text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="flex items-center gap-4">
+                {discount?.hasDiscount ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl md:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
+                    <span className="text-base text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
+                  </div>
+                ) : (
+                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
+                )}
+              </div>
+
+              {discount?.hasDiscount && (
+                <div className="inline-flex items-center gap-2 bg-yellow-accent/20 border border-yellow-accent/30 text-yellow-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit animate-pulse">
+                  <span className="w-1.5 h-1.5 bg-yellow-accent rounded-full animate-ping" />
+                  Offer Applied
                 </div>
-              ) : (
-                <span className="text-2xl sm:text-3xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
               )}
             </div>
           </div>
 
-          {/* Description */}
-          {product.description && (
-            <div className="mb-4">
-              <p className="text-gray-500 leading-relaxed font-medium text-sm sm:text-base">
-                {product.description}
-              </p>
-            </div>
-          )}
 
           {/* Specs Chips */}
           <div className="flex flex-wrap gap-2 mb-4">
@@ -163,7 +164,7 @@ export default function ProductQuickView({ product, onClose }) {
                 {product.bulkPricingTiers.map((tier, idx) => (
                   <div key={idx} className="flex items-center justify-between py-1.5 border-b border-yellow-accent/10 last:border-0">
                     <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[9px] font-black text-yellow-accent shadow-sm border border-yellow-accent/20">
+                      <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[12px] font-bold text-yellow-accent shadow-sm border border-yellow-accent/20">
                         {tier.minQty}
                       </span>
                       <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Pieces</span>

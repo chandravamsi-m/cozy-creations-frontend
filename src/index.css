@@ -25,6 +25,10 @@ html {
   box-shadow: none !important;
 }
 
+.cc-nav-hero .nav-shop-now {
+  display: none !important;
+}
+
 .cc-nav-solid {
   background: rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(12px) !important;

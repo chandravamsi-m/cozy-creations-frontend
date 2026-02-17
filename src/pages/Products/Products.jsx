@@ -291,18 +291,24 @@ export default function ProductsPage() {
           alt="Products Hero Background"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/40" />
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-[150px]">
           <div
             ref={heroContentRef}
-            className={`max-w-[461px] flex flex-col gap-6 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+            className={`max-w-2xl flex flex-col transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            <h1 className="text-white text-5xl font-normal leading-tight">
-              Lighting Moments, One Candle at a Time
+            <p
+              className={`text-white font-semibold text-xs uppercase tracking-wider mb-4 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                }`}
+            >
+              Find Your Perfect Glow
+            </p>
+            <h1 className="text-white text-4xl md:text-6xl font-bold leading-tight mb-6 transition-all duration-700 delay-100">
+              Lighting Moments, <br /> One Candle at a Time
             </h1>
             <p
-              className={`text-white text-lg transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              className={`text-white/90 text-xs md:text-sm font-semibold leading-relaxed max-w-lg mb-8 transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
               Browse our lovingly made collections designed to uplift your space, calm your senses, and make gifting truly special.

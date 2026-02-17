@@ -187,15 +187,11 @@ export default function ProductCard({ product, onOpenQuickView }) {
           }
         `}
       </style>
-      {/* TAGS */}
-      {product.onSale && (
-        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-10">
-          SALE
-        </div>
-      )}
-      {product.limitedEdition && !product.onSale && (
-        <div className="absolute top-2 left-2 bg-yellow-accent text-black text-xs px-2 py-1 rounded-full z-10">
-          Limited Edition
+
+      {/* OFFER BANNER (Top Right) */}
+      {discount?.hasDiscount && (
+        <div className="absolute top-2 right-2 bg-yellow-accent text-black text-[8px] sm:text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md z-20 shadow-lg border border-yellow-accent/50 animate-pulse">
+          Offer
         </div>
       )}
 
