@@ -64,7 +64,7 @@ export async function sendOrderConfirmation(email, orderData) {
  * @param {string} status - New status (e.g., 'shipped')
  * @param {string} name - Recipient name
  */
-export async function sendOrderStatusUpdate(email, orderId, status, name) {
+export async function sendOrderStatusUpdate(email, orderId, status, name, expectedDeliveryDate) {
   if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
   const url = `${BACKEND_URL}/send-status-update`;
 
@@ -72,7 +72,7 @@ export async function sendOrderStatusUpdate(email, orderId, status, name) {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, orderId, status, name }),
+      body: JSON.stringify({ email, orderId, status, name, expectedDeliveryDate }),
     });
     return await res.json();
   } catch (err) {

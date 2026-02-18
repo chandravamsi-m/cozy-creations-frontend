@@ -16,6 +16,7 @@ export default function AdminOrders() {
   const [expandedId, setExpandedId] = useState(null);
   const [savingId, setSavingId] = useState(null);
   const [statusDraft, setStatusDraft] = useState({});
+  const [deliveryDateDraft, setDeliveryDateDraft] = useState({});
 
   const scrollToTop = () => {
     setTimeout(() => {
@@ -89,10 +90,11 @@ export default function AdminOrders() {
     setSavingId(orderId);
     setMsg("");
     try {
-      await updateAdminOrderStatus(orderId, nextStatus, idToken);
+      const deliveryDate = deliveryDateDraft[orderId] || order.expectedDeliveryDate;
+      await updateAdminOrderStatus(orderId, nextStatus, idToken, deliveryDate);
       // Update local state instantly so the badge updates without refresh
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus, expectedDeliveryDate: deliveryDate } : o))
       );
       showToast("Status updated successfully");
       setExpandedId(null); // Close the details view on success
@@ -114,7 +116,7 @@ export default function AdminOrders() {
       }
 
       if (targetEmail) {
-        sendOrderStatusUpdate(targetEmail, orderId, nextStatus, order.shippingAddress?.fullName || "Customer");
+        sendOrderStatusUpdate(targetEmail, orderId, nextStatus, order.shippingAddress?.fullName || "Customer", deliveryDate);
       } else {
         console.warn(`AdminOrders: Could not find any recipient email for order ${orderId}.`);
       }
@@ -182,6 +184,12 @@ export default function AdminOrders() {
               </span>
             </div>
 
+            {order.expectedDeliveryDate && (
+              <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                <span>📅 Expected: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</span>
+              </p>
+            )}
+
             <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
               <button
                 onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
@@ -195,6 +203,20 @@ export default function AdminOrders() {
               <div className="mt-4 border-t pt-4 space-y-4 bg-gray-50 rounded-lg p-4">
                 {/* STATUS UPDATE */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                  <div className="w-full sm:w-72">
+                    <label className="block text-sm font-medium text-gray-800 mb-1">
+                      Expected Delivery Date
+                    </label>
+                    <input
+                      type="date"
+                      value={deliveryDateDraft[order.id] || order.expectedDeliveryDate || ""}
+                      onChange={(e) =>
+                        setDeliveryDateDraft((prev) => ({ ...prev, [order.id]: e.target.value }))
+                      }
+                      className="border p-2 rounded w-full bg-white text-sm"
+                    />
+                  </div>
+
                   <div className="w-full sm:w-72">
                     <label className="block text-sm font-medium text-gray-800 mb-1">
                       Update Status

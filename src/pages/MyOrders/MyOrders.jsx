@@ -240,6 +240,11 @@ export default function MyOrders() {
                                 </p>
                               );
                             })()}
+                            {order.expectedDeliveryDate && (
+                              <p className="text-xs text-emerald-600 font-bold mt-1 flex items-center gap-1">
+                                <span>📅 Estimated Arrival: {formatDate(order.expectedDeliveryDate)}</span>
+                              </p>
+                            )}
                           </div>
                         </div>
 

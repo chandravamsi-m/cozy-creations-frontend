@@ -27,14 +27,14 @@ export async function getAdminOrderDetails(orderId, idToken) {
   return res.json();
 }
 
-export async function updateAdminOrderStatus(orderId, status, idToken) {
+export async function updateAdminOrderStatus(orderId, status, idToken, expectedDeliveryDate) {
   const res = await fetch(`${BACKEND_URL}/admin/orders/${orderId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${idToken}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, expectedDeliveryDate }),
   });
 
   if (!res.ok) throw new Error("Failed to update order status");
