@@ -39,7 +39,12 @@ const COLOR_PRESETS = [
 ];
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeItem, clearCart } = useCart();
+  const {
+    cart, updateQuantity, removeItem, clearCart,
+    deliveryFee, finalTotal, deliveryConfig,
+    totalPrice, totalDiscountAmount, discountedTotal,
+    itemDiscounts, loadingDiscounts
+  } = useCart();
   const navigate = useNavigate();
   const { user, idToken } = useAuth();
   const { openLoginModal } = useLoginModal();
@@ -59,54 +64,7 @@ export default function CartPage() {
     colourHex: "",
     colourName: "",
   });
-  const [itemDiscounts, setItemDiscounts] = React.useState({});
-  const [loadingDiscounts, setLoadingDiscounts] = React.useState(true);
-
-  React.useEffect(() => {
-    try {
-      localStorage.setItem("cc_cart_customizations_v1", JSON.stringify(customizations));
-    } catch {
-      // ignore storage write failures
-    }
-  }, [customizations]);
-
-  // Fetch discounts for all items in cart
-  React.useEffect(() => {
-    const fetchDiscounts = async () => {
-      setLoadingDiscounts(true);
-      const discounts = {};
-
-      try {
-        await Promise.all(
-          cart.map(async (item) => {
-            // Only fetch for non-bulk products (assuming bulk products handle their own separate pricing logic)
-            // We'll check if it already has a bulk price/isBulk flag if it was in the cart
-            // For now, let's treat cart items that have normal price as candidates for offer discounts
-            const result = await calculateProductDiscount({
-              id: item.productId,
-              price: item.price,
-              category: item.category // ensure category is passed if available in cart item
-            });
-            if (result.hasDiscount) {
-              discounts[item.productId] = result;
-            }
-          })
-        );
-        setItemDiscounts(discounts);
-      } catch (err) {
-        console.error("Error fetching cart discounts:", err);
-      } finally {
-        setLoadingDiscounts(false);
-      }
-    };
-
-    if (cart.length > 0) {
-      fetchDiscounts();
-    } else {
-      setLoadingDiscounts(false);
-    }
-  }, [cart]);
-
+  // calculate customizations logic
   const openCustomize = (item) => {
     const saved = customizations[item.productId] || {};
     setDraft({
@@ -136,23 +94,13 @@ export default function CartPage() {
     closeCustomize();
   };
 
-  // calculate totals
-  const totalOriginalAmount = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  const totalDiscountAmount = cart.reduce((sum, item) => {
-    const discount = itemDiscounts[item.productId];
-    if (discount && discount.hasDiscount) {
-      return sum + (discount.savedAmount * item.quantity);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("cc_cart_customizations_v1", JSON.stringify(customizations));
+    } catch {
+      // ignore storage write failures
     }
-    return sum;
-  }, 0);
-
-  const finalTotalAmount = totalOriginalAmount - totalDiscountAmount;
-
-  // handlers mapped correctly to your hook functions
+  }, [customizations]);
   const decreaseQuantity = (id) => {
     const item = cart.find((i) => i.productId === id);
     if (!item) return;
@@ -229,6 +177,7 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Cart items */}
             <div className="lg:col-span-2 space-y-4">
+
               {cart.map((item) => (
                 <div
                   key={item.productId}
@@ -373,46 +322,90 @@ export default function CartPage() {
 
             {/* Summary */}
             <aside className="lg:col-span-1">
-              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm lg:sticky lg:top-28">
-                <h3 className="text-lg font-semibold text-gray-900">Order summary</h3>
-                <div className="mt-4 space-y-3 text-sm">
-                  <div className="flex justify-between text-gray-700">
-                    <span>Items</span>
-                    <span className="font-medium">
-                      {cart.reduce((sum, i) => sum + i.quantity, 0)}
-                    </span>
+              <div className="space-y-4 lg:sticky lg:top-28">
+                {/* Delivery Progress (Minimal) */}
+                {deliveryConfig.isActive && deliveryConfig.freeDeliveryThreshold > 0 && (
+                  <div className={`p-4 rounded-2xl border transition-all duration-300 ${totalPrice >= deliveryConfig.freeDeliveryThreshold
+                    ? "bg-green-50 border-green-100"
+                    : "bg-yellow-50/30 border-yellow-100/50"
+                    }`}>
+                    {totalPrice >= deliveryConfig.freeDeliveryThreshold ? (
+                      <div className="flex items-center gap-2 text-green-700">
+                        <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] shadow-sm">✓</div>
+                        <span className="text-xs font-bold uppercase tracking-wider">Free Delivery Unlocked</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <div className="flex justify-between items-end">
+                          <p className="text-[11px] text-gray-600 font-medium leading-tight">
+                            Add <span className="text-black font-bold">₹{(deliveryConfig.freeDeliveryThreshold - totalPrice).toLocaleString()}</span> more<br />for <span className="text-yellow-600 font-bold underline decoration-yellow-300/50 underline-offset-2">Free Delivery</span>
+                          </p>
+                          <span className="text-[10px] font-bold text-gray-400 bg-white px-1.5 py-0.5 rounded-md border border-gray-100 shadow-sm">
+                            {Math.round((totalPrice / deliveryConfig.freeDeliveryThreshold) * 100)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-white/60 rounded-full h-[5px] overflow-hidden border border-gray-100 shadow-inner">
+                          <div
+                            className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-700 ease-out rounded-full"
+                            style={{ width: `${Math.min(100, (totalPrice / deliveryConfig.freeDeliveryThreshold) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {deliveryConfig.message && (
+                      <div className="mt-2.5 pt-2.5 border-t border-black/5">
+                        <p className="text-[10px] text-gray-500 italic leading-relaxed">
+                          "{deliveryConfig.message}"
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Subtotal</span>
-                    <span className="font-medium">₹{totalOriginalAmount.toLocaleString()}</span>
-                  </div>
-                  {totalDiscountAmount > 0 && (
-                    <div className="flex justify-between text-green-600 font-medium">
-                      <span>Offers Discount</span>
-                      <span>-₹{totalDiscountAmount.toLocaleString()}</span>
+                )}
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-50 pb-3 mb-4">Order summary</h3>
+                  <div className="mt-4 space-y-3 text-sm">
+                    <div className="flex justify-between text-gray-700">
+                      <span>Subtotal</span>
+                      <span className="font-medium">₹{totalPrice.toLocaleString()}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-gray-500">
-                    <span>Shipping</span>
-                    <span>Calculated at checkout</span>
+                    {totalDiscountAmount > 0 && (
+                      <div className="flex justify-between text-green-600 font-medium">
+                        <span>Offers Discount</span>
+                        <span>-₹{totalDiscountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-gray-700">
+                      <span>Shipping</span>
+                      {deliveryConfig.isActive ? (
+                        deliveryFee === 0 ? (
+                          <span className="font-bold text-green-600">FREE</span>
+                        ) : (
+                          <span className="font-medium">₹{deliveryFee.toLocaleString()}</span>
+                        )
+                      ) : (
+                        <span className="text-green-600 font-medium">Free</span>
+                      )}
+                    </div>
+                    <div className="border-t pt-3 flex justify-between text-base font-semibold text-gray-900">
+                      <span>Total</span>
+                      <span>₹{finalTotal.toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div className="border-t pt-3 flex justify-between text-base font-semibold text-gray-900">
-                    <span>Total</span>
-                    <span>₹{finalTotalAmount.toLocaleString()}</span>
-                  </div>
+
+                  <button
+                    onClick={handleCheckout}
+                    disabled={cart.length === 0}
+                    className="mt-5 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Proceed to Checkout →
+                  </button>
+
+                  <p className="mt-3 text-xs text-gray-500">
+                    Secure checkout. You can review your order before placing it.
+                  </p>
                 </div>
-
-                <button
-                  onClick={handleCheckout}
-                  disabled={cart.length === 0}
-                  className="mt-5 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  Proceed to Checkout →
-                </button>
-
-                <p className="mt-3 text-xs text-gray-500">
-                  Secure checkout. You can review your order before placing it.
-                </p>
               </div>
             </aside>
           </div>

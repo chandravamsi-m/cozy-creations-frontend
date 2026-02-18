@@ -13,6 +13,7 @@ import { CartProvider } from "./hooks/useCart";
 import { useAuth } from "./contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OfferBanner from "./components/OfferBanner";
 
 import { ToastProvider } from "./contexts/ToastContext";
 
@@ -34,6 +35,7 @@ const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
+const AdminDelivery = lazy(() => import("./pages/admin/AdminDelivery"));
 const Profile = lazy(() => import("./pages/Profile/Profile"));
 const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
 const SavedAddresses = lazy(() => import("./pages/SavedAddresses/SavedAddresses"));
@@ -150,6 +152,7 @@ function AppContent({
           </div>
         }
       >
+        {location.pathname === "/" && <OfferBanner />}
         <Routes>
           <Route
             path="/"
@@ -195,6 +198,7 @@ function AppContent({
             <Route path="orders" element={<AdminOrders />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="offers" element={<AdminOffers />} />
+            <Route path="delivery" element={<AdminDelivery />} />
           </Route>
         </Routes>
       </Suspense>

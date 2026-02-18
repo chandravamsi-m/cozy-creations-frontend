@@ -10,17 +10,12 @@ import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimiz
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, clearCart } = useCart();
+  const { cart, clearCart, deliveryFee, finalTotal, totalPrice, totalDiscountAmount, discountedTotal } = useCart();
   const { user, idToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [completedOrderId, setCompletedOrderId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("online"); // 'online' or 'cod'
-
-  // Address State
-  const [savedAddresses, setSavedAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [showManualForm, setShowManualForm] = useState(false);
 
   const [address, setAddress] = useState({
     fullName: "",
@@ -30,8 +25,11 @@ export default function Checkout() {
     state: "",
     pincode: "",
   });
-
   const [errors, setErrors] = useState({});
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
   // Redirect if cart empty or not logged in (double check)
   React.useEffect(() => {
@@ -42,71 +40,135 @@ export default function Checkout() {
     }
   }, [user, cart, navigate, isOrderComplete]);
 
-  // Fetch saved addresses on mount
+  // Fetch saved addresses
   React.useEffect(() => {
-    const fetchSavedAddresses = async () => {
-      if (user?.uid) {
-        try {
-          const userRef = doc(db, "users", user.uid);
-          const snap = await getDoc(userRef);
+    const fetchAddresses = async () => {
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          const addresses = data.addresses || [];
+          setSavedAddresses(addresses);
 
-          if (snap.exists()) {
-            const data = snap.data();
-            const primaryAddress = data.shippingAddress;
-            const multiAddresses = data.addresses || [];
-
-            setSavedAddresses(multiAddresses);
-
-            // Logic to pick initial selection
-            if (multiAddresses.length > 0) {
-              const defaultAddr = multiAddresses.find(a => a.isDefault) || multiAddresses[0];
-              setSelectedAddressId(defaultAddr.id);
-              setShowManualForm(false);
-            } else if (primaryAddress) {
-              // Fallback for legacy data
-              setAddress(primaryAddress);
-              setShowManualForm(true);
-            } else {
-              if (user.displayName && !address.fullName) {
-                setAddress((prev) => ({ ...prev, fullName: user.displayName }));
-              }
-              setShowManualForm(true);
-            }
+          // Default selection logic
+          if (addresses.length > 0) {
+            const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+            setSelectedAddressId(defaultAddr.id);
+            setShowManualForm(false);
+          } else {
+            setShowManualForm(true);
           }
-        } catch (err) {
-          console.error("Failed to fetch addresses:", err);
+        } else {
+          setShowManualForm(true);
         }
+      } catch (err) {
+        console.error("Error fetching addresses:", err);
+        setShowManualForm(true);
       }
     };
-    fetchSavedAddresses();
+    fetchAddresses();
   }, [user]);
 
   const updateField = (field, value) => {
     setAddress((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleToggleForm = () => {
+    if (showManualForm) {
+      // Cancel
+      setShowManualForm(false);
+      setEditingAddressId(null);
+      setAddress({
+        fullName: "",
+        phone: "",
+        street: "",
+        city: "",
+        state: "",
+        pincode: "",
+      });
+      setErrors({});
+      if (savedAddresses.length > 0) {
+        const defaultAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
+        setSelectedAddressId(defaultAddr.id);
+      }
+    } else {
+      // Add New
+      setShowManualForm(true);
+      setSelectedAddressId(null);
+      setEditingAddressId(null);
+      setAddress({
+        fullName: "",
+        phone: "",
+        street: "",
+        city: "",
+        state: "",
+        pincode: "",
+      });
+      setErrors({});
+    }
+  };
+
+  const handleEditAddress = (addr) => {
+    setAddress({
+      fullName: addr.fullName,
+      phone: addr.phone,
+      street: addr.street,
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode,
+    });
+    setErrors({});
+    setEditingAddressId(addr.id);
+    setShowManualForm(true);
+    setSelectedAddressId(null);
+  };
+
+  const handleRemoveAddress = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to remove this address?")) return;
+
+    try {
+      const updatedAddresses = savedAddresses.filter(a => a.id !== id);
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, { addresses: updatedAddresses }, { merge: true });
+      setSavedAddresses(updatedAddresses);
+      if (selectedAddressId === id) {
+        if (updatedAddresses.length > 0) {
+          setSelectedAddressId(updatedAddresses[0].id);
+        } else {
+          setShowManualForm(true);
+        }
+      }
+    } catch (err) {
+      console.error("Error removing address:", err);
+      alert("Failed to remove address.");
+    }
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!address.fullName.trim()) newErrors.fullName = "Name is required";
-    if (!address.phone.trim()) newErrors.phone = "Phone is required";
-    else if (!/^\d{10}$/.test(address.phone.replace(/\D/g, "")))
-      newErrors.phone = "Enter a valid 10-digit phone";
-    if (!address.street.trim()) newErrors.street = "Address is required";
-    if (!address.city.trim()) newErrors.city = "City is required";
-    if (!address.state.trim()) newErrors.state = "State is required";
-    if (!address.pincode.trim()) newErrors.pincode = "Pincode is required";
+    if (!address.fullName.trim()) newErrors.fullName = "Required";
+    if (!address.phone.trim()) newErrors.phone = "Required";
+    else if (address.phone.length < 10) newErrors.phone = "Invalid phone number";
+    if (!address.street.trim()) newErrors.street = "Required";
+    if (!address.city.trim()) newErrors.city = "Required";
+    if (!address.state.trim()) newErrors.state = "Required";
+    if (!address.pincode.trim()) newErrors.pincode = "Required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const totalAmount = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
   const handlePlaceOrder = async () => {
+
     // Determine which address to use
     let finalAddress = null;
     if (showManualForm) {
@@ -146,7 +208,8 @@ export default function Checkout() {
           image: item.thumbnailUrl || item.imageUrl,
           customization: customizations[item.productId] || null,
         })),
-        total: totalAmount,
+        deliveryFee: deliveryFee,
+        total: finalTotal,
         shippingAddress: finalAddress,
         customerName: finalAddress.fullName,
         userEmail: user.email,
@@ -177,16 +240,25 @@ export default function Checkout() {
           const userRef = doc(db, "users", user.uid);
 
           if (showManualForm) {
-            // Add NEW address to the array
-            const newAddress = {
-              ...address,
-              id: Date.now().toString(),
-              type: "Home", // Default for manual entry
-              isDefault: savedAddresses.length === 0
-            };
+            let updatedAddresses;
+            if (editingAddressId) {
+              // Update EXISTING address
+              updatedAddresses = savedAddresses.map(a =>
+                a.id === editingAddressId ? { ...address, id: a.id, type: a.type, isDefault: a.isDefault } : a
+              );
+            } else {
+              // Add NEW address
+              const newAddress = {
+                ...address,
+                id: Date.now().toString(),
+                type: "Home",
+                isDefault: savedAddresses.length === 0
+              };
+              updatedAddresses = [...savedAddresses, newAddress];
+            }
 
             await setDoc(userRef, {
-              addresses: [...savedAddresses, newAddress],
+              addresses: updatedAddresses,
               shippingAddress: address
             }, { merge: true });
           } else {
@@ -264,16 +336,23 @@ export default function Checkout() {
                 const userRef = doc(db, "users", user.uid);
 
                 if (showManualForm) {
-                  // Add NEW address to the array
-                  const newAddress = {
-                    ...address,
-                    id: Date.now().toString(),
-                    type: "Home",
-                    isDefault: savedAddresses.length === 0
-                  };
+                  let updatedAddresses;
+                  if (editingAddressId) {
+                    updatedAddresses = savedAddresses.map(a =>
+                      a.id === editingAddressId ? { ...address, id: a.id, type: a.type, isDefault: a.isDefault } : a
+                    );
+                  } else {
+                    const newAddress = {
+                      ...address,
+                      id: Date.now().toString(),
+                      type: "Home",
+                      isDefault: savedAddresses.length === 0
+                    };
+                    updatedAddresses = [...savedAddresses, newAddress];
+                  }
 
                   await setDoc(userRef, {
-                    addresses: [...savedAddresses, newAddress],
+                    addresses: updatedAddresses,
                     shippingAddress: address
                   }, { merge: true });
                 } else {
@@ -327,247 +406,371 @@ export default function Checkout() {
   };
 
   return (
-    <main className="w-full bg-[#FBFAF9] min-h-screen px-4 py-10 pt-24 font-montserrat">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8">Checkout</h1>
+    <main className="w-full bg-[#FBFAF9] min-h-screen font-montserrat pb-20 pt-16 md:pt-20">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Page Title & Back link */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900 uppercase">Checkout</h1>
+          <button
+            onClick={() => navigate("/cart")}
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors group"
+          >
+            <span className="group-hover:-translate-x-0.5 transition-transform font-black">←</span>
+            BACK TO CART
+          </button>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 xl:gap-12">
+          {/* LEFT COLUMN: DETAILS (8/12) */}
+          <div className="lg:col-span-8 space-y-4 animate-fadeIn">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT: ADDRESS FORM */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">Shipping Address</h2>
+            {/* 1. SHIPPING ADDRESS */}
+            <section className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Select Shipping Address</h2>
+                </div>
                 {savedAddresses.length > 0 && (
                   <button
-                    onClick={() => {
-                      setShowManualForm(!showManualForm);
-                      if (!showManualForm) setSelectedAddressId(null);
-                      else if (savedAddresses.length > 0) setSelectedAddressId(savedAddresses[0].id);
-                    }}
-                    className="text-xs font-bold text-yellow-600 hover:text-yellow-700 underline"
+                    onClick={handleToggleForm}
+                    className={`text-xs font-bold transition-all hover:underline ${showManualForm ? "text-red-600" : "text-yellow-600"
+                      }`}
                   >
-                    {showManualForm ? "Use Saved Address" : "+ Add New Address"}
+                    {showManualForm ? "Cancel" : "+ Add New Address"}
                   </button>
                 )}
               </div>
 
               {!showManualForm && savedAddresses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {savedAddresses.map((addr) => (
                     <div
                       key={addr.id}
                       onClick={() => setSelectedAddressId(addr.id)}
-                      className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${selectedAddressId === addr.id
-                        ? "border-yellow-accent bg-yellow-accent/5"
-                        : "border-gray-50 bg-white hover:border-gray-200"
+                      className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${selectedAddressId === addr.id
+                        ? "border-yellow-accent bg-yellow-accent/[0.03]"
+                        : "border-gray-100 bg-white hover:border-gray-300"
                         }`}
                     >
-                      {selectedAddressId === addr.id && (
-                        <div className="absolute top-3 right-3 w-5 h-5 bg-yellow-accent rounded-full flex items-center justify-center shadow-sm">
-                          <span className="text-black text-[10px] font-black">✓</span>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${selectedAddressId === addr.id ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400 group-hover:bg-gray-100"
+                            }`}>
+                            {addr.type === "Home" ? "🏠" : "💼"}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{addr.type || "Address"}</p>
+                            {addr.isDefault && <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-tighter">Default</span>}
+                          </div>
                         </div>
-                      )}
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">{addr.type === "Home" ? "🏠" : "💼"}</span>
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{addr.type}</span>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedAddressId === addr.id ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
+                          }`}>
+                          {selectedAddressId === addr.id && <div className="w-2 h-2 rounded-full bg-black"></div>}
+                        </div>
                       </div>
-                      <p className="font-bold text-gray-900 text-sm">{addr.fullName}</p>
-                      <p className="text-gray-500 text-xs mt-1 line-clamp-2">{addr.street}</p>
-                      <p className="text-gray-500 text-xs">{addr.city}, {addr.state} - {addr.pincode}</p>
+
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-gray-900">{addr.fullName}</p>
+                        <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                          {addr.street}<br />
+                          {addr.city}, {addr.state} {addr.pincode}<br />
+                          India
+                        </p>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditAddress(addr);
+                          }}
+                          className="text-[11px] font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => handleRemoveAddress(e, addr.id)}
+                          className="text-[11px] font-bold text-gray-400 hover:text-red-600 transition-colors uppercase tracking-widest"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Full Name</label>
-                    <input
-                      value={address.fullName}
-                      onChange={(e) => updateField("fullName", e.target.value)}
-                      className="w-full border p-2 rounded-lg"
-                      placeholder="John Doe"
-                    />
-                    {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName}</p>}
+                <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm ring-1 ring-black/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg">{editingAddressId ? "Edit Address" : "New Shipping Address"}</h3>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
+                      <input
+                        value={address.fullName}
+                        onChange={(e) => updateField("fullName", e.target.value)}
+                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.fullName ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
+                        placeholder="John Doe"
+                      />
+                      {errors.fullName && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.fullName}</p>}
+                    </div>
 
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Phone Number</label>
-                    <input
-                      value={address.phone}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        if (val.length <= 10) updateField("phone", val);
-                      }}
-                      type="tel"
-                      className="w-full border p-2 rounded-lg"
-                      placeholder="9876543210"
-                    />
-                    {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
-                  </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Phone Number</label>
+                      <input
+                        value={address.phone}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          if (val.length <= 10) updateField("phone", val);
+                        }}
+                        type="tel"
+                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.phone ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
+                        placeholder="9876543210"
+                      />
+                      {errors.phone && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.phone}</p>}
+                    </div>
 
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Address (House No, Building, Street)</label>
-                    <textarea
-                      value={address.street}
-                      onChange={(e) => updateField("street", e.target.value)}
-                      className="w-full border p-2 rounded-lg h-20 resize-none"
-                      placeholder="Flat 101, Galaxy Apts..."
-                    />
-                    {errors.street && <p className="text-red-500 text-xs">{errors.street}</p>}
-                  </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Street Address</label>
+                      <textarea
+                        value={address.street}
+                        onChange={(e) => updateField("street", e.target.value)}
+                        className={`w-full h-24 bg-gray-50 border rounded-xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all resize-none ${errors.street ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
+                        placeholder="Flat No, Building, Area"
+                      />
+                      {errors.street && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.street}</p>}
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">City</label>
-                    <input
-                      value={address.city}
-                      onChange={(e) => updateField("city", e.target.value)}
-                      className="w-full border p-2 rounded-lg"
-                      placeholder="Mumbai"
-                    />
-                    {errors.city && <p className="text-red-500 text-xs">{errors.city}</p>}
-                  </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">City</label>
+                      <input
+                        value={address.city}
+                        onChange={(e) => updateField("city", e.target.value)}
+                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.city ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
+                        placeholder="Mumbai"
+                      />
+                      {errors.city && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.city}</p>}
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">State</label>
-                    <input
-                      value={address.state}
-                      onChange={(e) => updateField("state", e.target.value)}
-                      className="w-full border p-2 rounded-lg"
-                      placeholder="Maharashtra"
-                    />
-                    {errors.state && <p className="text-red-500 text-xs">{errors.state}</p>}
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Pin Code</label>
-                    <input
-                      value={address.pincode}
-                      onChange={(e) => updateField("pincode", e.target.value)}
-                      className="w-full border p-2 rounded-lg"
-                      placeholder="400001"
-                    />
-                    {errors.pincode && <p className="text-red-500 text-xs">{errors.pincode}</p>}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Pin Code</label>
+                      <input
+                        value={address.pincode}
+                        onChange={(e) => updateField("pincode", e.target.value)}
+                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.pincode ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
+                        placeholder="400001"
+                      />
+                      {errors.pincode && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.pincode}</p>}
+                    </div>
                   </div>
                 </div>
               )}
-            </div>
+            </section>
+
+            <hr className="border-gray-100" />
+
+            {/* 2. PAYMENT METHOD */}
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Payment Method</h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div
+                  onClick={() => setPaymentMethod("online")}
+                  className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${paymentMethod === "online"
+                    ? "border-yellow-accent bg-yellow-accent/[0.03]"
+                    : "border-gray-100 bg-white hover:border-gray-300"
+                    }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "online" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
+                        }`}>
+                        💳
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          Online Payment
+                          {/* <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase">Razorpay</span> */}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Instant Confirmation</p>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "online" ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
+                      }`}>
+                      {paymentMethod === "online" && <div className="w-2 h-2 rounded-full bg-black"></div>}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                    Secure payment via Cards, UPI, Netbanking or Wallets. Easy and fast.
+                  </p>
+                </div>
+
+                <div
+                  onClick={() => setPaymentMethod("cod")}
+                  className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${paymentMethod === "cod"
+                    ? "border-yellow-accent bg-yellow-accent/[0.03]"
+                    : "border-gray-100 bg-white hover:border-gray-300"
+                    }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
+                        }`}>
+                        🚚
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">Cash on Delivery (COD)</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Pay at Doorstep</p>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "cod" ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
+                      }`}>
+                      {paymentMethod === "cod" && <div className="w-2 h-2 rounded-full bg-black"></div>}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                    Pay with cash when your order arrives at your doorstep.
+                  </p>
+                </div>
+              </div>
+            </section>
           </div>
 
-          {/* RIGHT: ORDER SUMMARY */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm sticky top-28">
-              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-              <div className="max-h-60 overflow-y-auto space-y-3 mb-4 pr-1">
+          {/* RIGHT COLUMN: ORDER SUMMARY (4/12) */}
+          <aside className="lg:col-span-4">
+            <div className="bg-white border border-gray-100 rounded-[1.5rem] p-4 shadow-2xl shadow-black/5 sticky top-28 space-y-4 animate-fadeInRight">
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Order Summary</h2>
+
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
                 {cart.map((item) => (
-                  <div key={item.productId} className="flex gap-3 text-sm">
-                    <div className="w-12 h-12 bg-gray-100 rounded shrink-0 overflow-hidden">
+                  <div key={item.productId} className="flex gap-4 group">
+                    <div className="w-20 h-20 bg-gray-50 border border-gray-100 rounded-2xl shrink-0 overflow-hidden relative shadow-sm group-hover:shadow-md transition-shadow">
                       <img
                         src={optimizeCloudinaryImage(item.thumbnailUrl || item.imageUrl, IMAGE_PRESETS.checkout)}
-                        className="w-full h-full object-cover"
-                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        alt={item.name}
                         loading="lazy"
                       />
+                      <div className="absolute top-1 right-1 bg-black text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                        {item.quantity}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900 line-clamp-1">{item.name}</p>
-                      <p className="text-gray-500">
-                        {item.quantity} x ₹{item.price}
+                    <div className="flex-1 min-w-0 py-1">
+                      <p className="font-bold text-gray-900 text-sm line-clamp-1 group-hover:text-yellow-600 transition-colors uppercase tracking-tight">
+                        {item.name}
                       </p>
-                    </div>
-                    <div className="font-medium">
-                      ₹{item.quantity * item.price}
+                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                        Cozy Minimalist
+                      </p>
+                      <p className="text-sm font-black text-gray-900 mt-2">
+                        ₹{item.price.toLocaleString()}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* PAYMENT METHOD SELECTOR */}
-              <div className="mt-4 pt-4 border-t space-y-3">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Payment Method</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  <button
-                    onClick={() => setPaymentMethod("online")}
-                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === "online"
-                      ? "border-black bg-gray-50 font-bold"
-                      : "border-gray-100 opacity-60 hover:opacity-100"
-                      }`}
-                  >
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-lg">💳</span> Online Payment
-                    </div>
-                    {paymentMethod === "online" && <span className="bg-black text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✓</span>}
-                  </button>
-
-                  <button
-                    onClick={() => setPaymentMethod("cod")}
-                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === "cod"
-                      ? "border-black bg-gray-50 font-bold"
-                      : "border-gray-100 opacity-60 hover:opacity-100"
-                      }`}
-                  >
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-lg">🚚</span> Cash on Delivery
-                    </div>
-                    {paymentMethod === "cod" && <span className="bg-black text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✓</span>}
-                  </button>
+              <div className="pt-4 border-t border-gray-100 space-y-4">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Subtotal</span>
+                  <span className="text-sm font-semibold text-gray-900">₹{totalPrice.toLocaleString()}</span>
                 </div>
-              </div>
-
-              <div className="border-t mt-4 pt-4 space-y-2">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>₹{totalAmount}</span>
+                {totalDiscountAmount > 0 && (
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-sm font-bold text-green-600 uppercase tracking-widest leading-none">Discount</span>
+                    <span className="text-sm font-semibold text-green-600">-₹{totalDiscountAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Shipping</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {deliveryFee === 0 ? (
+                      <span className="text-green-600 flex items-center gap-1.5">
+                        <span className="text-[10px]">✓</span> FREE
+                      </span>
+                    ) : (
+                      `₹${deliveryFee.toLocaleString()}`
+                    )}
+                  </span>
                 </div>
-                <div className="flex justify-between font-semibold text-lg text-gray-900 pt-2 border-t">
-                  <span>Total</span>
-                  <span>₹{totalAmount}</span>
+
+                <div className="pt-2 border-t border-gray-100 flex justify-between items-end px-1">
+                  <span className="text-md font-bold text-gray-900 uppercase tracking-tight">Total</span>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-gray-900 tracking-tighter leading-none">
+                      ₹{finalTotal.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
 
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="mt-6 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-semibold disabled:opacity-50 transition-all"
+                className="group relative w-full h-14 bg-yellow-accent hover:bg-black transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
-                {loading ? "Processing..." : `Pay ₹${totalAmount}`}
+                <div className="absolute inset-0 flex items-center justify-center gap-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
+                  <span className="text-md font-bold text-black group-hover:text-white uppercase tracking-wider">
+                    {loading ? "Processing..." : "Complete Purchase"}
+                  </span>
+                  {!loading && <span className="text-black group-hover:text-white transition-colors">→</span>}
+                </div>
               </button>
+
+              {/* Trust Badges */}
+              <div className="grid grid-cols-3 gap-2 px-1">
+                <div className="flex flex-col items-center text-center gap-1">
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-lg">🛡️</div>
+                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Secure</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-1">
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-lg">📦</div>
+                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Hand-Packed</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-1">
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-lg">🍃</div>
+                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Eco-Friendly</span>
+                </div>
+              </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
       {/* SUCCESS MODAL */}
       {completedOrderId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center animate-in fade-in zoom-in duration-300">
-            <div className="w-20 h-20 rounded-full bg-green-100 grid place-items-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-10 text-center animate-in fade-in zoom-in duration-500 border border-white/20">
+            <div className="w-24 h-24 rounded-full bg-green-50 grid place-items-center mx-auto mb-8 relative">
+              <div className="absolute inset-0 rounded-full animate-ping bg-green-200 opacity-20"></div>
+              <svg className="w-12 h-12 text-green-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h2>
-            <p className="text-gray-600 mb-6">
-              Thank you for your purchase. Your order has been placed successfully.
+            <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Order Confirmed!</h2>
+            <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+              Your artisanal treasures are being prepared. Thank you for supporting Cozy Creations.
             </p>
 
-            <div className="bg-gray-50 rounded-xl p-4 mb-8">
-              <p className="text-xs font-bold text-gray-400 uppercase mb-1">Order ID</p>
-              <p className="font-mono text-sm font-bold text-gray-900">{completedOrderId}</p>
+            <div className="bg-gray-50 rounded-2xl p-5 mb-10 ring-1 ring-black/5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Authentic Order ID</p>
+              <p className="font-mono text-base font-black text-gray-900 tracking-tighter">{completedOrderId}</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4 mt-4">
               <button
                 onClick={() => navigate("/products")}
-                className="w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-bold transition-all shadow-lg active:scale-95"
+                className="w-full h-14 bg-yellow-accent hover:bg-black py-3 rounded-2xl text-black hover:text-white font-black transition-all shadow-lg active:scale-95 uppercase tracking-wider text-sm"
               >
-                Continue Shopping
+                Explore More Items
               </button>
               <button
                 onClick={() => navigate("/")}
-                className="w-full py-3 text-gray-500 hover:text-gray-800 font-semibold transition-colors"
+                className="w-full text-xs font-black text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-[0.2em]"
               >
-                Back to Home
+                Back to Sanctuary
               </button>
             </div>
           </div>

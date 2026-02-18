@@ -1,14 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function OfferBanner() {
   const [offer, setOffer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const navigate = useNavigate();
+  const lastScrollY = useRef(window.scrollY);
 
-  useEffect(() => {   
+  useEffect(() => {
     fetchActiveOffer();
   }, []);
+
+  // Auto-minimize when scrolling past hero section
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      // Threshold: 70% of viewport height (assuming hero is 100vh)
+      const threshold = window.innerHeight * 0.7;
+
+      // Only auto-minimize if crossing the threshold downwards while expanded
+      if (lastScrollY.current <= threshold && currentScrollY > threshold && !isMinimized) {
+        setIsMinimized(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMinimized]);
 
   const fetchActiveOffer = async () => {
     try {
@@ -26,32 +49,79 @@ export default function OfferBanner() {
   };
 
   // Don't render anything while loading or if no active offer
-  if (loading || !offer) return null;
+  if (loading || !offer || !offer.isActive) return null;
 
   return (
-    <div className="w-full bg-transparent text-white/90 py-3 px-4 text-[10px] sm:text-xs font-medium tracking-wide relative z-[100] border-b border-white/20">
-      <div className="max-w-[1280px] mx-auto flex justify-between items-center">
-        {/* Left: Email */}
-        <div className="hidden md:flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
-          </svg>
-          <span className="font-light tracking-wider">{offer.email || "cozycreationscorner13@gmail.com"}</span>
-        </div>
+    <div className={`fixed right-0 top-1/2 -translate-y-1/2 z-[9999] pointer-events-none transition-all duration-500 ${!isMinimized ? 'pr-3 md:pr-4' : ''}`}>
+      {!isMinimized ? (
+        <div className="w-48 sm:w-56 md:w-60 h-[360px] sm:h-[400px] md:h-[420px] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col group relative">
+          {/* Close/Minimize Button - TOP RIGHT */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(true);
+            }}
+            className="absolute right-2 top-2 w-6 h-6 bg-black/20 backdrop-blur-md hover:bg-black/40 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg z-30 transition-all border border-white/20"
+            title="Minimize"
+          >
+            ✕
+          </button>
 
-        {/* Center: Offer */}
-        <div className="flex-1 text-center font-normal text-white">
-          <p className="tracking-[0.05em] lowercase">{offer.offerText}</p>
-        </div>
+          {/* Banner Image Area - TOP HALF */}
+          <div className="h-1/2 bg-gray-100 relative overflow-hidden">
+            {offer.bannerImageUrl ? (
+              <img
+                src={offer.bannerImageUrl}
+                alt="Special Offer"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-yellow-50 text-yellow-600 font-black text-3xl opacity-20">
+                COZY
+              </div>
+            )}
 
-        {/* Right: Phone */}
-        <div className="hidden md:flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-          </svg>
-          <span className="font-light tracking-wider">{offer.phone || "+91 80194 01322"}</span>
+            {/* Subtle Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+          </div>
+
+          {/* Offer Content - BOTTOM HALF */}
+          <div className="h-1/2 p-3 sm:p-5 flex flex-col items-center justify-between text-center bg-white">
+            <div className="space-y-1 flex-1 flex flex-col justify-center">
+              <span className="text-[8px] sm:text-[9px] font-black text-yellow-600 uppercase tracking-[0.2em] animate-pulse mb-1">
+                {offer.offerHeading || "Special Offer"}
+              </span>
+              <h3 className="text-[10px] sm:text-xs md:text-sm font-black text-gray-900 leading-tight uppercase tracking-tight line-clamp-3">
+                {offer.offerText}
+              </h3>
+            </div>
+
+            <button
+              onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
+              className="w-full py-2 sm:py-2.5 bg-yellow-accent hover:bg-yellow-400 text-black rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] shadow-[0_5px_15px_rgba(251,191,36,0.2)] hover:-translate-y-0.5 transition-all duration-300 mb-1"
+            >
+              Shop Now
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Minimized Tab */
+        <button
+          onClick={() => setIsMinimized(false)}
+          className="w-6 py-2 bg-yellow-accent rounded-l-[2rem] flex flex-col items-center justify-center gap-2 shadow-[0_15px_30px_rgba(251,191,36,0.3)] pointer-events-auto hover:-translate-x-2 transition-all duration-500 group border-y-1 border-l-1 border-white/60 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
+        >
+          <div className="py-2 flex flex-col items-center justify-center relative">
+            {/* Subtle highlight pulse */}
+            <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse scale-150 blur-xl pointer-events-none" />
+
+            {["O", "F", "F", "E", "R", "S"].map((char, i) => (
+              <span key={i} className="text-[0.8rem] font-bold leading-[1.2] tracking-wide text-black relative z-10">
+                {char}
+              </span>
+            ))}
+          </div>
+        </button>
+      )}
     </div>
   );
 }

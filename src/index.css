@@ -41,18 +41,39 @@ html {
   transition-duration: 300ms;
 }
 
-/* Offer Banner visibility control */
-.offer-banner-wrapper {
-  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  max-height: 100px;
-  opacity: 1;
+/* Redesigned Checkout Animations & Utils */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.cc-nav-solid .offer-banner-wrapper {
-  max-height: 0;
-  opacity: 0;
-  pointer-events: none;
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
+.animate-fadeIn {
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 
+.animate-fadeInRight {
+  animation: fadeInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  display: block;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #fdfdfd;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}

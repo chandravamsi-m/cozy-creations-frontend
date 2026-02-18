@@ -25,37 +25,79 @@ const toCloudinaryThumb = (url) => {
 };
 
 const BannerPreview = ({ settings }) => {
+  const [isMinimized, setIsMinimized] = useState(false);
+
   if (!settings.isActive) return (
     <div className="w-full bg-gray-100 rounded-lg p-8 text-center text-gray-400 border-2 border-dashed border-gray-200">
-      Banner is currently disabled and won't be visible
+      Floating card is currently disabled and won't be visible
     </div>
   );
 
   return (
-    <div className="w-full bg-[#1a1a1a] rounded-lg overflow-hidden shadow-inner p-4 mb-8">
-      {/* <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold border-b border-gray-800 pb-2">
-        Live Banner Preview (on dark background)
-      </p> */}
-      <div className="w-full bg-transparent text-white/90 py-3 px-4 text-[10px] sm:text-xs font-medium tracking-wide border-b border-white/20">
-        <div className="max-w-[1280px] mx-auto flex justify-between items-center">
-          <div className="hidden md:flex items-center gap-2 opacity-80">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
-            </svg>
-            <span className="font-light tracking-wider">{settings.email}</span>
-          </div>
+    <div className="w-full bg-gray-100 rounded-xl p-8 relative min-h-[460px] border border-gray-200 overflow-hidden">
+      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold border-b border-gray-200 pb-2">
+        Live Floating Card Preview (Desktop View)
+      </p>
 
-          <div className="flex-1 text-center font-normal text-white">
-            <p className="tracking-[0.05em] lowercase">{settings.offerText || "your offer message here"}</p>
+      {/* Floating Card Container */}
+      <div className={`absolute right-0 top-12 bottom-8 flex items-center justify-end pointer-events-none transition-all duration-500 ${!isMinimized ? 'pr-2' : ''}`}>
+        {!isMinimized ? (
+          <div className="w-48 sm:w-52 bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col relative group h-[340px] sm:h-[360px]">
+            <button
+              type="button"
+              onClick={() => setIsMinimized(true)}
+              className="absolute right-2 top-2 w-5 h-5 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-lg z-10 transition-all border border-white/30 hover:bg-black/40"
+            >
+              ✕
+            </button>
+            <div className="h-1/2 bg-gray-100 relative overflow-hidden">
+              {settings.bannerImageUrl ? (
+                <img
+                  src={settings.bannerImageUrl}
+                  alt="Banner"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] text-center p-4">
+                  No Image Selected
+                </div>
+              )}
+            </div>
+            <div className="h-1/2 p-3 sm:p-4 flex flex-col items-center justify-between text-center bg-white">
+              <div className="space-y-1 flex-1 flex flex-col justify-center">
+                <span className="text-[7px] sm:text-[8px] font-black text-yellow-600 uppercase tracking-[0.2em] animate-pulse mb-1">
+                  {settings.offerHeading || "Special Offer"}
+                </span>
+                <h3 className="text-[10px] font-black text-gray-900 leading-tight uppercase tracking-tight line-clamp-3">
+                  {settings.offerText || "Limited time artisanal offer for your home"}
+                </h3>
+              </div>
+              <button className="w-full py-2 bg-yellow-accent rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-yellow-100 hover:bg-yellow-400 transition-colors">
+                Shop Now
+              </button>
+            </div>
           </div>
+        ) : (
+          <button
+            onClick={() => setIsMinimized(false)}
+            className="w-6 py-2 bg-yellow-accent rounded-l-[2rem] flex flex-col items-center justify-center gap-1.5 shadow-xl pointer-events-auto hover:-translate-x-1 transition-transform group border-y border-l border-white/60 ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
+          >
+            <div className="flex flex-col items-center justify-center leading-[1.1] relative">
+              {/* Subtle highlight pulse */}
+              <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse scale-150 blur-lg" />
 
-          <div className="hidden md:flex items-center gap-2 opacity-80">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-            </svg>
-            <span className="font-light tracking-wider">{settings.phone}</span>
-          </div>
-        </div>
+              {["O", "F", "F", "E", "R", "S"].map((char, i) => (
+                <span key={i} className="text-[10px] font-bold uppercase text-black relative z-10">
+                  {char}
+                </span>
+              ))}
+            </div>
+          </button>
+        )}
+      </div>
+
+      <div className="absolute bottom-4 left-4 text-[10px] text-gray-400">
+        * Preview shows floating behavior on the right edge
       </div>
     </div>
   );
@@ -73,9 +115,11 @@ export default function AdminOffers() {
   const [offerSettings, setOfferSettings] = useState({
     // Banner settings
     isActive: false,
+    offerHeading: "Special Offer",
     offerText: "",
     email: "cozycreationscorner13@gmail.com",
     phone: "+91 80194 01322",
+    bannerImageUrl: "",
 
     // Discount settings
     hasDiscount: false,
@@ -128,6 +172,40 @@ export default function AdminOffers() {
       console.error("Error fetching products:", err);
     } finally {
       setLoadingProducts(false);
+    }
+  };
+
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Image too large (max 5MB)", "error");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: "POST", body: formData }
+      );
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setOfferSettings(prev => ({ ...prev, bannerImageUrl: data.secure_url }));
+      showToast("Image uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to upload image", "error");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -237,14 +315,13 @@ export default function AdminOffers() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto pb-12">
       <div className="bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
           🎁 Manage Offers & Discounts
         </h1>
 
-        <form onSubmit={handleSave} className="space-y-6">
-
+        <form onSubmit={handleSave} className="space-y-8">
           {/* Banner Toggle */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
@@ -262,118 +339,125 @@ export default function AdminOffers() {
               onClick={() =>
                 setOfferSettings((prev) => ({ ...prev, isActive: !prev.isActive }))
               }
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.isActive ? "bg-green-600" : "bg-gray-300"
-                }`}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.isActive ? "bg-green-600" : "bg-gray-300"}`}
             >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${offerSettings.isActive ? "translate-x-6" : "translate-x-0"
-                  }`}
-              />
+              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${offerSettings.isActive ? "translate-x-6" : "translate-x-0"}`} />
             </button>
           </div>
 
+          {/* Banner Image & Text Group */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Image Upload */}
+            <div className="md:col-span-1">
+              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-widest">
+                Banner Image
+              </label>
+              <div className="relative group aspect-[4/5] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center transition-all hover:border-blue-400">
+                {offerSettings.bannerImageUrl ? (
+                  <>
+                    <img
+                      src={offerSettings.bannerImageUrl}
+                      className="w-full h-full object-cover"
+                      alt="Offer Banner"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <label className="cursor-pointer bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">
+                        Change Image
+                        <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
+                      </label>
+                    </div>
+                  </>
+                ) : (
+                  <label className="cursor-pointer flex flex-col items-center gap-2 p-4 text-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                      {uploading ? "⌛" : "🖼️"}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">{uploading ? "Uploading..." : "Click to Upload"}</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-tighter mt-1">Recommended: 400x500px</p>
+                    </div>
+                    <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" disabled={uploading} />
+                  </label>
+                )}
+              </div>
+            </div>
 
-          {/* Offer Text */}
-          <div className="max-w-2xl">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Offer Message
-            </label>
-            <textarea
-              value={offerSettings.offerText}
-              onChange={(e) =>
-                setOfferSettings((prev) => ({ ...prev, offerText: e.target.value }))
-              }
-              rows={2}
-              placeholder="e.g., valentine's day special - limited time offer"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400 resize-none"
-            />
+            {/* Offer Text & Heading */}
+            <div className="md:col-span-2 space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-widest">
+                  Offer Heading (Animated)
+                </label>
+                <input
+                  type="text"
+                  value={offerSettings.offerHeading}
+                  onChange={(e) =>
+                    setOfferSettings((prev) => ({ ...prev, offerHeading: e.target.value }))
+                  }
+                  placeholder="e.g., Special Offer"
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium shadow-inner"
+                />
+                <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-tight">Small pulse text above the main message</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-widest">
+                  Offer Message
+                </label>
+                <textarea
+                  value={offerSettings.offerText}
+                  onChange={(e) =>
+                    setOfferSettings((prev) => ({ ...prev, offerText: e.target.value }))
+                  }
+                  rows={4}
+                  placeholder="e.g., valentine's day special - limited time offer"
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium resize-none shadow-inner"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Contact Info Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Email
-              </label>
-              <input
-                type="email"
-                value={offerSettings.email}
-                onChange={(e) =>
-                  setOfferSettings((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone
-              </label>
-              <input
-                type="text"
-                value={offerSettings.phone}
-                onChange={(e) =>
-                  setOfferSettings((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400"
-              />
-            </div>
-          </div>
           <BannerPreview settings={offerSettings} />
 
-
           {/* Discount Section */}
-          <div className="border-t pt-6">
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg mb-4">
+          <div className="border-t pt-8">
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  💰 Enable Discount
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <span>💰</span> Enable Discount
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  {offerSettings.hasDiscount
-                    ? "Discounts will be applied to products"
-                    : "No discounts active"}
+                  {offerSettings.hasDiscount ? "Discounts will be applied to products" : "No discounts active"}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() =>
-                  setOfferSettings((prev) => ({ ...prev, hasDiscount: !prev.hasDiscount }))
-                }
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.hasDiscount ? "bg-green-600" : "bg-gray-300"
-                  }`}
+                onClick={() => setOfferSettings((prev) => ({ ...prev, hasDiscount: !prev.hasDiscount }))}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.hasDiscount ? "bg-green-600" : "bg-gray-300"}`}
               >
-                <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${offerSettings.hasDiscount ? "translate-x-6" : "translate-x-0"
-                    }`}
-                />
+                <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${offerSettings.hasDiscount ? "translate-x-6" : "translate-x-0"}`} />
               </button>
             </div>
 
             {offerSettings.hasDiscount && (
-              <div className="space-y-4 pl-4 border-l-4 border-blue-200">
+              <div className="space-y-6 pl-4 border-l-4 border-blue-200">
                 {/* Discount Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Discount Type
                   </label>
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
                     <button
                       type="button"
                       onClick={() => setOfferSettings(prev => ({ ...prev, discountType: "percentage" }))}
-                      className={`px-4 py-2 rounded-lg border-2 transition-colors w-full sm:w-auto sm:min-w-[180px] ${offerSettings.discountType === "percentage"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
-                        }`}
+                      className={`px-4 py-2 rounded-lg border-2 transition-colors min-w-[180px] ${offerSettings.discountType === "percentage" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 hover:border-gray-400"}`}
                     >
                       Percentage (%)
                     </button>
                     <button
                       type="button"
                       onClick={() => setOfferSettings(prev => ({ ...prev, discountType: "fixed" }))}
-                      className={`px-4 py-2 rounded-lg border-2 transition-colors w-full sm:w-auto sm:min-w-[180px] ${offerSettings.discountType === "fixed"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
-                        }`}
+                      className={`px-4 py-2 rounded-lg border-2 transition-colors min-w-[180px] ${offerSettings.discountType === "fixed" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 hover:border-gray-400"}`}
                     >
                       Fixed Amount (₹)
                     </button>
@@ -399,158 +483,119 @@ export default function AdminOffers() {
                     placeholder={offerSettings.discountType === "percentage" ? "20" : "100"}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {offerSettings.discountType === "percentage"
-                      ? "Enter percentage (e.g., 20 for 20% off)"
-                      : "Enter amount in rupees (e.g., 100 for ₹100 off)"}
-                  </p>
                 </div>
 
-                {/* Target Products */}
+                {/* Targeting */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Apply Discount To
                   </label>
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-3">
+                  <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <button
                       type="button"
                       onClick={() => setOfferSettings(prev => ({ ...prev, applicableToAll: true }))}
-                      className={`px-4 py-2 rounded-lg border-2 transition-colors w-full sm:w-auto sm:min-w-[180px] ${offerSettings.applicableToAll
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
-                        }`}
+                      className={`px-4 py-2 rounded-lg border-2 transition-colors min-w-[180px] ${offerSettings.applicableToAll ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 hover:border-gray-400"}`}
                     >
                       All Products
                     </button>
                     <button
                       type="button"
                       onClick={() => setOfferSettings(prev => ({ ...prev, applicableToAll: false }))}
-                      className={`px-4 py-2 rounded-lg border-2 transition-colors w-full sm:w-auto sm:min-w-[180px] ${!offerSettings.applicableToAll
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-300 hover:border-gray-400"
-                        }`}
+                      className={`px-4 py-2 rounded-lg border-2 transition-colors min-w-[180px] ${!offerSettings.applicableToAll ? "border-blue-600 bg-blue-50 text-blue-700" : "border-gray-300 hover:border-gray-400"}`}
                     >
-                      Specific Products/Categories
+                      Specific Products
                     </button>
                   </div>
 
                   {!offerSettings.applicableToAll && (
-                    <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                      {/* Categories */}
+                    <div className="space-y-6 bg-gray-50 p-4 rounded-xl">
+                      {/* Categories Selector */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Select Categories</h4>
-                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Filter by Categories</h4>
+                        <div className="flex flex-wrap gap-2">
                           {CATEGORIES.map((cat) => (
                             <button
                               key={cat.value}
                               type="button"
                               onClick={() => toggleCategory(cat.value)}
-                              className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-center w-full sm:w-auto border ${(offerSettings.applicableCategories || []).includes(cat.value)
-                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                : "bg-white border-gray-200 text-gray-700 hover:border-blue-400"
-                                }`}
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${offerSettings.applicableCategories.includes(cat.value) ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white border-gray-200 text-gray-600 hover:border-blue-400"}`}
                             >
-                              <span className="sm:hidden">{cat.label.split(" ")[0]}</span>
-                              <span className="hidden sm:inline">{cat.label}</span>
+                              {cat.label}
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      {/* Products */}
+                      {/* Products Selector */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                          Select Products {loadingProducts && "(Loading...)"}
+                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center justify-between">
+                          <span>Select Individual Products</span>
+                          <span className="text-[10px] bg-gray-200 px-2 py-0.5 rounded text-gray-500 uppercase tracking-widest font-bold">
+                            Total Selected: {offerSettings.applicableProducts.length}
+                          </span>
                         </h4>
 
-                        {/* Category Filter Bar - Desktop */}
-                        <div className="hidden sm:flex flex-wrap items-center justify-start gap-1.5 mb-3 p-2 bg-white border border-gray-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-3 bg-white border border-gray-200 rounded-lg p-1">
                           <button
                             type="button"
                             onClick={() => setSelectionListFilter("all")}
-                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all min-w-[50px] ${selectionListFilter === "all"
-                              ? "bg-black text-white"
-                              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                              }`}
+                            className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${selectionListFilter === "all" ? "bg-black text-white" : "hover:bg-gray-100 text-gray-500"}`}
                           >
                             All
                           </button>
-                          {CATEGORIES.map((cat) => (
+                          {CATEGORIES.map(cat => (
                             <button
                               key={cat.value}
                               type="button"
                               onClick={() => setSelectionListFilter(cat.value)}
-                              className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all min-w-[80px] ${selectionListFilter === cat.value
-                                ? "bg-black text-white"
-                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                }`}
+                              className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${selectionListFilter === cat.value ? "bg-black text-white" : "hover:bg-gray-100 text-gray-500"}`}
                             >
-                              {cat.label.replace(" Collection", "")}
+                              {cat.label.split(" ")[0]}
                             </button>
                           ))}
                         </div>
 
-                        {/* Category Filter Bar - Mobile */}
-                        <div className="block sm:hidden mb-3">
-                          <select
-                            value={selectionListFilter}
-                            onChange={(e) => setSelectionListFilter(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-gray-400 text-sm font-medium"
-                          >
-                            <option value="all">Filter by: All Products</option>
-                            {CATEGORIES.map((cat) => (
-                              <option key={cat.value} value={cat.value}>
-                                Filter by: {cat.label.replace(" Collection", "")}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-2 bg-white">
+                        <div className="max-h-64 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-3 rounded-lg border border-gray-200 custom-scrollbar">
                           {products
                             .filter(p => selectionListFilter === "all" || p.category === selectionListFilter)
-                            .map((product) => (
-                              <label
-                                key={product.id}
-                                className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-50 last:border-0"
-                              >
+                            .map((p) => (
+                              <label key={p.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-blue-100 group">
                                 <input
                                   type="checkbox"
-                                  checked={(offerSettings.applicableProducts || []).includes(product.id)}
-                                  onChange={() => toggleProduct(product.id)}
-                                  className="w-4 h-4 text-blue-600 shrink-0"
+                                  checked={offerSettings.applicableProducts.includes(p.id)}
+                                  onChange={() => toggleProduct(p.id)}
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
-                                <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-gray-50 shrink-0">
-                                  <img
-                                    src={toCloudinaryThumb(product.imageUrl || product.image)}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                  />
+                                <div className="w-8 h-8 rounded overflow-hidden bg-gray-100">
+                                  <img src={toCloudinaryThumb(p.imageUrl || p.image)} alt="" className="w-full h-full object-cover" />
                                 </div>
-                                <span className="text-sm font-medium text-gray-700 truncate">{product.name}</span>
+                                <span className="text-xs font-semibold text-gray-700 truncate group-hover:text-blue-600">{p.name}</span>
                               </label>
                             ))}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Selected: {(offerSettings.applicableProducts || []).length} product(s)
-                        </p>
                       </div>
                     </div>
                   )}
                 </div>
-
               </div>
             )}
           </div>
 
           {/* Save Button */}
-          <div className="flex justify-end pt-4 border-t">
+          <div className="flex justify-end pt-6 border-t">
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-8 py-3 rounded-xl transition-all font-bold uppercase tracking-widest text-xs disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-100 active:scale-95"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Application Settings"
+              )}
             </button>
           </div>
         </form>

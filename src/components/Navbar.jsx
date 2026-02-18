@@ -2,8 +2,6 @@
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo image.webp";
-import OfferBanner from "./OfferBanner";
-
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
 import { useLoginModal } from "../contexts/LoginModalContext";
@@ -73,11 +71,6 @@ export default function Navbar({
       className={`fixed top-0 left-0 w-full z-50 ${location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
         }`}
     >
-      {location.pathname === "/" && (
-        <div className="offer-banner-wrapper">
-          <OfferBanner />
-        </div>
-      )}
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">
           {/* LOGO */}
