@@ -681,12 +681,21 @@ const AdminProductCard = ({
   return (
     <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
       {/* Product Image */}
-      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50">
+      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative">
         <img
           src={toCloudinaryThumb(p.imageUrl)}
           alt={p.name}
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
         />
+
+        {/* Bulk Pricing Badge */}
+        <div className="absolute top-1 left-1 z-10 flex flex-col gap-1">
+          {((p.bulkPricingTiers && p.bulkPricingTiers.length > 0) || (p.bulkPricing && p.bulkPricing.length > 0)) && (
+            <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm border border-emerald-400/50">
+              Bulk
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Product Info */}

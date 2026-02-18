@@ -101,7 +101,7 @@ export default function About() {
               className={`text-white/90 text-md font-semibold leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
-              Cozy Creations crafts premium soy candles, aroma-rich gifts, and custom designs that elevate everyday spaces with soothing fragrance and timeless beauty.
+              Cozy Creations crafts premium candles, aroma-rich gifts, and custom designs that elevate everyday spaces with soothing fragrance and timeless beauty.
             </p>
           </div>
 

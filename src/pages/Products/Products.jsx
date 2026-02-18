@@ -305,7 +305,7 @@ export default function ProductsPage() {
               Find Your Perfect Glow
             </p>
             <h1 className="text-white text-4xl md:text-6xl font-bold leading-tight mb-6 transition-all duration-700 delay-100">
-              Lighting Moments, <br /> One Candle at a Time
+              Lighting Moments, <br /> <span className="text-yellow-accent">One Candle at a Time</span>
             </h1>
             <p
               className={`text-white/90 text-xs md:text-sm font-semibold leading-relaxed max-w-lg mb-8 transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"

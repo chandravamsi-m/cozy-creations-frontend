@@ -660,9 +660,9 @@ export default function Checkout() {
                       <p className="font-bold text-gray-900 text-sm line-clamp-1 group-hover:text-yellow-600 transition-colors uppercase tracking-tight">
                         {item.name}
                       </p>
-                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                      {/* <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
                         Cozy Minimalist
-                      </p>
+                      </p> */}
                       <p className="text-sm font-black text-gray-900 mt-2">
                         ₹{item.price.toLocaleString()}
                       </p>
