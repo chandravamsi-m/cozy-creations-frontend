@@ -52,7 +52,7 @@ export async function permanentlyDeleteProduct(id, idToken) {
   return res.json();
 }
 
-export async function generateCatalogue(idToken) {
+export async function generateCatalogue(idToken, onProgress) {
   const res = await fetch(`${BACKEND_URL}/admin/generate-catalogue`, {
     headers: {
       Authorization: `Bearer ${idToken}`,
@@ -60,10 +60,26 @@ export async function generateCatalogue(idToken) {
   });
 
   if (!res.ok) throw new Error("Failed to generate catalogue");
-  return res.blob();
+
+  const reader = res.body.getReader();
+  const contentLength = Number(res.headers.get('Content-Length'));
+
+  let receivedLength = 0;
+  let chunks = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    receivedLength += value.length;
+    if (contentLength && onProgress) {
+      onProgress(Math.round((receivedLength / contentLength) * 100));
+    }
+  }
+
+  return new Blob(chunks, { type: 'application/pdf' });
 }
 
-export async function generateBulkCatalogue(idToken) {
+export async function generateBulkCatalogue(idToken, onProgress) {
   const res = await fetch(`${BACKEND_URL}/admin/generate-bulk-catalogue`, {
     headers: {
       Authorization: `Bearer ${idToken}`,
@@ -71,5 +87,32 @@ export async function generateBulkCatalogue(idToken) {
   });
 
   if (!res.ok) throw new Error("Failed to generate bulk catalogue");
-  return res.blob();
+
+  const reader = res.body.getReader();
+  const contentLength = Number(res.headers.get('Content-Length'));
+
+  let receivedLength = 0;
+  let chunks = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    receivedLength += value.length;
+    if (contentLength && onProgress) {
+      onProgress(Math.round((receivedLength / contentLength) * 100));
+    }
+  }
+
+  return new Blob(chunks, { type: 'application/pdf' });
+}
+
+export async function getCatalogueStatus(idToken) {
+  const res = await fetch(`${BACKEND_URL}/admin/catalogue-status`, {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to get catalogue status");
+  return res.json();
 }

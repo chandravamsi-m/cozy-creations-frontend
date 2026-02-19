@@ -4,7 +4,7 @@ import { db } from "../../firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
-import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue } from "../../api/adminProducts";
+import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/admin/ConfirmModal";
@@ -37,6 +37,8 @@ export default function AdminProducts() {
   };
   const [loading, setLoading] = useState(true);
   const [catalogueLoading, setCatalogueLoading] = useState(false);
+  const [catalogueProgress, setCatalogueProgress] = useState(0);
+  const [catalogueStatus, setCatalogueStatusText] = useState("");
 
   // Bulk pricing tiers state (optional)
   const [bulkPricingTiers, setBulkPricingTiers] = useState([]);
@@ -203,8 +205,39 @@ export default function AdminProducts() {
       confirmText: "Download",
       onConfirm: async () => {
         setCatalogueLoading(true);
+        setCatalogueProgress(0);
+        setCatalogueStatusText("Starting...");
+        let statusInterval;
         try {
-          const blob = await generateCatalogue(idToken);
+          // Poll backend status for the generation phase
+          statusInterval = setInterval(async () => {
+            try {
+              const status = await getCatalogueStatus(idToken);
+              if (status) {
+                // Map 0-100 backend progress to 0-90% UI progress
+                setCatalogueProgress(Math.round(status.progress * 0.9));
+                setCatalogueStatusText(status.currentAction);
+              }
+            } catch (pollErr) {
+              console.warn("Status poll error:", pollErr);
+            }
+          }, 800);
+
+          const blob = await generateCatalogue(idToken, (p) => {
+            // Once real download starts (90%+), clear polling and show download progress
+            if (statusInterval) {
+              clearInterval(statusInterval);
+              statusInterval = null;
+            }
+            // Map 0-100 download progress to 90-100% UI progress
+            setCatalogueProgress(90 + Math.round(p * 0.1));
+            setCatalogueStatusText("Downloading...");
+          });
+
+          if (statusInterval) clearInterval(statusInterval);
+          setCatalogueProgress(100);
+          setCatalogueStatusText("Complete!");
+
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -215,10 +248,13 @@ export default function AdminProducts() {
           document.body.removeChild(a);
           showToast("Catalogue generated and downloaded!");
         } catch (error) {
+          if (statusInterval) clearInterval(statusInterval);
           console.error("Catalogue Generation Error:", error);
           showToast("Failed to generate catalogue", "error");
         } finally {
           setCatalogueLoading(false);
+          setCatalogueProgress(0);
+          setCatalogueStatusText("");
         }
       }
     });
@@ -549,11 +585,22 @@ export default function AdminProducts() {
             <button
               onClick={handleGenerateCatalogue}
               disabled={loading || catalogueLoading}
-              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10"
+              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10 shadow-sm relative overflow-hidden"
             >
               {catalogueLoading ? (
-                <Loader2 className="animate-spin h-3 w-3 text-white" />
-              ) : "📄 Catalogue"}
+                <>
+                  <div className="absolute inset-0 bg-emerald-500/20" style={{ width: `${catalogueProgress}%`, transition: 'width 0.3s ease-out' }} />
+                  <Loader2 className="animate-spin h-3 w-3 text-white relative z-10" />
+                  <span className="relative z-10 font-bold flex flex-col items-start leading-none gap-0.5">
+                    <span className="text-[8px] animate-pulse opacity-80 uppercase tracking-tighter">Generating...</span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-[10px] font-black">{catalogueProgress}%</span>
+                    </span>
+                  </span>
+                </>
+              ) : (
+                "📄 Catalogue"
+              )}
             </button>
             <button
               onClick={handleOpenAddModal}

@@ -190,10 +190,10 @@ export default function AdminDelivery() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="bg-black text-white px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-gray-800 transition-all disabled:bg-gray-400 flex items-center gap-3 shadow-xl shadow-black/10"
+          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-8 py-3 rounded-xl transition-all font-bold uppercase tracking-widest text-xs disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-100 active:scale-95"
         >
           {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
-          Apply Store Changes
+          Save
         </button>
       </div>
     </div>

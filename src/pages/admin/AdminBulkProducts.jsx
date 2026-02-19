@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
-import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue } from "../../api/adminProducts";
+import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/admin/ConfirmModal";
 import { Loader2 } from "lucide-react";
@@ -55,6 +55,8 @@ export default function AdminBulkProducts() {
   const [bulkProducts, setBulkProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [catalogueLoading, setCatalogueLoading] = useState(false);
+  const [catalogueProgress, setCatalogueProgress] = useState(0);
+  const [catalogueStatus, setCatalogueStatusText] = useState("");
 
   // Confirm Modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -189,8 +191,39 @@ export default function AdminBulkProducts() {
       confirmText: "Download",
       onConfirm: async () => {
         setCatalogueLoading(true);
+        setCatalogueProgress(0);
+        setCatalogueStatusText("Starting...");
+        let statusInterval;
         try {
-          const blob = await generateBulkCatalogue(idToken);
+          // Poll backend status for the generation phase
+          statusInterval = setInterval(async () => {
+            try {
+              const status = await getCatalogueStatus(idToken);
+              if (status) {
+                // Map 0-100 backend progress to 0-90% UI progress
+                setCatalogueProgress(Math.round(status.progress * 0.9));
+                setCatalogueStatusText(status.currentAction);
+              }
+            } catch (pollErr) {
+              console.warn("Status poll error:", pollErr);
+            }
+          }, 800);
+
+          const blob = await generateBulkCatalogue(idToken, (p) => {
+            // Once real download starts (90%+), clear polling and show download progress
+            if (statusInterval) {
+              clearInterval(statusInterval);
+              statusInterval = null;
+            }
+            // Map 0-100 download progress to 90-100% UI progress
+            setCatalogueProgress(90 + Math.round(p * 0.1));
+            setCatalogueStatusText("Downloading...");
+          });
+
+          if (statusInterval) clearInterval(statusInterval);
+          setCatalogueProgress(100);
+          setCatalogueStatusText("Complete!");
+
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -201,10 +234,13 @@ export default function AdminBulkProducts() {
           document.body.removeChild(a);
           showToast("Bulk catalogue generated and downloaded!");
         } catch (error) {
+          if (statusInterval) clearInterval(statusInterval);
           console.error("Bulk Catalogue Generation Error:", error);
           showToast("Failed to generate bulk catalogue", "error");
         } finally {
           setCatalogueLoading(false);
+          setCatalogueProgress(0);
+          setCatalogueStatusText("");
         }
       }
     });
@@ -311,7 +347,7 @@ export default function AdminBulkProducts() {
           }
         `}
       </style>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 shrink-0">
+      <div className="flex flex-row justify-between items-center gap-4 mb-6 shrink-0">
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Bulk Products</h2>
           <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
@@ -319,18 +355,27 @@ export default function AdminBulkProducts() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <div className="flex gap-2 w-full sm:w-auto shrink-0">
-            <button
-              onClick={handleGenerateCatalogue}
-              disabled={loading || catalogueLoading}
-              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10"
-            >
-              {catalogueLoading ? (
-                <Loader2 className="animate-spin h-3 w-3 text-white" />
-              ) : "📄 Catalogue"}
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleGenerateCatalogue}
+            disabled={loading || catalogueLoading}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10 shadow-sm relative overflow-hidden shrink-0"
+          >
+            {catalogueLoading ? (
+              <>
+                <div className="absolute inset-0 bg-emerald-500/20" style={{ width: `${catalogueProgress}%`, transition: 'width 0.3s ease-out' }} />
+                <Loader2 className="animate-spin h-3 w-3 text-white relative z-10" />
+                <span className="relative z-10 font-bold flex flex-col items-start leading-none gap-0.5">
+                  <span className="text-[8px] animate-pulse opacity-80 uppercase tracking-tighter">Generating...</span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-[10px] font-black">{catalogueProgress}%</span>
+                  </span>
+                </span>
+              </>
+            ) : (
+              "📄 Catalogue"
+            )}
+          </button>
         </div>
       </div>
 

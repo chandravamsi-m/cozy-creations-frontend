@@ -8,11 +8,11 @@ import { collection, getDocs } from "firebase/firestore";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const CATEGORIES = [
-  { value: "flower", label: "Flower Collection" },
-  { value: "animal", label: "Animal Collection" },
-  { value: "festive", label: "Festive Collection" },
-  { value: "glassJar", label: "Glass Jar Collection" },
-  { value: "special", label: "Special Collection" },
+  { value: "flower", label: "Flower" },
+  { value: "animal", label: "Animal" },
+  { value: "festive", label: "Festive" },
+  { value: "glassJar", label: "Glass Jar" },
+  { value: "special", label: "Special" },
 ];
 
 const toCloudinaryThumb = (url) => {
@@ -34,15 +34,15 @@ const BannerPreview = ({ settings }) => {
   );
 
   return (
-    <div className="w-full bg-gray-100 rounded-xl p-6 relative min-h-[380px] border border-gray-200 overflow-hidden">
+    <div className="w-full bg-gray-100 rounded-xl p-4 sm:p-6 relative min-h-[340px] border border-gray-200 overflow-hidden">
       <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold border-b border-gray-200 pb-2">
-        Live Floating Card Preview (Desktop View)
+        Live Floating Card Preview (Desktop context)
       </p>
 
       {/* Floating Card Container */}
-      <div className={`absolute right-0 top-10 bottom-8 flex items-center justify-end pointer-events-none transition-all duration-500 ${!isMinimized ? 'pr-2' : ''}`}>
+      <div className={`sm:absolute left-0 right-0 sm:left-auto sm:right-0 sm:top-10 sm:bottom-8 flex items-center justify-center sm:justify-end pointer-events-none transition-all duration-500 ${!isMinimized ? 'sm:pr-2' : ''} ${isMinimized ? 'relative py-12' : 'relative sm:absolute py-8 sm:py-0'}`}>
         {!isMinimized ? (
-          <div className="w-48 sm:w-52 bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col relative group h-[280px] sm:h-[300px]">
+          <div className="w-48 sm:w-52 bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col relative group h-[260px] sm:h-[300px]">
             <button
               type="button"
               onClick={() => setIsMinimized(true)}
@@ -80,7 +80,7 @@ const BannerPreview = ({ settings }) => {
         ) : (
           <button
             onClick={() => setIsMinimized(false)}
-            className="w-6 py-2 bg-yellow-accent rounded-l-[2rem] flex flex-col items-center justify-center gap-1.5 shadow-xl pointer-events-auto hover:-translate-x-1 transition-transform group border-y border-l border-white/60 ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
+            className="w-8 sm:w-6 py-3 sm:py-2 bg-yellow-accent rounded-[1.5rem] sm:rounded-l-[2rem] sm:rounded-r-none flex flex-col items-center justify-center gap-1.5 shadow-xl pointer-events-auto hover:-translate-x-1 transition-transform group border border-white/60 ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
           >
             <div className="flex flex-col items-center justify-center leading-[1.1] relative">
               {/* Subtle highlight pulse */}
@@ -315,8 +315,8 @@ export default function AdminOffers() {
   }
 
   return (
-    <div className="p-4 sm:p-5 relative">
-      <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
+    <div className="p-0 sm:p-5 relative">
+      <div className="p-4 sm:p-6 bg-transparent sm:bg-white sm:rounded-2xl sm:shadow-md sm:border sm:border-gray-100">
         <h1 className="text-xl font-black text-gray-900 mb-5">
           🎁 Manage Offers & Discounts
         </h1>
@@ -518,12 +518,13 @@ export default function AdminOffers() {
                               key={cat.value}
                               type="button"
                               onClick={() => toggleCategory(cat.value)}
-                              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border uppercase tracking-wider ${offerSettings.applicableCategories.includes(cat.value) ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-blue-400"}`}
+                              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border uppercase tracking-wider whitespace-nowrap ${offerSettings.applicableCategories.includes(cat.value) ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-blue-400"}`}
                             >
                               {cat.label.replace(" Collection", "")}
                             </button>
                           ))}
                         </div>
+
                       </div>
 
                       {/* Products Selector */}
@@ -535,27 +536,51 @@ export default function AdminOffers() {
                           </span>
                         </h4>
 
-                        <div className="flex items-center gap-2 mb-3 bg-white border border-gray-200 rounded-lg p-1">
-                          <button
-                            type="button"
-                            onClick={() => setSelectionListFilter("all")}
-                            className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${selectionListFilter === "all" ? "bg-black text-white" : "hover:bg-gray-100 text-gray-500"}`}
-                          >
-                            All
-                          </button>
-                          {CATEGORIES.map(cat => (
+                        {/* Filter Tabs / Dropdown */}
+                        <div className="mb-3">
+                          {/* Desktop: Tabs */}
+                          <div className="hidden sm:flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
                             <button
-                              key={cat.value}
                               type="button"
-                              onClick={() => setSelectionListFilter(cat.value)}
-                              className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${selectionListFilter === cat.value ? "bg-black text-white" : "hover:bg-gray-100 text-gray-500"}`}
+                              onClick={() => setSelectionListFilter("all")}
+                              className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${selectionListFilter === "all" ? "bg-black text-white" : "hover:bg-gray-100 text-gray-500"}`}
                             >
-                              {cat.label.split(" ")[0]}
+                              All
                             </button>
-                          ))}
+                            {CATEGORIES.map(cat => (
+                              <button
+                                key={cat.value}
+                                type="button"
+                                onClick={() => setSelectionListFilter(cat.value)}
+                                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${selectionListFilter === cat.value ? "bg-black text-white" : "hover:bg-gray-100 text-gray-500"}`}
+                              >
+                                {cat.label.split(" ")[0]}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Mobile: Filter Dropdown */}
+                          <div className="sm:hidden relative">
+                            <select
+                              value={selectionListFilter}
+                              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none"
+                              onChange={(e) => setSelectionListFilter(e.target.value)}
+                            >
+                              <option value="all">All</option>
+                              {CATEGORIES.map(cat => (
+                                <option key={cat.value} value={cat.value}>
+                                  {cat.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">
+                              ▼
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="max-h-56 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 bg-white p-2 rounded-xl border border-gray-200 custom-scrollbar">
+
+                        <div className="grid max-h-56 overflow-y-auto grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 bg-white p-2 rounded-xl border border-gray-200 custom-scrollbar">
                           {products
                             .filter(p => selectionListFilter === "all" || p.category === selectionListFilter)
                             .map((p) => (
@@ -594,12 +619,12 @@ export default function AdminOffers() {
                   Saving...
                 </>
               ) : (
-                "Save Application Settings"
+                "Save"
               )}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
