@@ -3,6 +3,16 @@ import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ToastProvider } from "../../contexts/ToastContext";
 import ConfirmModal from "../../components/admin/ConfirmModal";
+import {
+  Menu,
+  X,
+  Package,
+  Layers,
+  FileText,
+  Users,
+  Gift,
+  Truck,
+} from "lucide-react";
 
 export default function AdminLayout() {
   const { user, isAdmin, loading, logoutUser } = useAuth();
@@ -56,9 +66,9 @@ export default function AdminLayout() {
           {/* Hamburger on LEFT */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded focus:outline-none hover:bg-gray-800 z-50"
+            className="p-2 rounded focus:outline-none hover:bg-gray-800 z-50 transition-colors"
           >
-            {sidebarOpen ? "✕" : "☰"}
+            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
           {/* Title CENTERED */}
@@ -91,35 +101,41 @@ export default function AdminLayout() {
             {/* Close button inside sidebar for mobile */}
             <button
               onClick={closeSidebar}
-              className="md:hidden text-gray-400 hover:text-white"
+              className="md:hidden text-gray-400 hover:text-white transition-colors"
             >
-              ✕
+              <X className="w-6 h-6" />
             </button>
           </div>
 
-          <nav className="flex flex-col gap-3">
-            <Link to="/admin" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-              📦 Products
+          <nav className="flex flex-col gap-2">
+            <Link to="/admin" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <Package className="w-5 h-5 text-gray-400" />
+              <span>Products</span>
             </Link>
 
-            <Link to="/admin/bulk-products" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-              📦 Bulk Products
+            <Link to="/admin/bulk-products" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <Layers className="w-5 h-5 text-gray-400" />
+              <span>Bulk Products</span>
             </Link>
 
-            <Link to="/admin/orders" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-              🧾 Orders
+            <Link to="/admin/orders" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <FileText className="w-5 h-5 text-gray-400" />
+              <span>Orders</span>
             </Link>
 
-            <Link to="/admin/users" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-              👥 Users
+            <Link to="/admin/users" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <Users className="w-5 h-5 text-gray-400" />
+              <span>Users</span>
             </Link>
 
-            <Link to="/admin/offers" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-              🎁 Offers
+            <Link to="/admin/offers" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <Gift className="w-5 h-5 text-gray-400" />
+              <span>Offers</span>
             </Link>
 
-            <Link to="/admin/delivery" onClick={closeSidebar} className="hover:underline p-2 rounded hover:bg-gray-800 transition-colors">
-              🚚 Delivery
+            <Link to="/admin/delivery" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <Truck className="w-5 h-5 text-gray-400" />
+              <span>Delivery</span>
             </Link>
           </nav>
 

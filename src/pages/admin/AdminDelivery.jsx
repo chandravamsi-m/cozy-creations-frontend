@@ -17,6 +17,10 @@ export default function AdminDelivery() {
     message: ""
   });
 
+  const [paymentSettings, setPaymentSettings] = useState({
+    isCodEnabled: true
+  });
+
   // Fetch settings on mount
   useEffect(() => {
     fetchSettings();
@@ -24,15 +28,22 @@ export default function AdminDelivery() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/settings/delivery`);
-      if (!res.ok) throw new Error("Failed to fetch settings");
-      const data = await res.json();
-      if (data.delivery) {
-        setSettings(data.delivery);
+      // Fetch Delivery Settings
+      const delRes = await fetch(`${BACKEND_URL}/settings/delivery`);
+      if (delRes.ok) {
+        const delData = await delRes.json();
+        if (delData.delivery) setSettings(delData.delivery);
+      }
+
+      // Fetch Payment Settings
+      const payRes = await fetch(`${BACKEND_URL}/settings/payment`);
+      if (payRes.ok) {
+        const payData = await payRes.json();
+        if (payData.payment) setPaymentSettings(payData.payment);
       }
     } catch (err) {
       console.error(err);
-      showToast("Failed to load delivery settings", "error");
+      showToast("Failed to load settings", "error");
     } finally {
       setLoading(false);
     }
@@ -42,7 +53,8 @@ export default function AdminDelivery() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/admin/settings/delivery`, {
+      // Save Delivery Settings
+      const delRes = await fetch(`${BACKEND_URL}/admin/settings/delivery`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -51,11 +63,19 @@ export default function AdminDelivery() {
         body: JSON.stringify(settings),
       });
 
-      if (!res.ok) throw new Error("Failed to save settings");
+      // Save Payment Settings
+      const payRes = await fetch(`${BACKEND_URL}/admin/settings/payment`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(paymentSettings),
+      });
 
-      const data = await res.json();
-      setSettings(data.delivery);
-      showToast("Delivery settings updated successfully!", "success");
+      if (!delRes.ok || !payRes.ok) throw new Error("Failed to save settings");
+
+      showToast("Settings updated successfully!", "success");
     } catch (err) {
       console.error(err);
       showToast("Failed to save settings", "error");
@@ -73,32 +93,28 @@ export default function AdminDelivery() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Delivery Settings</h1>
+    <div className="p-4 sm:p-5 relative">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 truncate">Store Settings</h2>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
         <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100">
           <div>
             <h3 className="text-lg font-bold text-gray-900">Delivery Charges</h3>
             <p className="text-sm text-gray-500">Enable or disable delivery charges store-wide.</p>
           </div>
-          {/* Toggle Switch */}
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={settings.isActive}
-              onChange={(e) => setSettings({ ...settings, isActive: e.target.checked })}
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-accent/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-          </label>
+          <button
+            type="button"
+            onClick={() => setSettings({ ...settings, isActive: !settings.isActive })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 p-1 ${settings.isActive ? "bg-green-600" : "bg-gray-300"}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.isActive ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Delivery Amount */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">
                 Standard Delivery Fee (₹)
@@ -113,7 +129,6 @@ export default function AdminDelivery() {
               />
             </div>
 
-            {/* Free Delivery Threshold */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">
                 Free Delivery Threshold (₹)
@@ -130,7 +145,6 @@ export default function AdminDelivery() {
             </div>
           </div>
 
-          {/* Message */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700">
               Delivery Message (Optional)
@@ -144,19 +158,43 @@ export default function AdminDelivery() {
               className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-accent/50 disabled:bg-gray-50 disabled:text-gray-400"
             />
           </div>
+        </form>
+      </div>
 
+      <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100 mt-6">
+        <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Payment Options</h3>
+            <p className="text-sm text-gray-500">Enable or disable payment methods.</p>
+          </div>
+        </div>
 
-          <div className="pt-4 border-t border-gray-100 flex justify-end">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <div>
+              <p className="font-bold text-gray-900">Cash on Delivery (COD)</p>
+              <p className="text-xs text-gray-500">Allow customers to pay with cash upon delivery.</p>
+            </div>
             <button
-              type="submit"
-              disabled={saving}
-              className="bg-black text-white px-8 py-3 rounded-lg font-bold uppercase tracking-wider text-sm hover:bg-gray-800 transition-colors disabled:bg-gray-400 flex items-center gap-2"
+              type="button"
+              onClick={() => setPaymentSettings({ ...paymentSettings, isCodEnabled: !paymentSettings.isCodEnabled })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 p-1 ${paymentSettings.isCodEnabled ? "bg-green-600" : "bg-gray-300"}`}
             >
-              {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
-              Save Settings
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${paymentSettings.isCodEnabled ? "translate-x-5" : "translate-x-0"}`} />
             </button>
           </div>
-        </form>
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-8">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-black text-white px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-gray-800 transition-all disabled:bg-gray-400 flex items-center gap-3 shadow-xl shadow-black/10"
+        >
+          {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
+          Apply Store Changes
+        </button>
       </div>
     </div>
   );

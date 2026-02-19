@@ -121,7 +121,7 @@ export default function Navbar({
             {/* Nav Shop Now Link (Secondary CTA - Hidden on Home Hero) */}
             <button
               onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
-              className="nav-shop-now hidden sm:inline-flex border border-white/30 hover:bg-white hover:text-black text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 mr-1"
+              className="nav-shop-now hidden sm:inline-flex border border-yellow-accent/30 hover:bg-white hover:text-black text-yellow-accent px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 mr-1"
             >
               Shop Now
             </button>
@@ -187,7 +187,7 @@ export default function Navbar({
             {/* Mobile Shop Now (Smaller version next to cart) */}
             <button
               onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
-              className="nav-shop-now sm:hidden flex items-center justify-center border border-white/30 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition-all active:scale-95 mr-1"
+              className="nav-shop-now sm:hidden flex items-center justify-center border border-yellow-accent/30 text-yellow-accent px-2.5 py-1 rounded-md text-[10px] font-bold transition-all active:scale-95 mr-1"
             >
               Shop
             </button>

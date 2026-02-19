@@ -34,15 +34,15 @@ const BannerPreview = ({ settings }) => {
   );
 
   return (
-    <div className="w-full bg-gray-100 rounded-xl p-8 relative min-h-[460px] border border-gray-200 overflow-hidden">
+    <div className="w-full bg-gray-100 rounded-xl p-6 relative min-h-[380px] border border-gray-200 overflow-hidden">
       <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold border-b border-gray-200 pb-2">
         Live Floating Card Preview (Desktop View)
       </p>
 
       {/* Floating Card Container */}
-      <div className={`absolute right-0 top-12 bottom-8 flex items-center justify-end pointer-events-none transition-all duration-500 ${!isMinimized ? 'pr-2' : ''}`}>
+      <div className={`absolute right-0 top-10 bottom-8 flex items-center justify-end pointer-events-none transition-all duration-500 ${!isMinimized ? 'pr-2' : ''}`}>
         {!isMinimized ? (
-          <div className="w-48 sm:w-52 bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col relative group h-[340px] sm:h-[360px]">
+          <div className="w-48 sm:w-52 bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col relative group h-[280px] sm:h-[300px]">
             <button
               type="button"
               onClick={() => setIsMinimized(true)}
@@ -315,13 +315,13 @@ export default function AdminOffers() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-12">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="p-4 sm:p-5 relative">
+      <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
+        <h1 className="text-xl font-black text-gray-900 mb-5">
           🎁 Manage Offers & Discounts
         </h1>
 
-        <form onSubmit={handleSave} className="space-y-8">
+        <form onSubmit={handleSave} className="space-y-6">
           {/* Banner Toggle */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
@@ -339,9 +339,9 @@ export default function AdminOffers() {
               onClick={() =>
                 setOfferSettings((prev) => ({ ...prev, isActive: !prev.isActive }))
               }
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.isActive ? "bg-green-600" : "bg-gray-300"}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.isActive ? "bg-green-600" : "bg-gray-300"}`}
             >
-              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${offerSettings.isActive ? "translate-x-6" : "translate-x-0"}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${offerSettings.isActive ? "translate-x-5" : "translate-x-0"}`} />
             </button>
           </div>
 
@@ -349,7 +349,7 @@ export default function AdminOffers() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Image Upload */}
             <div className="md:col-span-1">
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-widest">
+              <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
                 Banner Image
               </label>
               <div className="relative group aspect-[4/5] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center transition-all hover:border-blue-400">
@@ -383,9 +383,9 @@ export default function AdminOffers() {
             </div>
 
             {/* Offer Text & Heading */}
-            <div className="md:col-span-2 space-y-6">
+            <div className="md:col-span-2 space-y-5">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-widest">
+                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
                   Offer Heading (Animated)
                 </label>
                 <input
@@ -395,13 +395,13 @@ export default function AdminOffers() {
                     setOfferSettings((prev) => ({ ...prev, offerHeading: e.target.value }))
                   }
                   placeholder="e.g., Special Offer"
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium shadow-inner"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium shadow-inner"
                 />
                 <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-tight">Small pulse text above the main message</p>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-widest">
+                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
                   Offer Message
                 </label>
                 <textarea
@@ -411,7 +411,7 @@ export default function AdminOffers() {
                   }
                   rows={4}
                   placeholder="e.g., valentine's day special - limited time offer"
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium resize-none shadow-inner"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium resize-none shadow-inner"
                 />
               </div>
             </div>
@@ -420,8 +420,8 @@ export default function AdminOffers() {
           <BannerPreview settings={offerSettings} />
 
           {/* Discount Section */}
-          <div className="border-t pt-8">
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg mb-6">
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <span>💰</span> Enable Discount
@@ -433,9 +433,9 @@ export default function AdminOffers() {
               <button
                 type="button"
                 onClick={() => setOfferSettings((prev) => ({ ...prev, hasDiscount: !prev.hasDiscount }))}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.hasDiscount ? "bg-green-600" : "bg-gray-300"}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 p-1 ${offerSettings.hasDiscount ? "bg-green-600" : "bg-gray-300"}`}
               >
-                <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${offerSettings.hasDiscount ? "translate-x-6" : "translate-x-0"}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${offerSettings.hasDiscount ? "translate-x-5" : "translate-x-0"}`} />
               </button>
             </div>
 
@@ -518,9 +518,9 @@ export default function AdminOffers() {
                               key={cat.value}
                               type="button"
                               onClick={() => toggleCategory(cat.value)}
-                              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${offerSettings.applicableCategories.includes(cat.value) ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white border-gray-200 text-gray-600 hover:border-blue-400"}`}
+                              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border uppercase tracking-wider ${offerSettings.applicableCategories.includes(cat.value) ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-blue-400"}`}
                             >
-                              {cat.label}
+                              {cat.label.replace(" Collection", "")}
                             </button>
                           ))}
                         </div>
@@ -528,10 +528,10 @@ export default function AdminOffers() {
 
                       {/* Products Selector */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center justify-between">
-                          <span>Select Individual Products</span>
-                          <span className="text-[10px] bg-gray-200 px-2 py-0.5 rounded text-gray-500 uppercase tracking-widest font-bold">
-                            Total Selected: {offerSettings.applicableProducts.length}
+                        <h4 className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Select Individual Products</span>
+                          <span className="text-[9px] bg-blue-100 px-2 py-0.5 rounded text-blue-700 uppercase tracking-widest font-black">
+                            {offerSettings.applicableProducts.length} SELECTED
                           </span>
                         </h4>
 
@@ -555,21 +555,21 @@ export default function AdminOffers() {
                           ))}
                         </div>
 
-                        <div className="max-h-64 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-3 rounded-lg border border-gray-200 custom-scrollbar">
+                        <div className="max-h-56 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 bg-white p-2 rounded-xl border border-gray-200 custom-scrollbar">
                           {products
                             .filter(p => selectionListFilter === "all" || p.category === selectionListFilter)
                             .map((p) => (
-                              <label key={p.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-blue-100 group">
+                              <label key={p.id} className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-blue-100 group">
                                 <input
                                   type="checkbox"
                                   checked={offerSettings.applicableProducts.includes(p.id)}
                                   onChange={() => toggleProduct(p.id)}
-                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
-                                <div className="w-8 h-8 rounded overflow-hidden bg-gray-100">
+                                <div className="w-6 h-6 rounded overflow-hidden bg-gray-100 shrink-0">
                                   <img src={toCloudinaryThumb(p.imageUrl || p.image)} alt="" className="w-full h-full object-cover" />
                                 </div>
-                                <span className="text-xs font-semibold text-gray-700 truncate group-hover:text-blue-600">{p.name}</span>
+                                <span className="text-[10px] font-bold text-gray-700 truncate group-hover:text-blue-600">{p.name}</span>
                               </label>
                             ))}
                         </div>

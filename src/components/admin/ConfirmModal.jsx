@@ -1,4 +1,5 @@
 import React from "react";
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
 const ConfirmModal = ({
   isOpen,
@@ -21,23 +22,17 @@ const ConfirmModal = ({
   const iconConfig = {
     danger: (
       <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-4 animate-in zoom-in duration-300">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
+        <AlertTriangle className="w-6 h-6" />
       </div>
     ),
     success: (
       <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-4 animate-in zoom-in duration-300">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-        </svg>
+        <CheckCircle2 className="w-6 h-6" />
       </div>
     ),
     default: (
       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 animate-in zoom-in duration-300">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+        <Info className="w-6 h-6" />
       </div>
     )
   };

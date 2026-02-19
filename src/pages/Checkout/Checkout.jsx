@@ -7,6 +7,9 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
+import { CheckCircle } from "lucide-react";
+
+const MAX_ADDRESSES = 5;
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -30,6 +33,7 @@ export default function Checkout() {
   const [showManualForm, setShowManualForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
+  const [isCodEnabled, setIsCodEnabled] = useState(true);
 
   // Redirect if cart empty or not logged in (double check)
   React.useEffect(() => {
@@ -69,6 +73,28 @@ export default function Checkout() {
     };
     fetchAddresses();
   }, [user]);
+
+  // Fetch Payment Settings
+  React.useEffect(() => {
+    const fetchPaymentSettings = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/settings/payment`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.payment) {
+            setIsCodEnabled(data.payment.isCodEnabled);
+            // If COD is disabled but somehow selected (e.g. default state), force online
+            if (!data.payment.isCodEnabled && paymentMethod === "cod") {
+              setPaymentMethod("online");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching payment settings:", err);
+      }
+    };
+    fetchPaymentSettings();
+  }, []);
 
   const updateField = (field, value) => {
     setAddress((prev) => ({ ...prev, [field]: value }));
@@ -432,7 +458,8 @@ export default function Checkout() {
                 {savedAddresses.length > 0 && (
                   <button
                     onClick={handleToggleForm}
-                    className={`text-xs font-bold transition-all hover:underline ${showManualForm ? "text-red-600" : "text-yellow-600"
+                    disabled={!showManualForm && savedAddresses.length >= MAX_ADDRESSES}
+                    className={`text-xs font-bold transition-all hover:underline ${showManualForm ? "text-red-600" : (savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600")
                       }`}
                   >
                     {showManualForm ? "Cancel" : "+ Add New Address"}
@@ -606,33 +633,35 @@ export default function Checkout() {
                   </p>
                 </div>
 
-                <div
-                  onClick={() => setPaymentMethod("cod")}
-                  className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${paymentMethod === "cod"
-                    ? "border-yellow-accent bg-yellow-accent/[0.03]"
-                    : "border-gray-100 bg-white hover:border-gray-300"
-                    }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
+                {isCodEnabled && (
+                  <div
+                    onClick={() => setPaymentMethod("cod")}
+                    className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${paymentMethod === "cod"
+                      ? "border-yellow-accent bg-yellow-accent/[0.03]"
+                      : "border-gray-100 bg-white hover:border-gray-300"
+                      }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
+                          }`}>
+                          🚚
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">Cash on Delivery (COD)</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Pay at Doorstep</p>
+                        </div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "cod" ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
                         }`}>
-                        🚚
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">Cash on Delivery (COD)</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Pay at Doorstep</p>
+                        {paymentMethod === "cod" && <div className="w-2 h-2 rounded-full bg-black"></div>}
                       </div>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "cod" ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
-                      }`}>
-                      {paymentMethod === "cod" && <div className="w-2 h-2 rounded-full bg-black"></div>}
-                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                      Pay with cash when your order arrives at your doorstep.
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                    Pay with cash when your order arrives at your doorstep.
-                  </p>
-                </div>
+                )}
               </div>
             </section>
           </div>
@@ -738,20 +767,18 @@ export default function Checkout() {
       {/* SUCCESS MODAL */}
       {completedOrderId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-10 text-center animate-in fade-in zoom-in duration-500 border border-white/20">
-            <div className="w-24 h-24 rounded-full bg-green-50 grid place-items-center mx-auto mb-8 relative">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-6 text-center animate-in fade-in zoom-in duration-500 border border-white/20">
+            <div className="w-20 h-20 rounded-full bg-green-50 grid place-items-center mx-auto mb-4 relative">
               <div className="absolute inset-0 rounded-full animate-ping bg-green-200 opacity-20"></div>
-              <svg className="w-12 h-12 text-green-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
+              <CheckCircle className="w-12 h-12 text-green-600 relative z-10" />
             </div>
 
             <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Order Confirmed!</h2>
-            <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+            <p className="text-gray-500 font-medium mb-4 leading-relaxed">
               Your artisanal treasures are being prepared. Thank you for supporting Cozy Creations.
             </p>
 
-            <div className="bg-gray-50 rounded-2xl p-5 mb-10 ring-1 ring-black/5">
+            <div className="bg-gray-50 rounded-2xl p-4 mb-4 ring-1 ring-black/5">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Authentic Order ID</p>
               <p className="font-mono text-base font-black text-gray-900 tracking-tighter">{completedOrderId}</p>
             </div>

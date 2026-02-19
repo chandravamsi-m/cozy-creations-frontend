@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 import { calculateProductDiscount } from "../utils/offerUtils";
+import { ShoppingCart, Plus, Minus } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../assets/svgs/animal-icon.svg";
@@ -287,19 +288,7 @@ export default function ProductCard({ product, onOpenQuickView }) {
                   className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="Decrease quantity"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M20 12H4"
-                    />
-                  </svg>
+                  <Minus className="w-4 h-4" />
                 </button>
 
                 <span className="text-sm font-medium text-gray-900 min-w-[20px] text-center">
@@ -314,19 +303,7 @@ export default function ProductCard({ product, onOpenQuickView }) {
                   className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="Increase quantity"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
             ) : (
@@ -338,19 +315,7 @@ export default function ProductCard({ product, onOpenQuickView }) {
                 className="w-9 h-9 sm:w-10 sm:h-10 bg-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#7A6345] transition-colors shadow-sm"
                 aria-label="Add to cart"
               >
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
+                <ShoppingCart className="w-5 h-5 text-white" />
               </button>
             )}
           </div>

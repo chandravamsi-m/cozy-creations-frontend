@@ -1,5 +1,5 @@
-// src/components/admin/ProductForm.jsx
 import React from "react";
+import { ChevronDown, ImagePlus } from "lucide-react";
 
 const ProductForm = ({
   isEdit,
@@ -267,9 +267,7 @@ const ProductForm = ({
               <option value="mm">mm</option>
             </select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <svg className="w-3 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown className="w-4 h-4" />
             </div>
           </div>
         </div>
@@ -364,9 +362,7 @@ const ProductForm = ({
           ) : (
             <div className="flex flex-col items-center gap-3 p-6 text-center">
               <div className="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center border border-gray-100 text-gray-400 group-hover:text-black group-hover:rotate-6 transition-all duration-300">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.587-1.587a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <ImagePlus className="w-6 h-6" />
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-black uppercase tracking-widest text-gray-900">Upload Product Image</p>

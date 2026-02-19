@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 import { calculateProductDiscount } from "../utils/offerUtils";
+import { X, ShoppingCart, Plus, Minus } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../assets/svgs/animal-icon.svg";
@@ -85,9 +86,7 @@ export default function ProductQuickView({ product, onClose }) {
           onClick={onClose}
           className="absolute top-6 right-6 z-50 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95"
         >
-          <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-5 h-5 text-gray-900" />
         </button>
 
         {/* Left: Image Section */}
@@ -186,18 +185,14 @@ export default function ProductQuickView({ product, onClose }) {
                 onClick={() => handleQuantityChange(-1)}
                 className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
               >
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" />
-                </svg>
+                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <span className="flex-1 text-center font-black text-gray-900 text-sm sm:text-base">{quantity}</span>
               <button
                 onClick={() => handleQuantityChange(1)}
                 className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
               >
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </div>
 
@@ -206,9 +201,7 @@ export default function ProductQuickView({ product, onClose }) {
               onClick={handleAddToCart}
               className="flex-1 h-[48px] sm:h-[56px] bg-yellow-accent hover:bg-yellow-accent/90 text-black font-black uppercase tracking-wider sm:tracking-[0.2em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-yellow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-3"
             >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
+              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" />
               <span className="whitespace-nowrap">Add to Cart</span>
             </button>
           </div>

@@ -1,5 +1,5 @@
-// src/components/Toast.jsx
 import React from "react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 const Toast = ({ show, message, type }) => {
   return (
@@ -13,31 +13,9 @@ const Toast = ({ show, message, type }) => {
       >
         <span className="flex-shrink-0">
           {type === "success" ? (
-            <svg
-              className="w-5 h-5 transition-transform duration-500 ease-out"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <CheckCircle2 className="w-5 h-5 transition-transform duration-500 ease-out" />
           ) : (
-            <svg
-              className="w-5 h-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            <AlertCircle className="w-5 h-5" />
           )}
         </span>
         <span className="text-sm font-semibold tracking-tight">{message}</span>

@@ -6,6 +6,8 @@ import { db } from "../../firebase";
 import { useToast } from "../../contexts/ToastContext";
 import UserSidebar from "../../components/UserSidebar";
 
+const MAX_ADDRESSES = 5;
+
 export default function SavedAddresses() {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -123,6 +125,11 @@ export default function SavedAddresses() {
         );
       } else {
         // Add new
+        if (addresses.length >= MAX_ADDRESSES) {
+          showToast(`Maximum limit of ${MAX_ADDRESSES} addresses reached.`, "error");
+          setModalLoading(false);
+          return;
+        }
         const newAddress = {
           ...formData,
           id: Date.now().toString(),
@@ -167,7 +174,7 @@ export default function SavedAddresses() {
 
           {/* Main Content */}
           <div className="flex-1 w-full scale-in">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
               <div>
                 <h1 className="text-4xl font-bold mb-2 font-serif">Saved Addresses</h1>
                 <p className="text-gray-500 font-medium font-serif">Manage your delivery locations for faster checkout.</p>
@@ -177,13 +184,18 @@ export default function SavedAddresses() {
                   setCurrentAddress(null);
                   setIsModalOpen(true);
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-yellow-accent text-black font-bold rounded-2xl shadow-lg shadow-yellow-accent/20 hover:scale-105 transition-transform active:scale-95 text-xs"
+                disabled={addresses.length >= MAX_ADDRESSES}
+                className={`flex items-center gap-2 px-3 py-2 font-bold rounded-lg shadow-lg transition-all active:scale-95 text-xs ${addresses.length >= MAX_ADDRESSES
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                  : "bg-yellow-accent text-black shadow-yellow-accent/20 hover:scale-105"
+                  }`}
               >
-                <span className="text-lg">+</span> Add New Address
+                <span className="text-lg">+</span>
+                Add New Address
               </button>
             </div>
 
-            <div className="bg-white rounded-[24px] p-4 shadow-sm border border-gray-50">
+            <div className="bg-white rounded-[24px] p-2 shadow-sm border border-gray-50">
               {/* Address Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {addresses.map((addr) => (
@@ -199,7 +211,7 @@ export default function SavedAddresses() {
                       </span>
                     )}
 
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-lg border border-gray-50 group-hover:scale-110 transition-transform">
                         {addr.type === "Home" ? "🏠" : addr.type === "Office" ? "💼" : "📍"}
                       </div>
@@ -208,7 +220,7 @@ export default function SavedAddresses() {
                       </div>
                     </div>
 
-                    <div className="space-y-0.5 mb-6">
+                    <div className="space-y-0.5 mb-2">
                       <p className="font-bold text-gray-900 text-[13px]">{addr.fullName}</p>
                       <p className="text-gray-500 text-[13px] leading-relaxed">{addr.street}</p>
                       <p className="text-gray-500 text-[13px] leading-relaxed">
@@ -246,18 +258,20 @@ export default function SavedAddresses() {
                 ))}
 
                 {/* Add Another Placeholder */}
-                <button
-                  onClick={() => {
-                    setCurrentAddress(null);
-                    setIsModalOpen(true);
-                  }}
-                  className="border-2 border-dashed border-gray-100 rounded-3xl p-6 flex flex-col items-center justify-center gap-3 hover:border-yellow-accent/50 hover:bg-gray-50/50 transition-all min-h-[180px] group"
-                >
-                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-xl group-hover:bg-yellow-accent group-hover:text-black transition-colors">
-                    +
-                  </div>
-                  <p className="text-sm font-bold text-gray-400 group-hover:text-gray-900 transition-colors">Add Another Address</p>
-                </button>
+                {addresses.length < MAX_ADDRESSES && (
+                  <button
+                    onClick={() => {
+                      setCurrentAddress(null);
+                      setIsModalOpen(true);
+                    }}
+                    className="border-2 border-dashed border-gray-100 rounded-3xl p-6 flex flex-col items-center justify-center gap-3 hover:border-yellow-accent/50 hover:bg-gray-50/50 transition-all min-h-[160px] group"
+                  >
+                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-xl group-hover:bg-yellow-accent group-hover:text-black transition-colors">
+                      +
+                    </div>
+                    <p className="text-sm font-bold text-gray-400 group-hover:text-gray-900 transition-colors">Add Another Address</p>
+                  </button>
+                )}
               </div>
 
               {/* Bottom Banner - Scaled Down */}
@@ -278,15 +292,17 @@ export default function SavedAddresses() {
       </div>
 
       {/* Address Modal */}
-      {isModalOpen && (
-        <AddressModal
-          address={currentAddress}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveAddress}
-          loading={modalLoading}
-        />
-      )}
-    </div>
+      {
+        isModalOpen && (
+          <AddressModal
+            address={currentAddress}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveAddress}
+            loading={modalLoading}
+          />
+        )
+      }
+    </div >
   );
 }
 
