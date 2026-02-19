@@ -24,84 +24,6 @@ const toCloudinaryThumb = (url) => {
   return `${parts[0]}/image/upload/w_100,h_100,c_fill,q_auto,f_auto/${parts[1]}`;
 };
 
-const BannerPreview = ({ settings }) => {
-  const [isMinimized, setIsMinimized] = useState(false);
-
-  if (!settings.isActive) return (
-    <div className="w-full bg-gray-100 rounded-lg p-8 text-center text-gray-400 border-2 border-dashed border-gray-200">
-      Floating card is currently disabled and won't be visible
-    </div>
-  );
-
-  return (
-    <div className="w-full bg-gray-100 rounded-xl p-4 sm:p-6 relative min-h-[340px] border border-gray-200 overflow-hidden">
-      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold border-b border-gray-200 pb-2">
-        Live Floating Card Preview (Desktop context)
-      </p>
-
-      {/* Floating Card Container */}
-      <div className={`sm:absolute left-0 right-0 sm:left-auto sm:right-0 sm:top-10 sm:bottom-8 flex items-center justify-center sm:justify-end pointer-events-none transition-all duration-500 ${!isMinimized ? 'sm:pr-2' : ''} ${isMinimized ? 'relative py-12' : 'relative sm:absolute py-8 sm:py-0'}`}>
-        {!isMinimized ? (
-          <div className="w-48 sm:w-52 bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col relative group h-[260px] sm:h-[300px]">
-            <button
-              type="button"
-              onClick={() => setIsMinimized(true)}
-              className="absolute right-2 top-2 w-5 h-5 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-lg z-10 transition-all border border-white/30 hover:bg-black/40"
-            >
-              ✕
-            </button>
-            <div className="h-1/2 bg-gray-100 relative overflow-hidden">
-              {settings.bannerImageUrl ? (
-                <img
-                  src={settings.bannerImageUrl}
-                  alt="Banner"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] text-center p-4">
-                  No Image Selected
-                </div>
-              )}
-            </div>
-            <div className="h-1/2 p-3 sm:p-4 flex flex-col items-center justify-between text-center bg-white">
-              <div className="space-y-1 flex-1 flex flex-col justify-center">
-                <span className="text-[7px] sm:text-[8px] font-black text-yellow-600 uppercase tracking-[0.2em] animate-pulse mb-1">
-                  {settings.offerHeading || "Special Offer"}
-                </span>
-                <h3 className="text-[10px] font-black text-gray-900 leading-tight uppercase tracking-tight line-clamp-3">
-                  {settings.offerText || "Limited time artisanal offer for your home"}
-                </h3>
-              </div>
-              <button className="w-full py-2 bg-yellow-accent rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-yellow-100 hover:bg-yellow-400 transition-colors">
-                Shop Now
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setIsMinimized(false)}
-            className="w-8 sm:w-6 py-3 sm:py-2 bg-yellow-accent rounded-[1.5rem] sm:rounded-l-[2rem] sm:rounded-r-none flex flex-col items-center justify-center gap-1.5 shadow-xl pointer-events-auto hover:-translate-x-1 transition-transform group border border-white/60 ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
-          >
-            <div className="flex flex-col items-center justify-center leading-[1.1] relative">
-              {/* Subtle highlight pulse */}
-              <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse scale-150 blur-lg" />
-
-              {["O", "F", "F", "E", "R", "S"].map((char, i) => (
-                <span key={i} className="text-[10px] font-bold uppercase text-black relative z-10">
-                  {char}
-                </span>
-              ))}
-            </div>
-          </button>
-        )}
-      </div>
-
-      <div className="absolute bottom-4 left-4 text-[10px] text-gray-400">
-        * Preview shows floating behavior on the right edge
-      </div>
-    </div>
-  );
-};
 
 export default function AdminOffers() {
   const { user } = useAuth();
@@ -417,7 +339,7 @@ export default function AdminOffers() {
             </div>
           </div>
 
-          <BannerPreview settings={offerSettings} />
+
 
           {/* Discount Section */}
           <div className="border-t pt-6">

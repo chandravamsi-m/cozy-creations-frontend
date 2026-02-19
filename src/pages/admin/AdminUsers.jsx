@@ -5,7 +5,7 @@ import { collection, getDocs, doc, updateDoc, query, where } from "firebase/fire
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { deleteUser, createUser } from "../../api/adminUsers";
-import ConfirmModal from "../../components/admin/ConfirmModal";
+import ConfirmModal from "../../components/ConfirmModal";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();

@@ -2,7 +2,7 @@ import React from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ToastProvider } from "../../contexts/ToastContext";
-import ConfirmModal from "../../components/admin/ConfirmModal";
+import ConfirmModal from "../../components/ConfirmModal";
 import {
   Menu,
   X,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
-import { calculateProductDiscount } from "../utils/offerUtils";
+import { calculateProductDiscount, getEffectiveDiscount } from "../utils/offerUtils";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
@@ -10,18 +10,42 @@ import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
 
-export default function ProductCard({ product, onOpenQuickView }) {
+export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
   const [quantity, setQuantity] = useState(0);
   const [discount, setDiscount] = useState(null);
   const [loadingDiscount, setLoadingDiscount] = useState(true);
 
-  // Determine if it's a bulk product using the new schema
-  const isBulk = product.isBulk === true || (product.bulkPricingTiers && product.bulkPricingTiers.length > 0);
-  const firstTier = isBulk && product.bulkPricingTiers && product.bulkPricingTiers.length > 0 ? product.bulkPricingTiers[0] : null;
-
-  // Legacy bulk fields are removed as per user feedback
-
   const { addItem, updateQuantity, removeItem, cart } = useCart();
+
+  // Sync UI quantity with cart quantity
+  useEffect(() => {
+    const item = cart.find((i) => i.productId === product.id);
+    setQuantity(item ? item.quantity : 0);
+  }, [cart, product.id]);
+
+  // Fetch or calculate discount for this product
+  useEffect(() => {
+    if (activeOffer) {
+      // Use efficient local calculation if activeOffer is provided
+      const localDiscount = getEffectiveDiscount(product, activeOffer);
+      setDiscount(localDiscount.hasDiscount ? localDiscount : null);
+      setLoadingDiscount(false);
+    } else {
+      // Fallback to async calculation (individual landing pages, etc.)
+      setLoadingDiscount(true);
+      calculateProductDiscount(product)
+        .then((discountData) => {
+          setDiscount(discountData?.hasDiscount ? discountData : null);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch legacy discount:", err);
+          setDiscount(null);
+        })
+        .finally(() => {
+          setLoadingDiscount(false);
+        });
+    }
+  }, [product.id, activeOffer]);
 
   // CATEGORY ICONS
   const categoryIcons = {
@@ -97,31 +121,6 @@ export default function ProductCard({ product, onOpenQuickView }) {
     return `${parts[0]}/image/upload/w_520,h_390,c_fill,q_auto,f_auto/${parts[1]}`;
   };
 
-  // Sync UI quantity with cart quantity
-  useEffect(() => {
-    const item = cart.find((i) => i.productId === product.id);
-    setQuantity(item ? item.quantity : 0);
-  }, [cart, product.id]);
-
-  // Fetch discount for this product
-  useEffect(() => {
-    setLoadingDiscount(true);
-    calculateProductDiscount(product)
-      .then((discountData) => {
-        if (discountData.hasDiscount) {
-          setDiscount(discountData);
-        } else {
-          setDiscount(null);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch discount:', err);
-      })
-      .finally(() => {
-        setLoadingDiscount(false);
-      });
-  }, [product.id]);
-
   const handleAddToCart = () => {
     addItem({
       productId: product.id,
@@ -191,7 +190,7 @@ export default function ProductCard({ product, onOpenQuickView }) {
 
       {/* OFFER BANNER (Top Right) */}
       {discount?.hasDiscount && (
-        <div className="absolute top-2 right-2 bg-yellow-accent text-black text-[8px] sm:text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md z-20 shadow-lg border border-yellow-accent/50 animate-pulse">
+        <div className="absolute top-2 right-2 bg-yellow-accent text-black text-[8px] sm:text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md z-20 shadow-lg border border-yellow-accent/50">
           Offer
         </div>
       )}

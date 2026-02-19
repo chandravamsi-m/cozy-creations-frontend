@@ -5,6 +5,8 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useToast } from "../../contexts/ToastContext";
 import UserSidebar from "../../components/UserSidebar";
+import ConfirmModal from "../../components/ConfirmModal";
+import AddressModal from "../../components/common/AddressModal";
 
 const MAX_ADDRESSES = 5;
 
@@ -19,6 +21,10 @@ export default function SavedAddresses() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentAddress, setCurrentAddress] = useState(null); // null means adding
   const [modalLoading, setModalLoading] = useState(false);
+
+  // Deletion Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -85,15 +91,20 @@ export default function SavedAddresses() {
     }
   };
 
-  const handleRemoveAddress = async (addressId) => {
-    if (!window.confirm("Are you sure you want to remove this address?")) return;
+  const handleRemoveAddress = (addressId) => {
+    setAddressToDelete(addressId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmRemoveAddress = async () => {
+    if (!addressToDelete) return;
 
     try {
-      const updatedAddresses = addresses.filter(addr => addr.id !== addressId);
+      const updatedAddresses = addresses.filter(addr => addr.id !== addressToDelete);
       const userRef = doc(db, "users", user.uid);
 
       // If we removed the default address and there are others left, make the first one default
-      if (addresses.find(a => a.id === addressId)?.isDefault && updatedAddresses.length > 0) {
+      if (addresses.find(a => a.id === addressToDelete)?.isDefault && updatedAddresses.length > 0) {
         updatedAddresses[0].isDefault = true;
       }
 
@@ -109,6 +120,8 @@ export default function SavedAddresses() {
     } catch (err) {
       console.error(err);
       showToast("Failed to remove address", "error");
+    } finally {
+      setAddressToDelete(null);
     }
   };
 
@@ -231,7 +244,8 @@ export default function SavedAddresses() {
 
                     <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setCurrentAddress(addr);
                           setIsModalOpen(true);
                         }}
@@ -240,7 +254,10 @@ export default function SavedAddresses() {
                         ✎ Edit
                       </button>
                       <button
-                        onClick={() => handleRemoveAddress(addr.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveAddress(addr.id);
+                        }}
                         className="flex items-center gap-1.5 text-[11px] font-bold text-red-500 hover:text-red-600 transition-colors"
                       >
                         🗑 Remove
@@ -291,150 +308,27 @@ export default function SavedAddresses() {
         </div>
       </div>
 
-      {/* Address Modal */}
-      {
-        isModalOpen && (
-          <AddressModal
-            address={currentAddress}
-            onClose={() => setIsModalOpen(false)}
-            onSave={handleSaveAddress}
-            loading={modalLoading}
-          />
-        )
-      }
-    </div >
-  );
-}
+      {isModalOpen && (
+        <AddressModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveAddress}
+          address={currentAddress}
+          loading={modalLoading}
+          showTypeSelect={true}
+        />
+      )}
 
-function AddressModal({ address, onClose, onSave, loading }) {
-  const [formData, setFormData] = useState({
-    type: address?.type || "Home",
-    fullName: address?.fullName || "",
-    phone: address?.phone || "",
-    street: address?.street || "",
-    city: address?.city || "",
-    state: address?.state || "",
-    pincode: address?.pincode || "",
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 font-montserrat">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
-          <h2 className="font-bold text-gray-900">{address ? "Edit Address" : "Add New Address"}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">✕</button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Address Type</label>
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData(p => ({ ...p, type: e.target.value }))}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-            >
-              <option value="Home">Home</option>
-              <option value="Office">Office</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Name</label>
-            <input
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => setFormData(p => ({ ...p, fullName: e.target.value }))}
-              required
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-              placeholder="e.g. John Doe"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Phone Number</label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
-              required
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-              placeholder="9876543210"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Address Line</label>
-            <input
-              type="text"
-              value={formData.street}
-              onChange={(e) => setFormData(p => ({ ...p, street: e.target.value }))}
-              required
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-              placeholder="House No, Street, Landmark"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData(p => ({ ...p, city: e.target.value }))}
-                required
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-                placeholder="e.g. Mumbai"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">State</label>
-              <input
-                type="text"
-                value={formData.state}
-                onChange={(e) => setFormData(p => ({ ...p, state: e.target.value }))}
-                required
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-                placeholder="e.g. Maharashtra"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pincode</label>
-            <input
-              type="text"
-              value={formData.pincode}
-              onChange={(e) => setFormData(p => ({ ...p, pincode: e.target.value }))}
-              required
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-              placeholder="400001"
-            />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 bg-gray-50 text-gray-600 font-bold rounded-2xl text-xs hover:bg-gray-100 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-[2] py-3 bg-yellow-accent text-black font-bold rounded-2xl text-xs hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
-            >
-              {loading ? "Saving..." : address ? "Apply Changes" : "Save Address"}
-            </button>
-          </div>
-        </form>
-      </div>
+      {/* Confirmation Modal for deletion */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmRemoveAddress}
+        title="Remove Address"
+        message="Are you sure you want to remove this address? This action cannot be undone."
+        confirmText="Remove Address"
+        type="danger"
+      />
     </div>
   );
 }

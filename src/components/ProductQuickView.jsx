@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
-import { calculateProductDiscount } from "../utils/offerUtils";
+import { calculateProductDiscount, getEffectiveDiscount } from "../utils/offerUtils";
 import { X, ShoppingCart, Plus, Minus } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
@@ -10,11 +10,13 @@ import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
 
-export default function ProductQuickView({ product, onClose }) {
+export default function ProductQuickView({ product, onClose, activeOffer }) {
   const [quantity, setQuantity] = useState(1);
   const [discount, setDiscount] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const { addItem, updateQuantity, removeItem, cart } = useCart();
+
+  const isBulk = product ? (product.isBulk === true || (product.bulkPricingTiers && product.bulkPricingTiers.length > 0)) : false;
 
   // CATEGORY ICONS
   const categoryIcons = {
@@ -25,17 +27,21 @@ export default function ProductQuickView({ product, onClose }) {
     glassJar: GlassJarIcon,
   };
 
-  const isBulk = product.isBulk === true || (product.bulkPricingTiers && product.bulkPricingTiers.length > 0);
-
   useEffect(() => {
     if (product) {
-      calculateProductDiscount(product).then(setDiscount);
+      if (activeOffer) {
+        // Instant local calculation
+        setDiscount(getEffectiveDiscount(product, activeOffer));
+      } else {
+        // Fallback to async
+        calculateProductDiscount(product).then(setDiscount);
+      }
 
       // Sync with cart quantity if exists
       const item = cart.find((i) => i.productId === product.id);
       if (item) setQuantity(item.quantity);
     }
-  }, [product, cart]);
+  }, [product, cart, activeOffer]);
 
   if (!product) return null;
 
@@ -137,8 +143,7 @@ export default function ProductQuickView({ product, onClose }) {
               </div>
 
               {discount?.hasDiscount && (
-                <div className="inline-flex items-center gap-2 bg-yellow-accent/20 border border-yellow-accent/30 text-yellow-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit animate-pulse">
-                  <span className="w-1.5 h-1.5 bg-yellow-accent rounded-full animate-ping" />
+                <div className="inline-flex items-center gap-2 bg-yellow-accent/20 border border-yellow-accent/30 text-yellow-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit">
                   Offer Applied
                 </div>
               )}

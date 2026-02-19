@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { sendOrderConfirmation } from "../../api/email";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { CheckCircle } from "lucide-react";
+import ConfirmModal from "../../components/ConfirmModal";
+import AddressModal from "../../components/common/AddressModal";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const MAX_ADDRESSES = 5;
 
 export default function Checkout() {
@@ -19,21 +21,17 @@ export default function Checkout() {
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [completedOrderId, setCompletedOrderId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("online"); // 'online' or 'cod'
+  const [savingAddress, setSavingAddress] = useState(false);
 
-  const [address, setAddress] = useState({
-    fullName: "",
-    phone: "",
-    street: "",
-    city: "",
-    state: "",
-    pincode: "",
-  });
-  const [errors, setErrors] = useState({});
   const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [showManualForm, setShowManualForm] = useState(false);
-  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [isCodEnabled, setIsCodEnabled] = useState(true);
+
+  // Deletion Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState(null);
 
   // Redirect if cart empty or not logged in (double check)
   React.useEffect(() => {
@@ -59,16 +57,10 @@ export default function Checkout() {
           if (addresses.length > 0) {
             const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
             setSelectedAddressId(defaultAddr.id);
-            setShowManualForm(false);
-          } else {
-            setShowManualForm(true);
           }
-        } else {
-          setShowManualForm(true);
         }
       } catch (err) {
         console.error("Error fetching addresses:", err);
-        setShowManualForm(true);
       }
     };
     fetchAddresses();
@@ -96,116 +88,87 @@ export default function Checkout() {
     fetchPaymentSettings();
   }, []);
 
-  const updateField = (field, value) => {
-    setAddress((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
   const handleToggleForm = () => {
-    if (showManualForm) {
-      // Cancel
-      setShowManualForm(false);
-      setEditingAddressId(null);
-      setAddress({
-        fullName: "",
-        phone: "",
-        street: "",
-        city: "",
-        state: "",
-        pincode: "",
-      });
-      setErrors({});
-      if (savedAddresses.length > 0) {
-        const defaultAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
-        setSelectedAddressId(defaultAddr.id);
-      }
-    } else {
-      // Add New
-      setShowManualForm(true);
-      setSelectedAddressId(null);
-      setEditingAddressId(null);
-      setAddress({
-        fullName: "",
-        phone: "",
-        street: "",
-        city: "",
-        state: "",
-        pincode: "",
-      });
-      setErrors({});
-    }
+    setEditingAddress(null);
+    setIsModalOpen(true);
   };
 
   const handleEditAddress = (addr) => {
-    setAddress({
-      fullName: addr.fullName,
-      phone: addr.phone,
-      street: addr.street,
-      city: addr.city,
-      state: addr.state,
-      pincode: addr.pincode,
-    });
-    setErrors({});
-    setEditingAddressId(addr.id);
-    setShowManualForm(true);
-    setSelectedAddressId(null);
+    setEditingAddress(addr);
+    setIsModalOpen(true);
   };
 
-  const handleRemoveAddress = async (e, id) => {
-    e.stopPropagation();
-    if (!window.confirm("Are you sure you want to remove this address?")) return;
+  const handleSaveModalAddress = async (formData) => {
+    setSavingAddress(true);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      let updatedAddresses;
+      const newId = editingAddress?.id || Date.now().toString();
+
+      if (editingAddress) {
+        updatedAddresses = savedAddresses.map(a =>
+          a.id === editingAddress.id ? { ...a, ...formData, id: a.id } : a
+        );
+      } else {
+        const newAddress = {
+          ...formData,
+          id: newId,
+          isDefault: savedAddresses.length === 0
+        };
+        updatedAddresses = [...savedAddresses, newAddress];
+      }
+
+      await setDoc(userRef, {
+        addresses: updatedAddresses,
+        shippingAddress: { ...formData }
+      }, { merge: true });
+
+      setSavedAddresses(updatedAddresses);
+      setSelectedAddressId(newId);
+      setIsModalOpen(false);
+      setEditingAddress(null);
+    } catch (err) {
+      console.error("Save address error:", err);
+      alert("Failed to save address.");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
+
+  const handleRemoveAddress = (id) => {
+    setAddressToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmRemoveAddress = async () => {
+    if (!addressToDelete) return;
 
     try {
-      const updatedAddresses = savedAddresses.filter(a => a.id !== id);
+      const updatedAddresses = savedAddresses.filter(a => a.id !== addressToDelete);
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, { addresses: updatedAddresses }, { merge: true });
       setSavedAddresses(updatedAddresses);
-      if (selectedAddressId === id) {
+
+      if (selectedAddressId === addressToDelete) {
         if (updatedAddresses.length > 0) {
           setSelectedAddressId(updatedAddresses[0].id);
-        } else {
-          setShowManualForm(true);
         }
       }
     } catch (err) {
       console.error("Error removing address:", err);
       alert("Failed to remove address.");
+    } finally {
+      setAddressToDelete(null);
     }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-    if (!address.fullName.trim()) newErrors.fullName = "Required";
-    if (!address.phone.trim()) newErrors.phone = "Required";
-    else if (address.phone.length < 10) newErrors.phone = "Invalid phone number";
-    if (!address.street.trim()) newErrors.street = "Required";
-    if (!address.city.trim()) newErrors.city = "Required";
-    if (!address.state.trim()) newErrors.state = "Required";
-    if (!address.pincode.trim()) newErrors.pincode = "Required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handlePlaceOrder = async () => {
 
     // Determine which address to use
-    let finalAddress = null;
-    if (showManualForm) {
-      if (!validate()) return;
-      finalAddress = address;
-    } else {
-      finalAddress = savedAddresses.find(a => a.id === selectedAddressId);
-      if (!finalAddress) {
-        alert("Please select a shipping address.");
-        return;
-      }
+    let finalAddress = savedAddresses.find(a => a.id === selectedAddressId);
+    if (!finalAddress) {
+      alert("Please select a shipping address.");
+      return;
     }
 
     if (!idToken) {
@@ -264,33 +227,7 @@ export default function Checkout() {
         // Save address to user profile for future use
         try {
           const userRef = doc(db, "users", user.uid);
-
-          if (showManualForm) {
-            let updatedAddresses;
-            if (editingAddressId) {
-              // Update EXISTING address
-              updatedAddresses = savedAddresses.map(a =>
-                a.id === editingAddressId ? { ...address, id: a.id, type: a.type, isDefault: a.isDefault } : a
-              );
-            } else {
-              // Add NEW address
-              const newAddress = {
-                ...address,
-                id: Date.now().toString(),
-                type: "Home",
-                isDefault: savedAddresses.length === 0
-              };
-              updatedAddresses = [...savedAddresses, newAddress];
-            }
-
-            await setDoc(userRef, {
-              addresses: updatedAddresses,
-              shippingAddress: address
-            }, { merge: true });
-          } else {
-            // Just update the primary shipping address field for checkout compatibility
-            await setDoc(userRef, { shippingAddress: finalAddress }, { merge: true });
-          }
+          await setDoc(userRef, { shippingAddress: finalAddress }, { merge: true });
         } catch (err) {
           console.error("Failed to save address:", err);
         }
@@ -360,31 +297,8 @@ export default function Checkout() {
               const result = await verifyRes.json();
               try {
                 const userRef = doc(db, "users", user.uid);
-
-                if (showManualForm) {
-                  let updatedAddresses;
-                  if (editingAddressId) {
-                    updatedAddresses = savedAddresses.map(a =>
-                      a.id === editingAddressId ? { ...address, id: a.id, type: a.type, isDefault: a.isDefault } : a
-                    );
-                  } else {
-                    const newAddress = {
-                      ...address,
-                      id: Date.now().toString(),
-                      type: "Home",
-                      isDefault: savedAddresses.length === 0
-                    };
-                    updatedAddresses = [...savedAddresses, newAddress];
-                  }
-
-                  await setDoc(userRef, {
-                    addresses: updatedAddresses,
-                    shippingAddress: address
-                  }, { merge: true });
-                } else {
-                  // Just update the primary shipping address field for checkout compatibility
-                  await setDoc(userRef, { shippingAddress: orderData.shippingAddress }, { merge: true });
-                }
+                // Just update the primary shipping address field for checkout compatibility
+                await setDoc(userRef, { shippingAddress: orderData.shippingAddress }, { merge: true });
               } catch (err) {
                 console.error("Failed to save address:", err);
               }
@@ -412,9 +326,9 @@ export default function Checkout() {
           }
         },
         prefill: {
-          name: address.fullName,
+          name: finalAddress.fullName,
           email: user.email,
-          contact: address.phone,
+          contact: finalAddress.phone,
         },
         theme: {
           color: "#FACC15",
@@ -432,7 +346,7 @@ export default function Checkout() {
   };
 
   return (
-    <main className="w-full bg-[#FBFAF9] min-h-screen font-montserrat pb-20 pt-16 md:pt-20">
+    <main className="w-full bg-[#FBFAF9] min-h-screen font-montserrat pb-10 sm:pb-20 pt-16 md:pt-20">
       <div className="max-w-7xl mx-auto px-4">
         {/* Page Title & Back link */}
         <div className="flex items-center justify-between mb-4">
@@ -451,143 +365,93 @@ export default function Checkout() {
 
             {/* 1. SHIPPING ADDRESS */}
             <section className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Select Shipping Address</h2>
+                  <h2 className="text-lg font-bold text-gray-900 tracking-tight">Select Shipping Address</h2>
                 </div>
                 {savedAddresses.length > 0 && (
                   <button
                     onClick={handleToggleForm}
-                    disabled={!showManualForm && savedAddresses.length >= MAX_ADDRESSES}
-                    className={`text-xs font-bold transition-all hover:underline ${showManualForm ? "text-red-600" : (savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600")
-                      }`}
+                    disabled={savedAddresses.length >= MAX_ADDRESSES}
+                    className={`text-[11px] font-bold transition-all hover:underline ${savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600"}`}
                   >
-                    {showManualForm ? "Cancel" : "+ Add New Address"}
+                    + Add New Address
                   </button>
                 )}
               </div>
 
-              {!showManualForm && savedAddresses.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {savedAddresses.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {savedAddresses.map((addr) => (
                     <div
                       key={addr.id}
                       onClick={() => setSelectedAddressId(addr.id)}
-                      className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${selectedAddressId === addr.id
-                        ? "border-yellow-accent bg-yellow-accent/[0.03]"
-                        : "border-gray-100 bg-white hover:border-gray-300"
+                      className={`relative px-2 sm:px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer group hover:shadow-md ${selectedAddressId === addr.id
+                        ? "border-yellow-accent bg-[#FFFDF5]"
+                        : "border-gray-50 bg-white hover:border-gray-200"
                         }`}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${selectedAddressId === addr.id ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400 group-hover:bg-gray-100"
+                      <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                          <div className={`shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-sm sm:text-base transition-all shadow-sm border border-gray-50 group-hover:scale-110 ${selectedAddressId === addr.id ? "bg-white text-black" : "bg-white text-gray-400"
                             }`}>
-                            {addr.type === "Home" ? "🏠" : "💼"}
+                            {addr.type === "Home" ? "🏠" : addr.type === "Office" ? "💼" : "📍"}
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">{addr.type || "Address"}</p>
-                            {addr.isDefault && <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-tighter">Default</span>}
+                          <div className="min-w-0">
+                            <p className="text-[11px] sm:text-[13px] font-bold text-gray-900 leading-tight">{addr.type || "Address"}</p>
+                            {addr.isDefault && <span className="text-[8px] sm:text-[9px] font-black text-yellow-600 uppercase tracking-wider block sm:inline">DEFAULT</span>}
                           </div>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedAddressId === addr.id ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
+                        <div className={`shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 flex items-center justify-center transition-all mt-0.5 ${selectedAddressId === addr.id ? "border-yellow-accent bg-yellow-accent" : "border-gray-200"
                           }`}>
-                          {selectedAddressId === addr.id && <div className="w-2 h-2 rounded-full bg-black"></div>}
+                          {selectedAddressId === addr.id && <div className="w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full bg-black"></div>}
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-gray-900">{addr.fullName}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                          {addr.street}<br />
-                          {addr.city}, {addr.state} {addr.pincode}<br />
-                          India
+                      <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-2 ml-1">
+                        <p className="text-[11px] sm:text-[12px] font-bold text-gray-900 leading-tight break-words">{addr.fullName}</p>
+                        <p className="text-[10px] sm:text-[12px] text-gray-500 leading-[1.2] font-medium break-words line-clamp-2">
+                          {addr.street}
+                        </p>
+                        <p className="text-[10px] sm:text-[12px] text-gray-500 leading-[1.2] font-medium break-words">
+                          {addr.city}, {addr.state} {addr.pincode}
                         </p>
                       </div>
 
-                      <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-4">
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-3 sm:gap-4">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditAddress(addr);
                           }}
-                          className="text-[11px] font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-widest"
+                          className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
                         >
-                          Edit
+                          ✎ Edit
                         </button>
                         <button
-                          onClick={(e) => handleRemoveAddress(e, addr.id)}
-                          className="text-[11px] font-bold text-gray-400 hover:text-red-600 transition-colors uppercase tracking-widest"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAddress(addr.id);
+                          }}
+                          className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
                         >
-                          Remove
+                          🗑 Del
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm ring-1 ring-black/5">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-lg">{editingAddressId ? "Edit Address" : "New Shipping Address"}</h3>
+                <div
+                  onClick={handleToggleForm}
+                  className="border-2 border-dashed border-gray-100 rounded-2xl p-8 flex flex-col items-center justify-center gap-2 hover:border-yellow-accent/50 hover:bg-gray-50/50 transition-all cursor-pointer group"
+                >
+                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-xl group-hover:bg-yellow-accent group-hover:text-black transition-all duration-300">
+                    +
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
-                      <input
-                        value={address.fullName}
-                        onChange={(e) => updateField("fullName", e.target.value)}
-                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.fullName ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
-                        placeholder="John Doe"
-                      />
-                      {errors.fullName && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.fullName}</p>}
-                    </div>
-
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Phone Number</label>
-                      <input
-                        value={address.phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          if (val.length <= 10) updateField("phone", val);
-                        }}
-                        type="tel"
-                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.phone ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
-                        placeholder="9876543210"
-                      />
-                      {errors.phone && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.phone}</p>}
-                    </div>
-
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Street Address</label>
-                      <textarea
-                        value={address.street}
-                        onChange={(e) => updateField("street", e.target.value)}
-                        className={`w-full h-24 bg-gray-50 border rounded-xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all resize-none ${errors.street ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
-                        placeholder="Flat No, Building, Area"
-                      />
-                      {errors.street && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.street}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">City</label>
-                      <input
-                        value={address.city}
-                        onChange={(e) => updateField("city", e.target.value)}
-                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.city ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
-                        placeholder="Mumbai"
-                      />
-                      {errors.city && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.city}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Pin Code</label>
-                      <input
-                        value={address.pincode}
-                        onChange={(e) => updateField("pincode", e.target.value)}
-                        className={`w-full h-12 bg-gray-50 border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-accent/40 transition-all ${errors.pincode ? "border-red-300" : "border-gray-200 focus:border-yellow-accent"}`}
-                        placeholder="400001"
-                      />
-                      {errors.pincode && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.pincode}</p>}
-                    </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-gray-900 mb-0.5">No addresses found</p>
+                    <p className="text-xs text-gray-400 font-medium">Click here to add your first shipping address.</p>
                   </div>
                 </div>
               )}
@@ -598,7 +462,7 @@ export default function Checkout() {
             {/* 2. PAYMENT METHOD */}
             <section className="space-y-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Payment Method</h2>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Payment Method</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -800,6 +664,24 @@ export default function Checkout() {
           </div>
         </div>
       )}
+      {/* Confirmation Modal for deletion */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmRemoveAddress}
+        title="Remove Address"
+        message="Are you sure you want to remove this address? This action cannot be undone."
+        confirmText="Remove Address"
+        type="danger"
+      />
+      <AddressModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveModalAddress}
+        address={editingAddress}
+        loading={savingAddress}
+        showTypeSelect={true}
+      />
     </main>
   );
 }

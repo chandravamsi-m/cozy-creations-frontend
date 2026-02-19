@@ -147,7 +147,7 @@ export default function CartPage() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/products")}
+            onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
             className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50 shadow-sm"
           >
             Continue shopping
@@ -165,7 +165,7 @@ export default function CartPage() {
               Add something cozy — your next favorite candle is waiting.
             </p>
             <button
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
               className="mt-6 bg-yellow-accent hover:bg-yellow-accent/90 px-5 py-3 rounded-xl font-semibold text-black"
             >
               Browse products

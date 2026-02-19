@@ -7,7 +7,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
-import ConfirmModal from "../../components/admin/ConfirmModal";
+import ConfirmModal from "../../components/ConfirmModal";
 import { Loader2 } from "lucide-react";
 
 // Cloudinary config

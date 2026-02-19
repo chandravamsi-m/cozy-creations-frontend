@@ -263,7 +263,7 @@ export default function ProductsPage() {
 
     setFiltered(list);
     setCurrentPage(1);
-  }, [products, category, search, priceRange, sortBy]);
+  }, [products, category, search, priceRange, sortBy, activeOffer]);
 
   // Firestore reload when category changes
   useEffect(() => {
@@ -284,18 +284,16 @@ export default function ProductsPage() {
   // When arriving from a CTA that explicitly asks to skip the hero, jump to products.
   // Default (e.g., navbar) keeps the hero visible.
   useEffect(() => {
-    if (appliedInitialScrollRef.current) return;
     const shouldSkipHero =
       location.state?.scrollTo === "products" && location.state?.skipHero;
     if (!shouldSkipHero) return;
-    appliedInitialScrollRef.current = true;
 
     // Wait a tick for layout so scroll is reliable.
     requestAnimationFrame(() => {
       const el = document.getElementById("products");
       if (el) el.scrollIntoView({ behavior: "smooth" });
     });
-  }, [location.state]);
+  }, [location.state, location.key]); // Trigger on state or key change
 
   // On normal visits, make sure we start at the top of the page/hero.
   useEffect(() => {
@@ -637,6 +635,7 @@ export default function ProductsPage() {
                         <div key={p.id} data-product-card>
                           <ProductCard
                             product={p}
+                            activeOffer={activeOffer}
                             onOpenQuickView={() => setSelectedProduct(p)}
                           />
                         </div>

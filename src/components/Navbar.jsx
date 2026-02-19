@@ -187,7 +187,7 @@ export default function Navbar({
             {/* Mobile Shop Now (Smaller version next to cart) */}
             <button
               onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
-              className="nav-shop-now sm:hidden flex items-center justify-center border border-yellow-accent/30 text-yellow-accent px-2.5 py-1 rounded-md text-[10px] font-bold transition-all active:scale-95 mr-1"
+              className="nav-shop-now sm:hidden flex items-center justify-center border border-yellow-accent/30 text-yellow-accent px-3 py-1.5 rounded-md text-[10px] font-bold transition-all active:scale-90 mr-1 relative z-10"
             >
               Shop
             </button>
