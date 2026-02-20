@@ -111,27 +111,11 @@ export default function OfferBanner() {
           </div>
         </div>
       ) : (
-        /* Minimized State - Responsive */
+        /* Unified Minimized Gift Icon */
         <div className="flex flex-col items-end">
-          {/* Desktop Tab */}
           <button
             onClick={() => setIsMinimized(false)}
-            className="hidden md:flex w-6 py-2 bg-yellow-accent rounded-l-[2rem] flex-col items-center justify-center gap-2 shadow-[0_15px_30px_rgba(251,191,36,0.3)] pointer-events-auto hover:-translate-x-2 transition-all duration-500 group border-y-1 border-l-1 border-white/60 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
-          >
-            <div className="py-2 flex flex-col items-center justify-center relative">
-              <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse scale-150 blur-xl pointer-events-none" />
-              {["O", "F", "F", "E", "R", "S"].map((char, i) => (
-                <span key={i} className="text-[0.8rem] font-bold leading-[1.2] tracking-wide text-black relative z-10">
-                  {char}
-                </span>
-              ))}
-            </div>
-          </button>
-
-          {/* Mobile Floating Icon */}
-          <button
-            onClick={() => setIsMinimized(false)}
-            className="md:hidden w-12 h-12 bg-yellow-accent rounded-full flex items-center justify-center shadow-2xl pointer-events-auto hover:scale-110 active:scale-95 transition-all duration-300 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white mr-2"
+            className="w-12 h-12 bg-yellow-accent rounded-full flex items-center justify-center shadow-2xl pointer-events-auto hover:scale-110 active:scale-95 transition-all duration-300 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white mr-2"
           >
             <Gift className="w-5 h-5 text-black" />
           </button>
