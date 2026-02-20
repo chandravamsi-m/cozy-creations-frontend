@@ -80,9 +80,9 @@ export default function ContactUs() {
     form: false,
   });
 
-  // Auto-scroll after 5s on hero
+  // Auto-scroll after 5s on hero (Desktop only)
   useAutoScrollFromHero({
-    enabled: true,
+    enabled: typeof window !== 'undefined' && window.innerWidth > 768,
     targetRef: contactCardsRef,
     delayMs: 5000,
   });
@@ -301,7 +301,7 @@ export default function ContactUs() {
   return (
     <div className="relative w-full min-h-screen bg-[#FBFAF9] font-montserrat">
       {/* HERO */}
-      <section className="relative w-full h-screen overflow-hidden">
+      <section className="relative w-full h-[50vh] min-h-[350px] md:h-screen overflow-hidden">
         <img
           src={optimizeCloudinaryImage(CONTACT_HERO_IMAGE, IMAGE_PRESETS.hero)}
           alt="Contact Hero Background"
@@ -311,7 +311,7 @@ export default function ContactUs() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/40" />
 
-        <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center pt-16 sm:pt-0">
           <div
             ref={heroContentRef}
             className={`max-w-3xl transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
@@ -336,12 +336,14 @@ export default function ContactUs() {
           </div>
         </div>
 
-        {/* Scroll Down Indicator */}
-        <ScrollDownIndicator
-          onClick={() =>
-            contactCardsRef?.current?.scrollIntoView({ behavior: "smooth" })
-          }
-        />
+        {/* Scroll Down Indicator - Desktop only */}
+        <div className="hidden md:block">
+          <ScrollDownIndicator
+            onClick={() =>
+              contactCardsRef?.current?.scrollIntoView({ behavior: "smooth" })
+            }
+          />
+        </div>
       </section>
 
       {/* CONTACT CARDS */}
