@@ -197,7 +197,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
       {/* PRODUCT IMAGE */}
       <div
-        className="aspect-[4/3] bg-[#F5F5F0] overflow-visible shrink-0 relative cursor-pointer"
+        className="aspect-square sm:aspect-[4/3] bg-[#F5F5F0] overflow-visible shrink-0 relative cursor-pointer"
         onClick={onOpenQuickView}
       >
         <div className="w-full h-full overflow-hidden rounded-t-2xl">
@@ -219,27 +219,27 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
       </div>
 
       {/* PRODUCT DETAILS */}
-      <div className="pt-3 px-3 pb-1.5 sm:pt-4 sm:px-4 sm:pb-2 xl:pt-3 xl:px-3 xl:pb-1.5 space-y-3 flex-1 flex flex-col">
+      <div className="pt-1.5 px-1.5 pb-0.5 sm:pt-3 sm:px-3 sm:pb-1.5 xl:pt-2 xl:px-2 xl:pb-1 space-y-0.5 sm:space-y-2 flex-1 flex flex-col">
         {/* NAME + PRICE */}
-        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-1 sm:gap-2">
+        <div className="flex flex-row items-center justify-between gap-1 sm:gap-2">
           <h3
-            className="font-semibold text-sm sm:text-base xl:text-sm text-gray-900 w-full sm:w-auto sm:flex-1 leading-tight cursor-pointer hover:text-[#8B7355] transition-colors"
+            className="font-semibold text-[11px] sm:text-sm md:text-base lg:text-sm text-gray-900 flex-1 leading-tight cursor-pointer hover:text-[#8B7355] transition-colors line-clamp-1"
             onClick={onOpenQuickView}
           >
             {product.name}
           </h3>
           {discount && discount.hasDiscount ? (
-            <div className="flex items-center gap-1.5 bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-1 rounded-full shadow-sm self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap shrink-0">
-              <span className="text-[10px] text-gray-400 diagonal-strike font-medium leading-none">
+            <div className="flex items-center gap-1 bg-yellow-accent/60 border border-yellow-accent/70 px-1 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
+              <span className="text-[9px] text-gray-400 diagonal-strike font-medium leading-none">
                 ₹{product.price.toLocaleString()}
               </span>
-              <span className="text-xs sm:text-sm font-bold text-green-700 leading-none">
+              <span className="text-[10px] sm:text-sm font-bold text-green-700 leading-none">
                 ₹{discount.discountedPrice.toLocaleString()}
               </span>
             </div>
           ) : (
-            <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-3 py-1 rounded-full shadow-sm self-start sm:self-auto mt-1 sm:mt-0 whitespace-nowrap shrink-0">
-              <span className="text-sm sm:text-base xl:text-sm font-bold text-[#6F573D] leading-none">
+            <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
+              <span className="text-[10px] sm:text-sm md:text-base lg:text-sm font-bold text-[#6F573D] leading-none">
                 {formatPrice(product.price)}
               </span>
             </div>
@@ -247,18 +247,18 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
         </div>
 
         {/* CHIPS */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-[2px] sm:gap-1">
           {getDetailChips(product).map((chip) => (
             <span
               key={chip.key}
-              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-700"
+              className="inline-flex items-center px-1 py-0 rounded-full text-[9px] sm:text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap"
             >
               {chip.label}
             </span>
           ))}
         </div>
 
-        <div className="border-t border-gray-100 mt-auto pt-2">
+        <div className="border-t border-gray-100 mt-auto pt-1 sm:pt-1.5">
           {/* CATEGORY + CART BUTTON */}
           <div className="flex items-center justify-between">
             {/* CATEGORY ICON */}
@@ -284,10 +284,10 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
                     e.stopPropagation();
                     handleQuantityChange(-1);
                   }}
-                  className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  className="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="Decrease quantity"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3.5 h-3.5" />
                 </button>
 
                 <span className="text-sm font-medium text-gray-900 min-w-[20px] text-center">
@@ -299,10 +299,10 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
                     e.stopPropagation();
                     handleQuantityChange(1);
                   }}
-                  className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  className="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="Increase quantity"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
@@ -311,10 +311,10 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
                   e.stopPropagation();
                   handleAddToCart();
                 }}
-                className="w-9 h-9 sm:w-10 sm:h-10 bg-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#7A6345] transition-colors shadow-sm"
+                className="w-8 h-8 sm:w-9 sm:h-9 bg-[#8B7355] rounded-full flex items-center justify-center hover:bg-[#7A6345] transition-colors shadow-sm"
                 aria-label="Add to cart"
               >
-                <ShoppingCart className="w-5 h-5 text-white" />
+                <ShoppingCart className="w-4 h-4 text-white" />
               </button>
             )}
           </div>

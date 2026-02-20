@@ -305,7 +305,7 @@ export default function ProductsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / productsPerPage));
   const pageItems = (() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const items = new Set([1, totalPages]);
     for (let p = currentPage - 1; p <= currentPage + 1; p++) {
@@ -380,7 +380,7 @@ export default function ProductsPage() {
         id="products"
         ref={productsSectionRef}
         data-section="products"
-        className="min-h-screen bg-[#FBFAF9]"
+        className="min-h-0 bg-[#FBFAF9]"
       >
         <div className="flex flex-col lg:flex-row">
 
@@ -431,7 +431,7 @@ export default function ProductsPage() {
           </aside>
 
           {/* MAIN CONTENT — layout preserved */}
-          <div className="flex-1 p-4 lg:p-6 pb-6 relative z-10">
+          <div className="flex-1 p-4 lg:p-6 pb-0 relative z-10">
 
             {/* SORT ROW */}
             <div
@@ -647,8 +647,8 @@ export default function ProductsPage() {
 
             {/* PAGINATION */}
             {filtered.length > productsPerPage && (
-              <div className="flex flex-col items-center gap-3 mt-6 pb-6">
-                <div className="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-full px-1.5 py-1.5 shadow-sm">
+              <div className="flex flex-col items-center gap-3 mt-6 pb-2">
+                <div className="inline-flex items-center gap-0.5 sm:gap-1 bg-white border border-gray-200 rounded-full px-1.5 py-1.5 shadow-sm">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
