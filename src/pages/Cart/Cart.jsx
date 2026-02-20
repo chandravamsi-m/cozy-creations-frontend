@@ -137,20 +137,21 @@ export default function CartPage() {
   return (
     <main className="w-full bg-[#FBFAF9] min-h-screen px-4 py-10 pt-20 sm:pt-24 font-montserrat">
       <div className="max-w-[1100px] mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+        <div className="flex items-center justify-between gap-3 mb-8">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900 uppercase">
               Your Cart
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              {cart.length === 0 ? "No items added yet." : `${cart.length} item(s) in your cart`}
+            <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase tracking-wider mt-1">
+              {cart.length === 0 ? "Empty" : `${cart.length} item(s)`}
             </p>
           </div>
           <button
             onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50 shadow-sm"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors group whitespace-nowrap"
           >
-            Continue shopping
+            <span className="group-hover:-translate-x-0.5 transition-transform font-black">←</span>
+            CONTINUE SHOPPING
           </button>
         </div>
 
@@ -181,11 +182,11 @@ export default function CartPage() {
               {cart.map((item) => (
                 <div
                   key={item.productId}
-                  className="bg-white border border-gray-200/60 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200"
+                  className="bg-white border border-gray-200/60 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     {/* Product Image */}
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden shrink-0 relative group">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden shrink-0 relative group">
                       <img
                         src={optimizeCloudinaryImage(item.thumbnailUrl || item.imageUrl, IMAGE_PRESETS.cart)}
                         alt={item.name}
@@ -198,35 +199,35 @@ export default function CartPage() {
                     {/* Product Details */}
                     <div className="flex-1 min-w-0">
                       {/* Header */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex-1 min-w-0">
-                          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 leading-tight line-clamp-2">
+                          <h2 className="text-sm sm:text-base font-bold text-gray-900 mb-0.5 leading-tight line-clamp-2">
                             {item.name}
                           </h2>
                           {itemDiscounts[item.productId]?.hasDiscount ? (
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-400 line-through">
+                              <span className="text-[10px] text-gray-400 line-through leading-none">
                                 ₹{item.price.toLocaleString()}
                               </span>
-                              <span className="text-sm font-bold text-green-600">
+                              <span className="text-xs sm:text-sm font-bold text-green-600">
                                 ₹{itemDiscounts[item.productId].discountedPrice.toLocaleString()}
                               </span>
                             </div>
                           ) : (
-                            <p className="text-xs sm:text-sm text-gray-600">
-                              ₹{item.price.toLocaleString()} <span className="text-gray-400">each</span>
+                            <p className="text-[11px] sm:text-xs text-gray-600">
+                              ₹{item.price.toLocaleString()} <span className="text-gray-400 font-medium">each</span>
                             </p>
                           )}
                           {item.quantityPack && (
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-[10px] text-gray-500 mt-0.5">
                               Pack of {item.quantityPack}
                             </p>
                           )}
                         </div>
 
                         <div className="text-right shrink-0">
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Subtotal</p>
-                          <p className="text-lg font-bold text-gray-900">
+                          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Subtotal</p>
+                          <p className="text-base font-black text-gray-900 leading-none">
                             ₹{((itemDiscounts[item.productId]?.discountedPrice || item.price) * item.quantity).toLocaleString()}
                           </p>
                         </div>
@@ -276,7 +277,7 @@ export default function CartPage() {
                       ) : null}
 
                       {/* Actions Row */}
-                      <div className="flex flex-row items-center gap-2 pt-3 border-t border-gray-200">
+                      <div className="flex flex-row items-center gap-2 pt-2 border-t border-gray-100">
                         {/* Quantity Controls */}
                         <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
                           <button
