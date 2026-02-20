@@ -7,13 +7,24 @@ import { updateUserProfile } from "../../api/userProfile";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../contexts/ToastContext";
 import UserSidebar from "../../components/UserSidebar";
+import { Eye, EyeOff, Lock } from "lucide-react";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, changeUserPassword, getErrorMessage } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Password change state
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwShow, setPwShow] = useState({ current: false, next: false, confirm: false });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState("");
+
+  // Detect if the user signed in with Google (no email/password credential)
+  const isGoogleUser = user?.providerData?.some((p) => p.providerId === "google.com");
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -83,6 +94,29 @@ export default function Profile() {
       showToast("Failed to update profile", "error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPwError("");
+    const { current, next, confirm } = pwForm;
+
+    if (!current) { setPwError("Please enter your current password."); return; }
+    if (next.length < 6) { setPwError("New password must be at least 6 characters."); return; }
+    if (next !== confirm) { setPwError("New passwords do not match."); return; }
+    if (current === next) { setPwError("New password must be different from the current one."); return; }
+
+    setPwSaving(true);
+    try {
+      await changeUserPassword(current, next);
+      showToast("Password changed successfully! 🔒");
+      setPwForm({ current: "", next: "", confirm: "" });
+      setShowPasswordSection(false);
+    } catch (err) {
+      const msg = getErrorMessage ? getErrorMessage(err) : (err.message || "Failed to change password.");
+      setPwError(msg);
+    } finally {
+      setPwSaving(false);
     }
   };
 
@@ -187,6 +221,93 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* SECURITY SECTION */}
+            <div className="mt-6 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-gray-50 relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gray-900 grid place-items-center shrink-0">
+                    <Lock className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">Security</h3>
+                    <p className="text-xs text-gray-400 font-medium">Manage your account password.</p>
+                  </div>
+                </div>
+                {!isGoogleUser && !showPasswordSection && (
+                  <button
+                    onClick={() => { setShowPasswordSection(true); setPwError(""); setPwForm({ current: "", next: "", confirm: "" }); }}
+                    className="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl text-xs shadow-lg hover:scale-105 transition-all active:scale-95"
+                  >
+                    Change Password
+                  </button>
+                )}
+              </div>
+
+              {/* Google User Info */}
+              {isGoogleUser && (
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 mt-0.5 shrink-0" alt="Google" />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Signed in with Google</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Your password is managed by Google. To change it, visit your <a href="https://myaccount.google.com/security" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Google Account settings</a>.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Change Password Form */}
+              {!isGoogleUser && !showPasswordSection && (
+                <p className="text-sm text-gray-500">Your password is set. You can change it anytime.</p>
+              )}
+
+              {!isGoogleUser && showPasswordSection && (
+                <div className="space-y-4 max-w-md">
+                  {pwError && (
+                    <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{pwError}</div>
+                  )}
+
+                  {/* Current Password */}
+                  {[{ key: "current", label: "Current Password" }, { key: "next", label: "New Password" }, { key: "confirm", label: "Confirm New Password" }].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{label}</label>
+                      <div className="relative">
+                        <input
+                          type={pwShow[key] ? "text" : "password"}
+                          value={pwForm[key]}
+                          onChange={(e) => setPwForm(p => ({ ...p, [key]: e.target.value }))}
+                          placeholder="••••••••"
+                          className="w-full text-sm font-medium text-gray-900 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-yellow-accent/40 focus:border-yellow-accent/40 placeholder:text-gray-300 transition-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPwShow(p => ({ ...p, [key]: !p[key] }))}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          aria-label={pwShow[key] ? "Hide" : "Show"}
+                        >
+                          {pwShow[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => { setShowPasswordSection(false); setPwError(""); }}
+                      className="px-5 py-2.5 bg-gray-50 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-100 transition-all active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={pwSaving}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-yellow-accent text-black font-bold rounded-xl text-xs shadow-lg shadow-yellow-accent/10 hover:scale-105 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {pwSaving ? "Updating..." : "Update Password"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

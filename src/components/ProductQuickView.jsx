@@ -78,7 +78,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-montserrat">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-montserrat">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
@@ -216,7 +216,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       {/* Zoom Overlay (Lightbox) - Outside transformed container to ensure true fullscreen */}
       {isZoomed && (
         <div
-          className="fixed inset-0 z-[1100] bg-black/95 flex items-center justify-center p-4 animate-fadeIn cursor-zoom-out"
+          className="fixed inset-0 z-[2100] bg-black/95 flex items-center justify-center p-4 animate-fadeIn cursor-zoom-out"
           onClick={(e) => {
             e.stopPropagation();
             setIsZoomed(false);

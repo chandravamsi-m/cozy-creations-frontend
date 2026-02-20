@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Gift } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function OfferBanner() {
   const [offer, setOffer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
   const lastScrollY = useRef(window.scrollY);
 
@@ -52,7 +53,12 @@ export default function OfferBanner() {
   if (loading || !offer || !offer.isActive) return null;
 
   return (
-    <div className={`fixed right-0 top-1/2 -translate-y-1/2 z-[9999] pointer-events-none transition-all duration-500 ${!isMinimized ? 'pr-3 md:pr-4' : ''}`}>
+    <div className={`fixed right-0 z-[100] pointer-events-none transition-all duration-500 
+      ${isMinimized
+        ? 'bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 pr-4 md:pr-0'
+        : 'bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 pr-3 md:pr-4'
+      }`}
+    >
       {!isMinimized ? (
         <div className="w-48 sm:w-56 md:w-60 h-[360px] sm:h-[400px] md:h-[420px] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col group relative">
           {/* Close/Minimize Button - TOP RIGHT */}
@@ -105,22 +111,31 @@ export default function OfferBanner() {
           </div>
         </div>
       ) : (
-        /* Minimized Tab */
-        <button
-          onClick={() => setIsMinimized(false)}
-          className="w-6 py-2 bg-yellow-accent rounded-l-[2rem] flex flex-col items-center justify-center gap-2 shadow-[0_15px_30px_rgba(251,191,36,0.3)] pointer-events-auto hover:-translate-x-2 transition-all duration-500 group border-y-1 border-l-1 border-white/60 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
-        >
-          <div className="py-2 flex flex-col items-center justify-center relative">
-            {/* Subtle highlight pulse */}
-            <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse scale-150 blur-xl pointer-events-none" />
+        /* Minimized State - Responsive */
+        <div className="flex flex-col items-end">
+          {/* Desktop Tab */}
+          <button
+            onClick={() => setIsMinimized(false)}
+            className="hidden md:flex w-6 py-2 bg-yellow-accent rounded-l-[2rem] flex-col items-center justify-center gap-2 shadow-[0_15px_30px_rgba(251,191,36,0.3)] pointer-events-auto hover:-translate-x-2 transition-all duration-500 group border-y-1 border-l-1 border-white/60 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white"
+          >
+            <div className="py-2 flex flex-col items-center justify-center relative">
+              <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse scale-150 blur-xl pointer-events-none" />
+              {["O", "F", "F", "E", "R", "S"].map((char, i) => (
+                <span key={i} className="text-[0.8rem] font-bold leading-[1.2] tracking-wide text-black relative z-10">
+                  {char}
+                </span>
+              ))}
+            </div>
+          </button>
 
-            {["O", "F", "F", "E", "R", "S"].map((char, i) => (
-              <span key={i} className="text-[0.8rem] font-bold leading-[1.2] tracking-wide text-black relative z-10">
-                {char}
-              </span>
-            ))}
-          </div>
-        </button>
+          {/* Mobile Floating Icon */}
+          <button
+            onClick={() => setIsMinimized(false)}
+            className="md:hidden w-12 h-12 bg-yellow-accent rounded-full flex items-center justify-center shadow-2xl pointer-events-auto hover:scale-110 active:scale-95 transition-all duration-300 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white mr-2"
+          >
+            <Gift className="w-5 h-5 text-black" />
+          </button>
+        </div>
       )}
     </div>
   );

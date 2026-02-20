@@ -141,7 +141,7 @@ export default function LoginModal({ closeModal }) {
   }, [mode]);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
 
       {/* CLICK OUTSIDE TO CLOSE */}
       <div className="absolute inset-0" onClick={closeModal}></div>

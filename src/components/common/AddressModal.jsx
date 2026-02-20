@@ -51,7 +51,7 @@ export default function AddressModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 font-montserrat">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4 font-montserrat">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="bg-gray-50 px-6 py-3 flex justify-between items-center border-b border-gray-100">

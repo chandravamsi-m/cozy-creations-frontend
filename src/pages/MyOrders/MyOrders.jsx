@@ -155,7 +155,7 @@ export default function MyOrders() {
                 </p>
                 {!searchTerm && (
                   <button
-                    onClick={() => navigate("/products")}
+                    onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
                     className="px-10 py-4 bg-yellow-accent text-black font-bold rounded-2xl shadow-lg shadow-yellow-accent/20 hover:scale-105 transition-transform active:scale-95"
                   >
                     Explore Products

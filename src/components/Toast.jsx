@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle } from "lucide-react";
 const Toast = ({ show, message, type }) => {
   return (
     <div
-      className={`fixed top-10 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-500 ease-in-out ${show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8 pointer-events-none"
+      className={`fixed top-10 left-1/2 transform -translate-x-1/2 z-[2100] transition-all duration-500 ease-in-out ${show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8 pointer-events-none"
         }`}
     >
       <div

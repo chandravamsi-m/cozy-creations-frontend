@@ -8,6 +8,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
 
 import { db } from "../firebase";
@@ -211,6 +214,21 @@ export function AuthProvider({ children }) {
     return await sendBackendResetEmail(email);
   };
 
+  // ------------------------------------------
+  // CHANGE PASSWORD (Requires re-authentication)
+  // ------------------------------------------
+  const changeUserPassword = async (currentPassword, newPassword) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error("No user is currently logged in.");
+
+    // Re-authenticate to satisfy Firebase's recent-login requirement
+    const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+    await reauthenticateWithCredential(currentUser, credential);
+
+    // Now safe to update the password
+    await updatePassword(currentUser, newPassword);
+  };
+
   const logoutUser = async () => {
     await signOut(auth);
     setIsAdmin(false);
@@ -225,6 +243,7 @@ export function AuthProvider({ children }) {
     loginWithEmail,
     signupWithEmail,
     resetPassword,
+    changeUserPassword,
     logoutUser,
     getErrorMessage, // Export for use in components
   };
