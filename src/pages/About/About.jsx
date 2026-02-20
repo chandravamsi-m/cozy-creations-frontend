@@ -84,25 +84,27 @@ export default function About() {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 md:px-[150px]">
-            <p
-              className={`text-white font-semibold text-4xl md:text-6xl uppercase tracking-wider mb-4 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-                }`}
-            >
-              About Us
-            </p>
-            <h1
-              className={`text-yellow-accent text-2xl md:text-3xl font-bold leading-tight uppercase mb-6 transition-all duration-700 delay-100 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-                }`}
-            >
-              Where Every Flame <br /> Feels Like Home
-            </h1>
-            <p
-              className={`text-white/90 text-md font-semibold leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-                }`}
-            >
-              Cozy Creations crafts premium candles, aroma-rich gifts, and custom designs that elevate everyday spaces with soothing fragrance and timeless beauty.
-            </p>
+          <div className="relative z-10 w-full h-full flex flex-col justify-center">
+            <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+              <p
+                className={`text-white font-semibold text-4xl md:text-6xl uppercase tracking-wider mb-4 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                  }`}
+              >
+                About Us
+              </p>
+              <h1
+                className={`text-yellow-accent text-2xl md:text-3xl font-bold leading-tight uppercase mb-6 transition-all duration-700 delay-100 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                  }`}
+              >
+                Where Every Flame <br /> Feels Like Home
+              </h1>
+              <p
+                className={`text-white/90 text-md font-semibold leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+                  }`}
+              >
+                Cozy Creations crafts premium candles, aroma-rich gifts, and custom designs that elevate everyday spaces with soothing fragrance and timeless beauty.
+              </p>
+            </div>
           </div>
 
           {/* Pajama scroll (all pages except Contact) */}

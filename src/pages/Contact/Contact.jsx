@@ -30,21 +30,21 @@ const PHONE_REGEX = /^[0-9]{10,15}$/;
 
 function ContactCard({ icon, title, value, children, delay = 0 }) {
   return (
-    <div className="group w-full h-full min-h-[120px] rounded-xl border border-gray-200/50 bg-white/95 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 px-4 py-4 sm:px-5 sm:py-5 flex flex-col">
-      <div className="flex items-start gap-3 flex-1">
-        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-accent to-yellow-accent/80 border border-yellow-accent/20 grid place-items-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+    <div className="group w-full h-full min-h-[140px] rounded-xl border border-gray-200/50 bg-white/95 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 px-3 py-4 sm:px-5 sm:py-5 flex flex-col justify-center">
+      <div className="flex flex-col items-center gap-2 flex-1 justify-center">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-yellow-accent to-yellow-accent/80 border border-yellow-accent/20 grid place-items-center shrink-0 group-hover:scale-110 transition-transform duration-300">
           {icon ? (
-            <img src={icon} alt={`${title} icon`} className="w-6 h-6" />
+            <img src={icon} alt={`${title} icon`} className="w-5 h-5 sm:w-6 sm:h-6" />
           ) : (
             children
           )}
         </div>
 
-        <div className="min-w-0 flex-1 flex flex-col">
+        <div className="text-center min-w-0 flex-1 flex flex-col justify-center">
           <h3 className="font-bold text-sm sm:text-base text-gray-900 capitalize tracking-tight leading-tight mb-1">
             {title}
           </h3>
-          <p className="text-xs sm:text-sm text-gray-600 break-words leading-relaxed flex-1">{value}</p>
+          <p className="text-xs sm:text-sm text-gray-600 break-all leading-relaxed">{value}</p>
         </div>
       </div>
     </div>
@@ -350,8 +350,8 @@ export default function ContactUs() {
         data-section="cards"
         className="relative z-20 bg-[#FBFAF9] pt-8 sm:pt-10 md:pt-12"
       >
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-2">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
             <div
               className={`transition-all duration-500 ${isVisible.cards ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                 }`}
@@ -400,7 +400,7 @@ export default function ContactUs() {
       <section
         ref={formRef}
         data-section="form"
-        className="w-full flex justify-center py-10 sm:py-12 lg:py-14 px-4 sm:px-6 lg:px-8 bg-[#FBFAF9]"
+        className="w-full flex justify-center pt-4 pb-10 sm:pt-6 sm:pb-12 lg:pt-8 lg:pb-14 px-4 sm:px-6 lg:px-8 bg-[#FBFAF9]"
       >
         <div
           className={`bg-white border border-gray-200/60 rounded-2xl w-full max-w-[750px] p-5 sm:p-6 md:p-7 lg:p-8 shadow-xl transition-all duration-700 ${isVisible.form ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
