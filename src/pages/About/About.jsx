@@ -120,10 +120,11 @@ export default function About() {
             journeySectionRef.current = el;
           }}
           data-section="journey"
-          className="relative w-full min-h-screen bg-white flex flex-col md:flex-row items-start px-4 md:px-[100px] pb-16"
+          className="relative w-full bg-white flex flex-col md:flex-row items-center md:max-h-[500px] lg:max-h-[450px] gap-0 md:gap-12 lg:gap-20 overflow-hidden mb-12"
         >
+          {/* Text Content */}
           <div
-            className={`w-full md:w-1/2 mb-8 md:mb-0 md:pr-8 pt-44 transition-all duration-700 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+            className={`w-full md:flex-1 flex flex-col justify-center px-4 md:pl-[100px] md:pr-0 py-6 md:py-8 transition-all duration-700 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
               }`}
           >
             <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
@@ -138,8 +139,10 @@ export default function About() {
               </p>
             </div>
           </div>
+
+          {/* Image Content - Full Width Edge (Flex) */}
           <div
-            className={`w-full md:w-1/2 h-[300px] sm:h-[400px] md:h-screen relative transition-all duration-700 delay-200 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
+            className={`w-full md:flex-1 h-[250px] sm:h-[300px] md:h-auto md:self-stretch relative transition-all duration-700 delay-200 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
               }`}
           >
             <div className="w-full h-full bg-gray-200 overflow-hidden">
@@ -156,24 +159,24 @@ export default function About() {
         <section
           ref={handmadeSectionRef}
           data-section="handmade"
-          className="relative w-full min-h-screen bg-white px-4 sm:px-8 md:px-16 lg:px-[100px] pb-16"
+          className="relative w-full bg-white px-0 pb-0 md:pb-8 overflow-hidden"
         >
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-            {/* Images Grid - Left Side */}
+          <div className="flex flex-col lg:flex-row items-center gap-0 md:gap-12 lg:gap-20">
+            {/* Images Grid - Left Side - Full Width Edge */}
             <div
-              className={`w-full lg:w-1/2 h-[250px] sm:h-[300px] md:h-[500px] lg:h-screen relative transition-all duration-700 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+              className={`w-full lg:flex-1 h-[350px] sm:h-[400px] md:h-[clamp(500px,65vh,600px)] lg:h-[clamp(550px,80vh,750px)] relative transition-all duration-700 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
                 }`}
             >
               <img
                 src={aboutGrid}
                 alt="About Grid"
-                className="w-full h-full object-contain lg:object-cover object-center hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
               />
             </div>
 
             {/* Text Content - Right Side */}
             <div
-              className={`w-full lg:w-1/2 flex flex-col justify-center pt-8 sm:pt-12 md:pt-16 transition-all duration-700 delay-200 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
+              className={`w-full lg:flex-1 flex flex-col justify-center px-4 pr-4 md:pr-[100px] lg:pr-[150px] pl-4 md:pl-12 lg:pl-0 py-8 md:py-16 transition-all duration-700 delay-200 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
                 }`}
             >
               <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
@@ -198,7 +201,7 @@ export default function About() {
         <section
           ref={collectionsSectionRef}
           data-section="collections"
-          className="relative w-full min-h-screen bg-white px-0 mb-0 md:px-0 pt-16 pb-0"
+          className="relative w-full bg-white px-0 mb-0 md:px-0 pt-4 md:pt-16 pb-0"
         >
           {/* Intro Text */}
           <p
@@ -208,19 +211,19 @@ export default function About() {
             Our collections include floral candles, animal-shaped candles, jar candles, spiral designs, festive specials, and personalized gift candles—perfect for home décor and gifting.
           </p>
 
-          {/* Collections Grid - Arched Layout */}
-          <div className="relative w-full max-w-7xl mx-auto items-end">
-            <div className="flex flex-wrap justify-center items-end gap-4 md:gap-6 lg:gap-8">
+          {/* Collections Grid - Responsive Structured Layout */}
+          <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-0">
+            <div className="flex flex-wrap justify-center items-end gap-6 md:gap-8 lg:gap-8">
               {/* Glass Jar Collection */}
               <div
-                className={`flex flex-col items-center w-[140px] md:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "100ms" }}
               >
-                <p className="text-base font-medium text-black capitalize text-center">
+                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
                   glass jar collection
                 </p>
-                <div className="relative w-full h-[300px] md:h-[436px] mb-0">
+                <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[436px]">
                   <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
                     <img
                       src={collection1}
@@ -229,18 +232,18 @@ export default function About() {
                     />
                   </div>
                 </div>
-
               </div>
+
               {/* Flower Collection */}
               <div
-                className={`flex flex-col items-center w-[140px] md:w-[181px] mt-12 md:mt-20 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] lg:mt-20 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "200ms" }}
               >
-                <p className="text-base font-medium text-black capitalize text-center">
+                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
                   flower collection
                 </p>
-                <div className="relative w-full h-[250px] md:h-[303px] mb-0">
+                <div className="relative w-full h-[220px] sm:h-[250px] md:h-[300px] lg:h-[303px]">
                   <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
                     <img
                       src={collection2}
@@ -250,69 +253,66 @@ export default function About() {
                   </div>
                 </div>
               </div>
-              {/* Animal Collection */}
+
+              {/* Animal & Shapes Collection */}
               <div
-                className={`flex flex-col items-center w-[140px] md:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] lg:mt-0 lg:-translate-y-12 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "300ms" }}
               >
-                <p className="text-base font-medium text-black capitalize text-center">
-                  animal collection
+                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                  animal & shapes
                 </p>
-
-                <div className="relative w-full h-[300px] md:h-[436px] mb-0">
+                <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[436px]">
                   <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
                     <img
                       src={collection3}
-                      alt="Animal Collection"
+                      alt="Animal & Shapes"
                       className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 </div>
-
               </div>
-              {/* Festive Collection */}
+
+              {/* Spiral Collection */}
               <div
-                className={`flex flex-col items-end w-[140px] md:w-[181px] mt-12 md:mt-20 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] lg:mt-20 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "400ms" }}
               >
-                <p className="text-base font-medium text-black capitalize text-center">
-                  festive collection
+                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                  spiral collection
                 </p>
-                <div className="relative w-full h-[250px] md:h-[303px] mb-0">
+                <div className="relative w-full h-[220px] sm:h-[250px] md:h-[300px] lg:h-[303px]">
                   <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
                     <img
                       src={collection4}
-                      alt="Festive Collection"
-                      className="w-full h-full object-cover object-end hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* Special Collection */}
-              <div
-                className={`flex flex-col items-center w-[140px] md:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                  }`}
-                style={{ transitionDelay: "500ms" }}
-              >
-                <p className="text-base font-medium text-black capitalize text-center">
-                  special collection
-                </p>
-                <div className="relative w-full h-[300px] md:h-[436px] mb-0">
-                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
-                    <img
-                      src={collection5}
-                      alt="Special Collection"
+                      alt="Spiral Collection"
                       className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 </div>
               </div>
 
-
-
-
+              {/* Festive Special */}
+              <div
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                  }`}
+                style={{ transitionDelay: "500ms" }}
+              >
+                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                  festive special
+                </p>
+                <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[436px]">
+                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
+                    <img
+                      src={collection5}
+                      alt="Festive Special"
+                      className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
