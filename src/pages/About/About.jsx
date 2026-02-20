@@ -28,7 +28,7 @@ export default function About() {
   });
 
   // Auto-scroll after 5s on hero (exclude Contact only; About included)
-  useAutoScrollFromHero({ enabled: true, targetRef: afterHeroRef, delayMs: 5000 });
+  useAutoScrollFromHero({ enabled: typeof window !== 'undefined' && window.innerWidth > 768, targetRef: afterHeroRef, delayMs: 5000 });
 
   // Hero fade-in on mount
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function About() {
       {/* Add padding top to account for fixed navbar */}
       <div className="pt-0">
         {/* Hero Section - About Us */}
-        <section className="relative w-full h-screen overflow-hidden">
+        <section className="relative w-full h-auto min-h-[50vh] md:h-screen overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0">
             <img
@@ -84,7 +84,7 @@ export default function About() {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 w-full h-full flex flex-col justify-center">
+          <div className="relative z-10 w-full h-full flex flex-col pt-32 pb-12 sm:pt-0 sm:pb-0 sm:justify-center">
             <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <p
                 className={`text-white font-semibold text-4xl md:text-6xl uppercase tracking-wider mb-4 transition-all duration-700 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
@@ -107,12 +107,14 @@ export default function About() {
             </div>
           </div>
 
-          {/* Pajama scroll (all pages except Contact) */}
-          <ScrollDownIndicator
-            onClick={() =>
-              afterHeroRef?.current?.scrollIntoView({ behavior: "smooth" })
-            }
-          />
+          {/* Pajama scroll (all pages except Contact) - Desktop only */}
+          <div className="hidden md:block">
+            <ScrollDownIndicator
+              onClick={() =>
+                afterHeroRef?.current?.scrollIntoView({ behavior: "smooth" })
+              }
+            />
+          </div>
         </section>
 
         {/* Our Journey Section */}

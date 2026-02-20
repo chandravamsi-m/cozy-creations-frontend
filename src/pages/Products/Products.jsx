@@ -80,10 +80,10 @@ export default function ProductsPage() {
   // With xl:grid-cols-4, 8 items = 2 full rows.
   const productsPerPage = 8;
 
-  // Auto-scroll after 5s on hero (exclude Contact only; Products included)
+  // Auto-scroll logic (Desktop only)
   useAutoScrollFromHero({
-    enabled: true,
-    targetId: "products",
+    enabled: typeof window !== 'undefined' && window.innerWidth > 768,
+    targetRef: productsSectionRef,
     delayMs: 5000,
   });
 
@@ -324,7 +324,7 @@ export default function ProductsPage() {
     <main className="w-full bg-[#FBFAF9] font-montserrat">
 
       {/* HERO SECTION — unchanged UI */}
-      <section className="relative w-full h-screen overflow-hidden">
+      <section className="relative w-full h-auto min-h-[50vh] md:h-screen overflow-hidden">
         <img
           src={optimizeCloudinaryImage(PRODUCTS_HERO_IMAGE, IMAGE_PRESETS.hero)}
           className="absolute inset-0 w-full h-full object-cover"
@@ -332,7 +332,7 @@ export default function ProductsPage() {
           loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/40" />
-        <div className="relative z-10 w-full h-full flex flex-col justify-center">
+        <div className="relative z-10 w-full h-full flex flex-col pt-32 pb-12 sm:pt-0 sm:pb-0 sm:justify-center">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div
               ref={heroContentRef}
@@ -358,12 +358,14 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Pajama scroll (all pages except Contact) */}
-        <ScrollDownIndicator
-          onClick={() =>
-            document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
-          }
-        />
+        {/* Pajama scroll (all pages except Contact) - Desktop only */}
+        <div className="hidden md:block">
+          <ScrollDownIndicator
+            onClick={() =>
+              document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })
+            }
+          />
+        </div>
       </section>
 
       {/* PRODUCTS SECTION — full old UI restored */}
