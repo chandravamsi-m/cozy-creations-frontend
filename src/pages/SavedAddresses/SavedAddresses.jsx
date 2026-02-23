@@ -208,48 +208,48 @@ export default function SavedAddresses() {
               </button>
             </div>
 
-            <div className="bg-white rounded-[24px] p-2 shadow-sm border border-gray-50">
-              {/* Address Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-transparent sm:bg-white rounded-none sm:rounded-[24px] p-0 sm:p-2 shadow-none sm:shadow-sm border-none sm:border border-gray-50">
+              {/* Address Grid - 2 columns even on mobile */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4">
                 {addresses.map((addr) => (
                   <div
                     key={addr.id}
                     onClick={() => !addr.isDefault && handleSetDefault(addr.id)}
-                    className={`relative p-4 rounded-3xl border-2 transition-all group cursor-pointer ${addr.isDefault ? "border-yellow-accent bg-[#FFFDF5]" : "border-gray-50 bg-white hover:border-gray-200 hover:shadow-md"
+                    className={`relative p-2.5 sm:p-4 rounded-2xl sm:rounded-3xl border-2 transition-all group cursor-pointer ${addr.isDefault ? "border-yellow-accent bg-[#FFFDF5]" : "border-gray-50 bg-white hover:border-gray-200 hover:shadow-md"
                       }`}
                   >
                     {addr.isDefault && (
-                      <span className="absolute top-4 right-4 bg-yellow-accent/20 text-yellow-700 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                      <span className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-yellow-accent/20 text-yellow-700 text-[7px] sm:text-[9px] font-black px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-widest">
                         Default
                       </span>
                     )}
 
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-lg border border-gray-50 group-hover:scale-110 transition-transform">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl shadow-sm flex items-center justify-center text-sm sm:text-lg border border-gray-50 group-hover:scale-110 transition-transform">
                         {addr.type === "Home" ? "🏠" : addr.type === "Office" ? "💼" : "📍"}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-900 text-sm">{addr.type}</h3>
+                        <h3 className="font-bold text-gray-900 text-[11px] sm:text-sm">{addr.type}</h3>
                       </div>
                     </div>
 
-                    <div className="space-y-0.5 mb-2">
-                      <p className="font-bold text-gray-900 text-[13px]">{addr.fullName}</p>
-                      <p className="text-gray-500 text-[13px] leading-relaxed">{addr.street}</p>
-                      <p className="text-gray-500 text-[13px] leading-relaxed">
-                        {addr.city}{addr.state ? `, ${addr.state}` : ""} - {addr.pincode}
+                    <div className="space-y-0.5 mb-2 overflow-hidden">
+                      <p className="font-bold text-gray-900 text-[11px] sm:text-[13px] truncate">{addr.fullName}</p>
+                      <p className="text-gray-500 text-[10px] sm:text-[13px] leading-tight sm:leading-relaxed line-clamp-2">{addr.street}</p>
+                      <p className="text-gray-500 text-[10px] sm:text-[13px] leading-tight sm:leading-relaxed line-clamp-1">
+                        {addr.city}{addr.state ? `, ${addr.state}` : ""}
                       </p>
-                      <p className="text-gray-400 text-[12px] pt-1">{addr.country || "India"}</p>
+                      <p className="text-gray-400 text-[10px] sm:text-[12px] font-medium">{addr.pincode}</p>
                     </div>
 
-                    <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-2 border-t border-gray-100">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setCurrentAddress(addr);
                           setIsModalOpen(true);
                         }}
-                        className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
+                        className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
                       >
                         ✎ Edit
                       </button>
@@ -258,14 +258,14 @@ export default function SavedAddresses() {
                           e.stopPropagation();
                           handleRemoveAddress(addr.id);
                         }}
-                        className="flex items-center gap-1.5 text-[11px] font-bold text-red-500 hover:text-red-600 transition-colors"
+                        className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-red-500 hover:text-red-600 transition-colors"
                       >
                         🗑 Remove
                       </button>
                       {!addr.isDefault && (
                         <button
                           onClick={() => handleSetDefault(addr.id)}
-                          className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-auto hover:text-gray-900 transition-colors"
+                          className="text-[7px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest ml-auto hover:text-gray-900 transition-colors hidden sm:block"
                         >
                           Set Default
                         </button>
@@ -281,12 +281,12 @@ export default function SavedAddresses() {
                       setCurrentAddress(null);
                       setIsModalOpen(true);
                     }}
-                    className="border-2 border-dashed border-gray-100 rounded-3xl p-6 flex flex-col items-center justify-center gap-3 hover:border-yellow-accent/50 hover:bg-gray-50/50 transition-all min-h-[160px] group"
+                    className="border-2 border-dashed border-gray-100 rounded-2xl sm:rounded-3xl p-3 sm:p-6 flex flex-col items-center justify-center gap-2 sm:gap-3 hover:border-yellow-accent/50 hover:bg-gray-50/50 transition-all min-h-[140px] sm:min-h-[160px] group"
                   >
-                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-xl group-hover:bg-yellow-accent group-hover:text-black transition-colors">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-base sm:text-xl group-hover:bg-yellow-accent group-hover:text-black transition-colors">
                       +
                     </div>
-                    <p className="text-sm font-bold text-gray-400 group-hover:text-gray-900 transition-colors">Add Another Address</p>
+                    <p className="text-[11px] sm:text-sm font-bold text-gray-400 group-hover:text-gray-900 transition-colors text-center">Add Address</p>
                   </button>
                 )}
               </div>

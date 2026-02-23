@@ -10,7 +10,7 @@ import instagram from '../assets/svgs/instagram-fill.svg';
 export default function Footer() {
     return (
         <div className="relative w-full bg-[#191816] text-white pt-4 md:pt-10 pb-8 md:pb-12 overflow-visible z-10">
-            <div className="hidden lg:block overflow-visible absolute bottom-[32px] right-[2%] w-[280px] h-[400px] opacity-100 pointer-events-none">
+            <div className="hidden lg:block overflow-visible absolute bottom-[52px] right-[2%] w-[280px] h-[400px] opacity-100 pointer-events-none">
                 <img src={whatsapp2} alt="Decor" className="w-full h-[100%] object-contain" />
             </div>
 
@@ -62,9 +62,7 @@ export default function Footer() {
                     <div className="hidden lg:block w-[280px] h-[1px] flex-shrink-0"></div>
                 </div>
 
-
                 <div className="w-full h-[1px] bg-white mt-6 mb-4"></div>
-
 
                 <div className="text-center text-xs text-white">© 2025 Cozy Creations. All rights reserved.</div>
             </div>

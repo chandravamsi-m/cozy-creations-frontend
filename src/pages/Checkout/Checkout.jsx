@@ -353,7 +353,7 @@ export default function Checkout() {
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900 uppercase">Checkout</h1>
           <button
             onClick={() => navigate("/cart")}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors group"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors group"
           >
             <span className="group-hover:-translate-x-0.5 transition-transform font-black">←</span>
             BACK TO CART
@@ -373,7 +373,7 @@ export default function Checkout() {
                   <button
                     onClick={handleToggleForm}
                     disabled={savedAddresses.length >= MAX_ADDRESSES}
-                    className={`text-[11px] font-bold transition-all hover:underline ${savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600"}`}
+                    className={`text-[11px] font-bold transition-all hover:underline ${savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600 hover:text-yellow-700"}`}
                   >
                     + Add New Address
                   </button>
@@ -598,13 +598,13 @@ export default function Checkout() {
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="group relative w-full h-14 bg-yellow-accent hover:bg-black transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                className="group relative w-full h-14 bg-yellow-accent hover:brightness-105 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
-                <div className="absolute inset-0 flex items-center justify-center gap-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
-                  <span className="text-md font-bold text-black group-hover:text-white uppercase tracking-wider">
+                <div className="absolute inset-0 flex items-center justify-center gap-2 transition-transform">
+                  <span className="text-md font-bold text-black uppercase tracking-wider">
                     {loading ? "Processing..." : "Complete Purchase"}
                   </span>
-                  {!loading && <span className="text-black group-hover:text-white transition-colors">→</span>}
+                  {!loading && <span className="text-black transition-colors">→</span>}
                 </div>
               </button>
 
@@ -650,7 +650,7 @@ export default function Checkout() {
             <div className="space-y-4 mt-4">
               <button
                 onClick={() => navigate("/products")}
-                className="w-full h-14 bg-yellow-accent hover:bg-black py-3 rounded-2xl text-black hover:text-white font-black transition-all shadow-lg active:scale-95 uppercase tracking-wider text-sm"
+                className="w-full h-14 bg-yellow-accent hover:brightness-105 py-3 rounded-2xl text-black font-black transition-all shadow-lg active:scale-95 uppercase tracking-wider text-sm"
               >
                 Explore More Items
               </button>
@@ -658,7 +658,7 @@ export default function Checkout() {
                 onClick={() => navigate("/")}
                 className="w-full text-xs font-black text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-[0.2em]"
               >
-                Back to Sanctuary
+                Back to Home
               </button>
             </div>
           </div>

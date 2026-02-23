@@ -424,7 +424,7 @@ export default function ProductsPage() {
           </aside>
 
           {/* MAIN CONTENT — layout preserved */}
-          <div className="flex-1 p-4 lg:p-6 pb-0 relative z-10">
+          <div className="flex-1 p-4 lg:p-6 pb-4 relative z-10">
 
             {/* SORT ROW */}
             <div

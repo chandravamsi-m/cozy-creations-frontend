@@ -137,20 +137,21 @@ export default function Profile() {
 
           {/* Main Content */}
           <div className="flex-1 w-full scale-in">
-            <div className="mb-4">
-              <h1 className="text-4xl font-bold mb-2 font-serif">Personal Profile</h1>
-              <p className="text-gray-500 font-medium font-serif">Manage your basic details and contact info.</p>
+            <div className="mb-6">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2 font-serif text-gray-900">Personal Profile</h1>
+              <p className="text-sm sm:text-base text-gray-500 font-medium font-serif">Manage your basic details and contact info.</p>
             </div>
 
-            <div className="bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-gray-50 relative overflow-hidden group">
+            <div className="bg-white rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-sm border border-gray-50 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-accent/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500" />
 
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 relative z-10">
+              <div className="flex justify-between items-start gap-4 mb-8 relative z-10">
                 <div className="space-y-1">
                   <h3 className="text-xl font-bold text-gray-900 leading-tight">Account Information</h3>
                   <p className="text-xs text-gray-400 font-medium">Update your name and primary contact details.</p>
                 </div>
-                <div className="flex gap-2">
+                {/* Desktop Buttons */}
+                <div className="hidden sm:flex gap-2">
                   {isEditing ? (
                     <>
                       <button
@@ -170,7 +171,7 @@ export default function Profile() {
                   ) : (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl text-xs shadow-lg hover:scale-105 transition-all active:scale-95"
+                      className="px-6 py-2.5 bg-yellow-accent text-black font-bold rounded-xl text-xs shadow-lg shadow-yellow-accent/10 hover:scale-105 transition-all active:scale-95"
                     >
                       Edit Profile
                     </button>
@@ -221,14 +222,42 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
+
+              {/* Mobile Buttons */}
+              <div className="sm:hidden mt-8 relative z-10">
+                {isEditing ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="flex-1 py-3.5 bg-gray-50 text-gray-500 font-bold rounded-2xl text-sm active:scale-95 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateProfile}
+                      disabled={saving}
+                      className="flex-[2] py-3.5 bg-yellow-accent text-black font-bold rounded-2xl text-sm shadow-lg shadow-yellow-accent/10 active:scale-95 disabled:opacity-50 transition-all"
+                    >
+                      {saving ? "Saving..." : "Save Changes"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="w-full py-3.5 bg-yellow-accent text-black font-bold rounded-2xl text-sm shadow-lg shadow-yellow-accent/10 active:scale-95 transition-all"
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* SECURITY SECTION */}
-            <div className="mt-6 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-gray-50 relative overflow-hidden">
+            <div className="mt-6 bg-white rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-sm border border-gray-50 relative overflow-hidden">
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gray-900 grid place-items-center shrink-0">
-                    <Lock className="w-4 h-4 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-yellow-accent/10 grid place-items-center shrink-0 border border-yellow-accent/10">
+                    <Lock className="w-5 h-5 text-gray-900" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 leading-tight">Security</h3>
@@ -238,7 +267,7 @@ export default function Profile() {
                 {!isGoogleUser && !showPasswordSection && (
                   <button
                     onClick={() => { setShowPasswordSection(true); setPwError(""); setPwForm({ current: "", next: "", confirm: "" }); }}
-                    className="px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl text-xs shadow-lg hover:scale-105 transition-all active:scale-95"
+                    className="hidden sm:block px-6 py-2.5 bg-yellow-accent text-black font-bold rounded-xl text-xs shadow-lg shadow-yellow-accent/10 hover:scale-105 transition-all active:scale-95"
                   >
                     Change Password
                   </button>
@@ -258,7 +287,15 @@ export default function Profile() {
 
               {/* Change Password Form */}
               {!isGoogleUser && !showPasswordSection && (
-                <p className="text-sm text-gray-500">Your password is set. You can change it anytime.</p>
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-gray-500">Your password is set. You can change it anytime.</p>
+                  <button
+                    onClick={() => { setShowPasswordSection(true); setPwError(""); setPwForm({ current: "", next: "", confirm: "" }); }}
+                    className="sm:hidden w-full py-3.5 bg-yellow-accent text-black font-bold rounded-2xl text-sm shadow-lg shadow-yellow-accent/10 active:scale-95 transition-all"
+                  >
+                    Change Password
+                  </button>
+                </div>
               )}
 
               {!isGoogleUser && showPasswordSection && (

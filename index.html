@@ -1,17 +1,33 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <title>Cozy Creations</title>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+  <!-- Home hero: preload (needed immediately on first page load) -->
+  <link rel="preload" as="image"
+    href="https://res.cloudinary.com/dumkblp3v/image/upload/w_1200,q_auto:best,f_auto,c_fill,dpr_auto/v1767176149/unnamed-7_j6fal6.webp" />
+  <!-- Other page heroes: prefetch (fetched at idle time for SPA navigation, no console warning) -->
+  <link rel="prefetch" as="image"
+    href="https://res.cloudinary.com/dumkblp3v/image/upload/w_1200,q_auto:best,f_auto,c_fill,dpr_auto/v1771307257/image_5_ympux0.webp" />
+  <link rel="prefetch" as="image"
+    href="https://res.cloudinary.com/dumkblp3v/image/upload/w_1200,q_auto:best,f_auto,c_fill,dpr_auto/v1771307253/image_3_i18muy.webp" />
+  <link rel="prefetch" as="image"
+    href="https://res.cloudinary.com/dumkblp3v/image/upload/w_1200,q_auto:best,f_auto,c_fill,dpr_auto/v1771307254/image_6_dal1ii.webp" />
+  <title>Cozy Creations</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

@@ -124,7 +124,7 @@ export default function AddressModal({
                 onChange={(e) => setFormData(p => ({ ...p, city: e.target.value }))}
                 required
                 className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-                placeholder="e.g. Mumbai"
+                placeholder="e.g. Hyderabad"
               />
             </div>
             <div className="space-y-1">
@@ -154,7 +154,7 @@ export default function AddressModal({
               }}
               required
               className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
-              placeholder="400001"
+              placeholder="500001"
             />
           </div>
 
