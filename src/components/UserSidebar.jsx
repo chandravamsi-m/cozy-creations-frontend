@@ -32,7 +32,7 @@ export default function UserSidebar({ userData }) {
 
       {/* Premium Segmented Control for Mobile / Vertical for Desktop */}
       <div className="lg:contents">
-        <nav className="flex lg:flex-col items-center bg-gray-100/50 lg:bg-transparent p-1 lg:p-0 rounded-xl lg:rounded-none overflow-x-auto lg:overflow-x-visible no-scrollbar gap-1 lg:space-y-0.5 scroll-smooth backdrop-blur-sm border border-gray-200/50 lg:border-none shadow-sm lg:shadow-none mb-4 lg:mb-0 transition-all duration-500">
+        <nav className="flex lg:flex-col items-center bg-gray-100/50 lg:bg-transparent p-1 lg:p-0 rounded-xl lg:rounded-none overflow-x-auto lg:overflow-x-visible no-scrollbar gap-1 lg:space-y-0.5 scroll-smooth backdrop-blur-sm border border-gray-200/50 lg:border-none shadow-sm lg:shadow-none mb-2 lg:mb-0 transition-all duration-500">
           {sidebarLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (

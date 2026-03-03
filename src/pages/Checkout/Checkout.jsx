@@ -69,25 +69,20 @@ export default function Checkout() {
     setServiceabilityInfo(null);
     setServiceabilityError(null);
 
-    // Calculate chargeable weight:
-    // - actualWeight (kg) = item.weightGrams / 1000  ← from the product itself
-    // - volumetricWeight (kg) = (L × W × H cm) / 5000  ← from category packaging
-    // - chargeableWeight = max(actual, volumetric) per unit × quantity
-    const totalWeight = Math.max(
-      0.5,
-      Number(cart.reduce((sum, item) => {
-        const cat = (item.category || "").toLowerCase();
-        const pkg = packagingConfig[cat];
-        // Actual weight from product (weightGrams stored in cart)
-        const actualWeight = item.weightGrams ? (item.weightGrams / 1000) : 0.3;
-        // Volumetric weight from packaging box dimensions
-        const volumetric = pkg && pkg.l && pkg.w && pkg.h
-          ? (pkg.l * pkg.w * pkg.h) / 5000
-          : 0;
-        const chargeable = volumetric > 0 ? Math.max(actualWeight, volumetric) : actualWeight;
-        return sum + (item.quantity * chargeable);
-      }, 0).toFixed(2))
-    );
+    const totals = cart.reduce((acc, item) => {
+      const cat = (item.category || "").toLowerCase();
+      const pkg = packagingConfig[cat];
+      const actualWeight = item.weightGrams ? (item.weightGrams / 1000) : 0.3;
+      const volumetric = (pkg && pkg.l && pkg.w && pkg.h)
+        ? (pkg.l * pkg.w * pkg.h) / 5000
+        : 0;
+
+      acc.actual += (actualWeight * item.quantity);
+      acc.volumetric += (volumetric * item.quantity);
+      return acc;
+    }, { actual: 0, volumetric: 0 });
+
+    const totalWeight = Math.max(0.5, Number(Math.max(totals.actual, totals.volumetric).toFixed(2)));
 
     const isCod = paymentMethod === "cod" ? 1 : 0;
 
@@ -114,7 +109,12 @@ export default function Checkout() {
         (c.rate < best.rate) ? c : best, couriers[0]
       );
 
-      const rate = Math.ceil(cheapest.rate || cheapest.freight_charge || 0);
+      // Sum up everything except COD charges (which are handled by paymentMethod toggle)
+      const rate = Math.ceil(
+        (cheapest.rate || 0) +
+        (cheapest.other_charges || 0) +
+        (cheapest.entry_tax || 0)
+      );
       setServiceabilityInfo({
         available: true,
         rate,
@@ -680,7 +680,7 @@ export default function Checkout() {
                 )}
                 <div className="flex justify-between items-start px-1 gap-2">
                   <div className="flex-1">
-                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Shipping</span>
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Shipping Fee</span>
 
                     {serviceabilityInfo?.available === false && (
                       <p className="text-[10px] text-red-500 font-bold mt-0.5">⚠️ Limited delivery options</p>

@@ -351,7 +351,7 @@ export default function AdminOrders() {
                         <span className="font-medium text-gray-600">₹{(order.items || []).reduce((s, i) => s + i.price * i.quantity, 0)}</span>
                       </div>
                       <div className="flex justify-between text-gray-400">
-                        <span>Delivery</span>
+                        <span>Courier Fee</span>
                         <span className={`font-medium ${order.deliveryFee > 0 ? "text-gray-600" : "text-green-600"}`}>
                           {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "Free"}
                         </span>

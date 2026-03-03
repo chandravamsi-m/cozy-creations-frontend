@@ -157,7 +157,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start">
           {/* Reusable Sticky Sidebar */}
           <UserSidebar userData={formData} />
 

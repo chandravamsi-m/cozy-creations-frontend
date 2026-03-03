@@ -154,7 +154,7 @@ export default function MyOrders() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start">
           <UserSidebar userData={userData} />
           <div className="flex-1 w-full">
             <div className="mb-4 lg:block hidden">
@@ -376,9 +376,21 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
                     <span className="font-bold text-gray-900 uppercase tracking-wide">{order.paymentMethod || "Online"}</span>
                   </div>
                   <div className="flex justify-between items-center text-[12px]">
-                    <span className="text-gray-400 font-medium">Status</span>
-                    <span className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${status.color}`}>{status.label}</span>
+                    <span className="text-gray-400 font-medium">Subtotal</span>
+                    <span className="font-bold text-gray-900">₹{(order.items || []).reduce((s, i) => s + (i.totalAmount || i.itemTotal || (i.price * i.quantity)), 0)}</span>
                   </div>
+                  <div className="flex justify-between items-center text-[12px]">
+                    <span className="text-gray-400 font-medium">Shipping Fee</span>
+                    <span className={`font-bold ${order.deliveryFee > 0 ? "text-gray-900" : "text-green-600"}`}>
+                      {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "FREE"}
+                    </span>
+                  </div>
+                  {order.platformFee && (
+                    <div className="flex justify-between items-center text-[12px]">
+                      <span className="text-gray-400 font-medium">Platform Fee</span>
+                      <span className="font-bold text-gray-900">₹{order.platformFee}</span>
+                    </div>
+                  )}
                   <div className="pt-1.5 border-t border-gray-100 flex justify-between items-center">
                     <span className="text-gray-900 font-bold text-sm">Total</span>
                     <span className="text-gray-900 font-black text-lg tracking-tight">₹{order.total}</span>

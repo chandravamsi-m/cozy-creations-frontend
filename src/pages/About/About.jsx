@@ -240,7 +240,7 @@ export default function About() {
 
               {/* Flower Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] lg:mt-20 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "200ms" }}
               >
@@ -260,7 +260,7 @@ export default function About() {
 
               {/* Animal & Shapes Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] lg:mt-0 lg:-translate-y-12 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "300ms" }}
               >
@@ -280,7 +280,7 @@ export default function About() {
 
               {/* Spiral Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] lg:mt-20 transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "400ms" }}
               >

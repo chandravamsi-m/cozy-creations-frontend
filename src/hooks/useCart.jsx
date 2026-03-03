@@ -38,9 +38,18 @@ export function CartProvider({ children }) {
 
   // shippingOverride: set by Checkout when Shiprocket returns a real rate.
   const [shippingOverride, setShippingOverride] = useState(null);
+  const [deliverySettings, setDeliverySettings] = useState({ amount: 0, freeDeliveryThreshold: 0 });
 
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [loadingDiscounts, setLoadingDiscounts] = useState(false);
+
+  // Fetch Delivery Settings once
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/settings/delivery`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.delivery) setDeliverySettings(data.delivery); })
+      .catch(err => console.warn("Delivery settings fetch failed:", err.message));
+  }, []);
 
   // Fetch discounts whenever cart changes
   useEffect(() => {
@@ -92,8 +101,17 @@ export function CartProvider({ children }) {
   const discountedTotal = totalPrice - totalDiscountAmount;
   const PLATFORM_FEE = 80;
 
-  // Delivery fee: use Shiprocket's real-time rate, or 0 if not yet calculated
-  const deliveryFee = shippingOverride !== null ? shippingOverride : 0;
+  // Delivery fee logic:
+  // 1. If Shiprocket returned a rate (shippingOverride), use it.
+  // 2. Otherwise, check if total qualifies for free delivery.
+  // 3. Otherwise, use the standard delivery amount from settings.
+  const deliveryFee = useMemo(() => {
+    if (shippingOverride !== null) return shippingOverride;
+    if (deliverySettings.freeDeliveryThreshold > 0 && discountedTotal >= deliverySettings.freeDeliveryThreshold) {
+      return 0;
+    }
+    return deliverySettings.amount || 0;
+  }, [shippingOverride, deliverySettings, discountedTotal]);
 
   const finalTotal = cart.length > 0 ? discountedTotal + deliveryFee + PLATFORM_FEE : 0;
 
