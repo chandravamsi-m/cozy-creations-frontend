@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { sendOrderConfirmation } from "../../api/email";
 import { useCart } from "../../hooks/useCart";
@@ -15,7 +15,7 @@ const MAX_ADDRESSES = 5;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, clearCart, deliveryFee, finalTotal, totalPrice, totalDiscountAmount, discountedTotal } = useCart();
+  const { cart, clearCart, deliveryFee, platformFee, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride } = useCart();
   const { user, idToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
@@ -29,6 +29,13 @@ export default function Checkout() {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [isCodEnabled, setIsCodEnabled] = useState(true);
 
+  // Shiprocket serviceability
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
+  const [serviceabilityInfo, setServiceabilityInfo] = useState(null);
+  const [serviceabilityError, setServiceabilityError] = useState(null);
+  // Category packaging config from backend
+  const [packagingConfig, setPackagingConfig] = useState({});
+
   // Deletion Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState(null);
@@ -41,6 +48,100 @@ export default function Checkout() {
       navigate("/products");
     }
   }, [user, cart, navigate, isOrderComplete]);
+
+  // Reset shipping override when leaving checkout
+  useEffect(() => {
+    return () => setShippingOverride(null);
+  }, []);
+
+  // Fetch per-category packaging config once
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/settings/packaging`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.categoryPackaging) setPackagingConfig(data.categoryPackaging); })
+      .catch(err => console.warn("Packaging config fetch failed:", err.message));
+  }, []);
+
+  // Check Shiprocket serviceability & get real shipping rate
+  const checkServiceability = useCallback(async (pincode) => {
+    if (!pincode || !idToken) return;
+    setCheckingServiceability(true);
+    setServiceabilityInfo(null);
+    setServiceabilityError(null);
+
+    // Calculate chargeable weight:
+    // - actualWeight (kg) = item.weightGrams / 1000  ← from the product itself
+    // - volumetricWeight (kg) = (L × W × H cm) / 5000  ← from category packaging
+    // - chargeableWeight = max(actual, volumetric) per unit × quantity
+    const totalWeight = Math.max(
+      0.5,
+      Number(cart.reduce((sum, item) => {
+        const cat = (item.category || "").toLowerCase();
+        const pkg = packagingConfig[cat];
+        // Actual weight from product (weightGrams stored in cart)
+        const actualWeight = item.weightGrams ? (item.weightGrams / 1000) : 0.3;
+        // Volumetric weight from packaging box dimensions
+        const volumetric = pkg && pkg.l && pkg.w && pkg.h
+          ? (pkg.l * pkg.w * pkg.h) / 5000
+          : 0;
+        const chargeable = volumetric > 0 ? Math.max(actualWeight, volumetric) : actualWeight;
+        return sum + (item.quantity * chargeable);
+      }, 0).toFixed(2))
+    );
+
+    const isCod = paymentMethod === "cod" ? 1 : 0;
+
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/shipping/check-serviceability?pincode=${pincode}&weight=${totalWeight}&cod=${isCod}`,
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
+      const json = await res.json();
+
+      if (!res.ok) throw new Error(json.error || "Serviceability check failed");
+
+      // Shiprocket returns a list of available couriers
+      const couriers = json.data?.data?.available_courier_companies || [];
+
+      if (couriers.length === 0) {
+        setServiceabilityInfo({ available: false, rate: null, courierName: null });
+        setShippingOverride(null); // fall back to flat fee
+        return;
+      }
+
+      // Pick the cheapest available courier
+      const cheapest = couriers.reduce((best, c) =>
+        (c.rate < best.rate) ? c : best, couriers[0]
+      );
+
+      const rate = Math.ceil(cheapest.rate || cheapest.freight_charge || 0);
+      setServiceabilityInfo({
+        available: true,
+        rate,
+        courierName: cheapest.courier_name || cheapest.name || null,
+        courierId: cheapest.courier_company_id || cheapest.id || null,
+        deliveryDays: cheapest.estimated_delivery_days || cheapest.etd || null,
+      });
+      setShippingOverride(rate);
+    } catch (err) {
+      console.error("Serviceability error:", err.message);
+      setServiceabilityError("Could not fetch real-time rates. Using standard fee.");
+      setShippingOverride(null); // graceful fallback
+    } finally {
+      setCheckingServiceability(false);
+    }
+  }, [cart, idToken, paymentMethod, setShippingOverride, packagingConfig]);
+
+  // Re-check whenever selected address, payment method, OR cart contents change
+  useEffect(() => {
+    const addr = savedAddresses.find(a => a.id === selectedAddressId);
+    if (!addr?.pincode) {
+      setShippingOverride(null);
+      return;
+    }
+    checkServiceability(addr.pincode);
+  }, [selectedAddressId, paymentMethod, savedAddresses, cart]);
+
 
   // Fetch saved addresses
   React.useEffect(() => {
@@ -195,13 +296,18 @@ export default function Checkout() {
           quantity: item.quantity,
           price: item.price,
           image: item.thumbnailUrl || item.imageUrl,
+          category: item.category || null,
+          weightGrams: item.weightGrams || 0,
           customization: customizations[item.productId] || null,
         })),
         deliveryFee: deliveryFee,
+        platformFee: platformFee,
         total: finalTotal,
         shippingAddress: finalAddress,
         customerName: finalAddress.fullName,
         userEmail: user.email,
+        courierId: serviceabilityInfo?.courierId || null,
+        courierName: serviceabilityInfo?.courierName || null,
       };
 
 
@@ -572,10 +678,24 @@ export default function Checkout() {
                     <span className="text-sm font-semibold text-green-600">-₹{totalDiscountAmount.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Shipping</span>
-                  <span className="text-sm font-semibold text-gray-900">
-                    {deliveryFee === 0 ? (
+                <div className="flex justify-between items-start px-1 gap-2">
+                  <div className="flex-1">
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Shipping</span>
+
+                    {serviceabilityInfo?.available === false && (
+                      <p className="text-[10px] text-red-500 font-bold mt-0.5">⚠️ Limited delivery options</p>
+                    )}
+                    {serviceabilityError && !checkingServiceability && (
+                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">Using standard rate</p>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 shrink-0">
+                    {checkingServiceability ? (
+                      <span className="flex items-center gap-1 text-gray-400 text-xs font-medium">
+                        <span className="animate-spin text-base">⏳</span>
+                        Calculating...
+                      </span>
+                    ) : deliveryFee === 0 ? (
                       <span className="text-green-600 flex items-center gap-1.5">
                         <span className="text-[10px]">✓</span> FREE
                       </span>
@@ -584,6 +704,10 @@ export default function Checkout() {
                     )}
                   </span>
                 </div>
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Platform Fee</span>
+                  <span className="text-sm font-semibold text-gray-900">₹{platformFee.toLocaleString()}</span>
+                </div>
 
                 <div className="pt-2 border-t border-gray-100 flex justify-between items-end px-1">
                   <span className="text-md font-bold text-gray-900 uppercase tracking-tight">Total</span>
@@ -591,20 +715,23 @@ export default function Checkout() {
                     <p className="text-xl font-bold text-gray-900 tracking-tighter leading-none">
                       ₹{finalTotal.toLocaleString()}
                     </p>
+                    {checkingServiceability && (
+                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">Updating...</p>
+                    )}
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={handlePlaceOrder}
-                disabled={loading}
+                disabled={loading || checkingServiceability}
                 className="group relative w-full h-14 bg-yellow-accent hover:brightness-105 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
                 <div className="absolute inset-0 flex items-center justify-center gap-2 transition-transform">
                   <span className="text-md font-bold text-black uppercase tracking-wider">
-                    {loading ? "Processing..." : "Complete Purchase"}
+                    {loading ? "Processing..." : checkingServiceability ? "Calculating Shipping..." : "Complete Purchase"}
                   </span>
-                  {!loading && <span className="text-black transition-colors">→</span>}
+                  {!loading && !checkingServiceability && <span className="text-black transition-colors">→</span>}
                 </div>
               </button>
 
@@ -647,12 +774,18 @@ export default function Checkout() {
               <p className="font-mono text-base font-black text-gray-900 tracking-tighter">{completedOrderId}</p>
             </div>
 
-            <div className="space-y-4 mt-4">
+            <div className="space-y-3 mt-4">
               <button
-                onClick={() => navigate("/products")}
+                onClick={() => navigate("/my-orders")}
                 className="w-full h-14 bg-yellow-accent hover:brightness-105 py-3 rounded-2xl text-black font-black transition-all shadow-lg active:scale-95 uppercase tracking-wider text-sm"
               >
-                Explore More Items
+                📦 View My Orders
+              </button>
+              <button
+                onClick={() => navigate("/products")}
+                className="w-full h-12 border-2 border-gray-100 hover:border-gray-200 hover:bg-gray-50 py-3 rounded-2xl text-gray-700 font-bold transition-all text-sm"
+              >
+                Continue Shopping →
               </button>
               <button
                 onClick={() => navigate("/")}

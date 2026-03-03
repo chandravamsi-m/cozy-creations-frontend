@@ -35,27 +35,9 @@ export function CartProvider({ children }) {
 
   const clearCart = () => setCart([]);
 
-  const [deliveryConfig, setDeliveryConfig] = useState({
-    isActive: false,
-    amount: 0,
-    freeDeliveryThreshold: 0,
-    message: ""
-  });
 
-  // Fetch delivery settings on mount
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/settings/delivery`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (data.delivery) {
-          setDeliveryConfig(data.delivery);
-        }
-      })
-      .catch(err => console.error("Failed to fetch delivery config:", err));
-  }, []);
+  // shippingOverride: set by Checkout when Shiprocket returns a real rate.
+  const [shippingOverride, setShippingOverride] = useState(null);
 
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [loadingDiscounts, setLoadingDiscounts] = useState(false);
@@ -108,18 +90,12 @@ export function CartProvider({ children }) {
   }, [cart, itemDiscounts]);
 
   const discountedTotal = totalPrice - totalDiscountAmount;
+  const PLATFORM_FEE = 80;
 
-  // Calculate Delivery Fee based on discounted total
-  const deliveryFee = useMemo(() => {
-    if (!deliveryConfig.isActive) return 0;
-    // Check threshold against discounted total (what user actually pays)
-    if (deliveryConfig.freeDeliveryThreshold > 0 && discountedTotal >= deliveryConfig.freeDeliveryThreshold) {
-      return 0; // Free delivery
-    }
-    return deliveryConfig.amount;
-  }, [deliveryConfig, discountedTotal]);
+  // Delivery fee: use Shiprocket's real-time rate, or 0 if not yet calculated
+  const deliveryFee = shippingOverride !== null ? shippingOverride : 0;
 
-  const finalTotal = discountedTotal + deliveryFee;
+  const finalTotal = cart.length > 0 ? discountedTotal + deliveryFee + PLATFORM_FEE : 0;
 
   return (
     <CartContext.Provider
@@ -130,14 +106,16 @@ export function CartProvider({ children }) {
         removeItem,
         clearCart,
         totalItems,
-        totalPrice, // Subtotal (raw)
+        totalPrice,
         totalDiscountAmount,
-        discountedTotal, // Total after discounts, before shipping
+        discountedTotal,
         deliveryFee,
-        finalTotal, // Subtotal - Discount + Delivery
-        deliveryConfig,
+        platformFee: PLATFORM_FEE,
+        finalTotal,
         itemDiscounts,
-        loadingDiscounts
+        loadingDiscounts,
+        shippingOverride,
+        setShippingOverride,
       }}
     >
       {children}

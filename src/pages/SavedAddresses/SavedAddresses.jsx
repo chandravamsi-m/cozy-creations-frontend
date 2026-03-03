@@ -179,16 +179,16 @@ export default function SavedAddresses() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pt-20 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
+    <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           {/* Reusable Sticky Sidebar */}
           <UserSidebar userData={userData} />
 
           {/* Main Content */}
           <div className="flex-1 w-full scale-in">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-              <div>
+              <div className="lg:block hidden">
                 <h1 className="text-4xl font-bold mb-2 font-serif">Saved Addresses</h1>
                 <p className="text-gray-500 font-medium font-serif">Manage your delivery locations for faster checkout.</p>
               </div>
@@ -308,16 +308,18 @@ export default function SavedAddresses() {
         </div>
       </div>
 
-      {isModalOpen && (
-        <AddressModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveAddress}
-          address={currentAddress}
-          loading={modalLoading}
-          showTypeSelect={true}
-        />
-      )}
+      {
+        isModalOpen && (
+          <AddressModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveAddress}
+            address={currentAddress}
+            loading={modalLoading}
+            showTypeSelect={true}
+          />
+        )
+      }
 
       {/* Confirmation Modal for deletion */}
       <ConfirmModal
@@ -329,6 +331,6 @@ export default function SavedAddresses() {
         confirmText="Remove Address"
         type="danger"
       />
-    </div>
+    </div >
   );
 }

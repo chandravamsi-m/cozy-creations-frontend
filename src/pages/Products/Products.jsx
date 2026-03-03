@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { useProducts } from "../../contexts/ProductsContext";
 import ProductCard from "../../components/ProductCard";
+import ProductCardSkeleton from "../../components/skeletons/ProductCardSkeleton";
 import ProductQuickView from "../../components/ProductQuickView";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
@@ -603,7 +604,11 @@ export default function ProductsPage() {
 
             {/* LOADING + ERROR */}
             {contextLoading && (
-              <div className="py-12 text-center text-gray-600">Loading products…</div>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+                {[...Array(8)].map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
+              </div>
             )}
             {contextError && (
               <div className="py-6 text-red-600 text-center">{contextError}</div>

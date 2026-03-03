@@ -7,6 +7,8 @@ import { updateUserProfile } from "../../api/userProfile";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../contexts/ToastContext";
 import UserSidebar from "../../components/UserSidebar";
+import Skeleton from "../../components/common/Skeleton";
+import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
 export default function Profile() {
@@ -122,22 +124,46 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-accent"></div>
+      <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <UserSidebar userData={formData} />
+            <div className="flex-1 w-full space-y-6">
+              <div className="mb-8">
+                <Skeleton width="220px" height="32px" className="mb-2" />
+                <Skeleton width="320px" height="16px" />
+              </div>
+              <div className="bg-white rounded-[24px] p-8 border border-gray-100 shadow-sm space-y-8">
+                <div className="flex justify-between items-center">
+                  <Skeleton width="200px" height="24px" />
+                  <Skeleton width="80px" height="36px" borderRadius="12px" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton width="100px" height="14px" />
+                      <Skeleton width="100%" height="44px" borderRadius="12px" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pt-20 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
+    <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           {/* Reusable Sticky Sidebar */}
           <UserSidebar userData={formData} />
 
           {/* Main Content */}
           <div className="flex-1 w-full scale-in">
-            <div className="mb-6">
+            <div className="mb-6 lg:block hidden">
               <h1 className="text-3xl sm:text-4xl font-bold mb-2 font-serif text-gray-900">Personal Profile</h1>
               <p className="text-sm sm:text-base text-gray-500 font-medium font-serif">Manage your basic details and contact info.</p>
             </div>

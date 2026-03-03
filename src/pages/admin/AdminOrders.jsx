@@ -1,22 +1,23 @@
 // src/pages/admin/AdminOrders.jsx
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, getDocs, orderBy, query, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
-import { updateAdminOrderStatus } from "../../api/adminOrders";
-import { sendOrderStatusUpdate } from "../../api/email";
+import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function AdminOrders() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
   const [expandedId, setExpandedId] = useState(null);
-  const [savingId, setSavingId] = useState(null);
-  const [statusDraft, setStatusDraft] = useState({});
-  const [deliveryDateDraft, setDeliveryDateDraft] = useState({});
+
+  // Shiprocket action states
+  const [creatingShipment, setCreatingShipment] = useState(null);
+  const [generatingLabel, setGeneratingLabel] = useState(null);
 
   const scrollToTop = () => {
     setTimeout(() => {
@@ -43,9 +44,8 @@ export default function AdminOrders() {
 
   const loadOrders = async () => {
     setLoading(true);
-    setMsg("");
+
     try {
-      // Load directly from Firestore so the list renders immediately (no backend dependency).
       const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
       const list = snap.docs.map((d) => {
@@ -69,62 +69,84 @@ export default function AdminOrders() {
     loadOrders();
   }, []);
 
-  const statusOptions = [
-    "pending",
-    "confirmed",
-    "packed",
-    "shipped",
-    "delivered",
-    "cancelled",
-  ];
 
-  const handleSaveStatus = async (order) => {
-    const orderId = order.id;
-    const nextStatus = statusDraft[orderId];
-    if (!nextStatus) return;
-    if (!idToken) {
-      showToast("Not authenticated. Please login again.", "error");
-      return;
-    }
-
-    setSavingId(orderId);
-    setMsg("");
+  // ── Shiprocket: Create Shipment ────────────────────────────────────────────
+  const handleCreateShipment = async (order) => {
+    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+    setCreatingShipment(order.id);
     try {
-      const deliveryDate = deliveryDateDraft[orderId] || order.expectedDeliveryDate;
-      await updateAdminOrderStatus(orderId, nextStatus, idToken, deliveryDate);
-      // Update local state instantly so the badge updates without refresh
+      const res = await fetch(`${BACKEND_URL}/orders/create-shipment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create shipment");
+
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus, expectedDeliveryDate: deliveryDate } : o))
+        prev.map((o) =>
+          o.id === order.id
+            ? { ...o, status: "packed", shiprocket: data.shiprocket }
+            : o
+        )
       );
-      showToast("Status updated successfully");
-      setExpandedId(null); // Close the details view on success
-      scrollToTop();
+      showToast(`✅ Shipment created! AWB: ${data.shiprocket?.awbCode || "Pending"}`);
+    } catch (err) {
+      console.error("Create shipment error:", err);
+      showToast(err.message || "Failed to create shipment", "error");
+    } finally {
+      setCreatingShipment(null);
+    }
+  };
 
-      // Send Status Update Email (Non-blocking)
-      let targetEmail = order.userEmail;
+  const handleSyncStatus = async (orderId) => {
+    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+    try {
+      const res = await fetch(`${BACKEND_URL}/admin/orders/${orderId}/sync`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
 
-      // Fallback for older orders: Try to fetch email from user profile
-      if (!targetEmail && order.userId) {
-        try {
-          const userSnap = await getDoc(doc(db, "users", order.userId));
-          if (userSnap.exists()) {
-            targetEmail = userSnap.data().email;
-          }
-        } catch (err) {
-          console.error("Failed to fetch user profile for email fallback:", err);
-        }
-      }
-
-      if (targetEmail) {
-        sendOrderStatusUpdate(targetEmail, orderId, nextStatus, order.shippingAddress?.fullName || "Customer", deliveryDate);
-      } else {
-        console.warn(`AdminOrders: Could not find any recipient email for order ${orderId}.`);
+      if (data.success) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? { ...o, status: data.localStatus, shiprocket: { ...o.shiprocket, status: data.srStatus, lastUpdate: new Date().toISOString() } }
+              : o
+          )
+        );
+        showToast(`🔄 Status synced: ${data.srStatus}`);
       }
     } catch (err) {
-      console.error("Failed to update status:", err);
-      showToast("Failed to update status", "error");
+      console.error("Sync error:", err);
+      showToast(err.message || "Failed to sync status", "error");
+    }
+  };
+
+  // ── Shiprocket: Generate Label ─────────────────────────────────────────────
+  const handleGenerateLabel = async (order) => {
+    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+    setGeneratingLabel(order.id);
+    try {
+      const res = await fetch(`${BACKEND_URL}/orders/generate-label/${order.id}`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Label generation failed");
+
+      if (data.labelUrl) {
+        window.open(data.labelUrl, "_blank");
+        showToast("Label opened in new tab");
+      } else {
+        showToast("Label URL not available yet. Try again shortly.", "error");
+      }
+    } catch (err) {
+      console.error("Label error:", err);
+      showToast(err.message || "Failed to generate label", "error");
     } finally {
-      setSavingId(null);
+      setGeneratingLabel(null);
     }
   };
 
@@ -139,42 +161,44 @@ export default function AdminOrders() {
 
   return (
     <div className="p-4">
-
       <h2 className="text-xl font-semibold mb-4">All Orders</h2>
 
-      {loading && <p>Loading orders...</p>}
-
-      {!loading && orders.length === 0 && (
-        <p>No orders found.</p>
+      {loading && (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <OrderRowSkeleton key={i} />
+          ))}
+        </div>
       )}
+      {!loading && orders.length === 0 && <p>No orders found.</p>}
 
       <div className="space-y-4">
         {orders.map((order) => (
-          <div
-            key={order.id}
-            className="border rounded-lg p-4 shadow-sm bg-white"
-          >
+          <div key={order.id} className="border rounded-lg p-4 shadow-sm bg-white">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-              <p className="font-semibold text-gray-800">
-                Order #{order.id}
-              </p>
-
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${statusColors[order.status] || "bg-gray-200 text-gray-800"
-                  }`}
-              >
-                {order.status}
-              </span>
+              <p className="font-semibold text-gray-800">Order #{order.id}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[order.status] || "bg-gray-200 text-gray-800"}`}>
+                  {order.status}
+                </span>
+                {/* Shiprocket AWB badge */}
+                {order.shiprocket?.awbCode && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); copyToClipboard(order.shiprocket.awbCode); }}
+                    className="px-2 py-1 rounded text-xs font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 border border-violet-200 flex items-center gap-1 transition-colors"
+                    title="Click to copy AWB"
+                  >
+                    🚚 AWB: {order.shiprocket.awbCode}
+                  </button>
+                )}
+              </div>
             </div>
 
             <p className="text-sm text-gray-600">
-              Created:{" "}
-              {order.createdAt
-                ? order.createdAt.toLocaleString()
-                : "N/A"}
+              Created:{" "}{order.createdAt ? order.createdAt.toLocaleString() : "N/A"}
             </p>
 
-            <div className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+            <div className="text-sm text-gray-600 flex items-center gap-2 mt-1 flex-wrap">
               <span>Total Amount: <span className="font-bold text-gray-900">₹{order.total}</span></span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${order.paymentMethod === 'cod'
                 ? 'bg-orange-100 text-orange-700 border-orange-200'
@@ -182,121 +206,170 @@ export default function AdminOrders() {
                 }`}>
                 {order.paymentMethod || "online"}
               </span>
+              {(order.shiprocket?.courierName || order.courierName) && (
+                <span className="text-[10px] font-bold text-violet-600 px-2 py-0.5 rounded-full bg-violet-50">
+                  via {order.shiprocket?.courierName || order.courierName}
+                </span>
+              )}
             </div>
 
-            {order.expectedDeliveryDate && (
-              <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
-                <span>📅 Expected: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</span>
-              </p>
-            )}
 
-            <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
               <button
                 onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
-                className="px-3 py-2 bg-black text-white rounded w-full sm:w-auto"
+                className="px-3 py-2 bg-black text-white rounded w-full sm:w-auto text-sm hover:bg-gray-800 transition-colors"
               >
                 {expandedId === order.id ? "Hide Details" : "View Details"}
               </button>
+
+              {/* Shiprocket: Create Shipment – show if no shipment yet and order is confirmed/packed */}
+              {!order.shiprocket?.shipmentId && ["confirmed", "packed", "pending"].includes(order.status) && (
+                <button
+                  onClick={() => handleCreateShipment(order)}
+                  disabled={creatingShipment === order.id}
+                  className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded w-full sm:w-auto text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  {creatingShipment === order.id ? (
+                    <><span className="animate-spin">⏳</span> Creating...</>
+                  ) : (
+                    <>🚚 Create Shipment</>
+                  )}
+                </button>
+              )}
+
+              {/* Shiprocket: Print Label – show once shipment exists */}
+              {order.shiprocket?.shipmentId && (
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleGenerateLabel(order)}
+                    disabled={generatingLabel === order.id}
+                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded flex-1 sm:flex-none text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                  >
+                    {generatingLabel === order.id ? (
+                      <><span className="animate-spin">⏳</span> Generating...</>
+                    ) : (
+                      <>🏷️ Print Label</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleSyncStatus(order.id)}
+                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded flex-1 sm:flex-none text-[10px] font-black uppercase tracking-wider transition-all border border-blue-100 flex items-center justify-center gap-1"
+                    title="Sync with Shiprocket"
+                  >
+                    🔄 Sync
+                  </button>
+                  {order.shiprocket.awbCode && (
+                    <a
+                      href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 rounded flex-1 sm:flex-none text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      🔗 Live Track
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
 
             {expandedId === order.id && (
-              <div className="mt-4 border-t pt-4 space-y-4 bg-gray-50 rounded-lg p-4">
-                {/* STATUS UPDATE */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                  <div className="w-full sm:w-72">
-                    <label className="block text-sm font-medium text-gray-800 mb-1">
-                      Expected Delivery Date
-                    </label>
-                    <input
-                      type="date"
-                      value={deliveryDateDraft[order.id] || order.expectedDeliveryDate || ""}
-                      onChange={(e) =>
-                        setDeliveryDateDraft((prev) => ({ ...prev, [order.id]: e.target.value }))
-                      }
-                      className="border p-2 rounded w-full bg-white text-sm"
-                    />
-                  </div>
+              <div className="mt-3 border-t border-gray-100 pt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 bg-gray-50/60 rounded-xl p-3">
 
-                  <div className="w-full sm:w-72">
-                    <label className="block text-sm font-medium text-gray-800 mb-1">
-                      Update Status
-                    </label>
-                    <select
-                      value={statusDraft[order.id] ?? order.status ?? "pending"}
-                      onChange={(e) =>
-                        setStatusDraft((prev) => ({ ...prev, [order.id]: e.target.value }))
-                      }
-                      className="border p-2 rounded w-full bg-white"
-                    >
-                      {statusOptions.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* ── LEFT: Address + Shiprocket ── */}
+                <div className="space-y-3">
 
-                  <button
-                    onClick={() => handleSaveStatus(order)}
-                    disabled={savingId === order.id}
-                    className="px-4 py-2 bg-emerald-600 text-white rounded disabled:opacity-50 w-full sm:w-auto"
-                  >
-                    {savingId === order.id ? "Saving..." : "Save"}
-                  </button>
-                </div>
-
-                {/* SHIPPING DETAILS */}
-                {order.shippingAddress && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-gray-900">Shipping Details</h3>
-                    <div className="bg-white border rounded p-3 text-sm text-gray-700 space-y-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <p><span className="font-medium text-gray-900">Name:</span> {order.shippingAddress.fullName}</p>
-                        <p><span className="font-medium text-gray-900">Phone:</span> {order.shippingAddress.phone}</p>
+                  {/* Ship-to */}
+                  {order.shippingAddress && (
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Ship To</p>
+                      <div className="bg-white rounded-lg border border-gray-100 px-3 py-2 text-[12px] text-gray-700 space-y-0.5">
+                        <p className="font-bold text-gray-900">{order.shippingAddress.fullName}</p>
+                        <p>{order.shippingAddress.street}</p>
+                        <p>{order.shippingAddress.city}, {order.shippingAddress.state} — {order.shippingAddress.pincode}</p>
+                        <p className="text-gray-400 pt-0.5">📞 {order.shippingAddress.phone}</p>
                       </div>
-                      <div className="border-t my-2 border-gray-100"></div>
-                      <p><span className="font-medium text-gray-900">Address:</span> {order.shippingAddress.street}</p>
-                      <p><span className="font-medium text-gray-900">City/State:</span> {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}</p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* ITEMS */}
-                <div>
-                  <h3 className="font-semibold mb-2 text-gray-900">Items</h3>
-                  {order.items?.length ? (
-                    <div className="space-y-2">
-                      {order.items.map((item, idx) => (
-                        <div
-                          key={item.productId || idx}
-                          className="border p-3 rounded bg-white flex items-start justify-between gap-3"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{item.name}</p>
-                            <p className="text-sm text-gray-600">
-                              Qty: <span className="font-medium text-gray-800">{item.quantity}</span>
-                            </p>
-                          </div>
-                          <div className="text-sm text-gray-800 font-semibold whitespace-nowrap">
-                            ₹{item.price}
-                          </div>
+                  {/* Shiprocket */}
+                  {order.shiprocket && (
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">🚚 Shiprocket</p>
+                      <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2 text-[12px] space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400 font-medium">Status</span>
+                          <span className="font-bold text-violet-700 capitalize">{order.shiprocket.status || "—"}</span>
                         </div>
-                      ))}
+                        {(order.shiprocket?.courierName || order.courierName) && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Courier</span>
+                            <span className="font-bold text-gray-800">{order.shiprocket?.courierName || order.courierName}</span>
+                          </div>
+                        )}
+                        {order.shiprocket.awbCode && (
+                          <div className="flex justify-between items-center pt-0.5">
+                            <span className="text-gray-400 font-medium">AWB</span>
+                            <a
+                              href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="font-bold text-violet-600 hover:underline text-[11px]"
+                            >
+                              {order.shiprocket.awbCode} →
+                            </a>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="text-sm text-gray-600">No items.</p>
                   )}
                 </div>
 
-                {/* BILLING */}
-                {order.billing && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-gray-900">Billing Info</h3>
-                    <pre className="bg-white border p-3 rounded text-sm overflow-x-auto">
-                      {JSON.stringify(order.billing, null, 2)}
-                    </pre>
+                {/* ── RIGHT: Items + Price Breakdown ── */}
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Order Items</p>
+                  <div className="bg-white rounded-lg border border-gray-100 overflow-hidden text-[12px]">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[1fr_auto_auto_auto] text-[9px] font-black text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100 px-3 py-1.5 gap-4">
+                      <span>Product</span>
+                      <span className="text-center">Qty</span>
+                      <span className="text-right">Unit</span>
+                      <span className="text-right">Total</span>
+                    </div>
+                    {/* Rows */}
+                    {(order.items || []).map((item, idx) => (
+                      <div key={item.productId || idx}
+                        className="grid grid-cols-[1fr_auto_auto_auto] items-center px-3 py-2 gap-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                        <span className="font-semibold text-gray-900 truncate">{item.name}</span>
+                        <span className="text-center text-gray-500 font-medium">×{item.quantity}</span>
+                        <span className="text-right text-gray-500">₹{item.price}</span>
+                        <span className="text-right font-bold text-gray-900">₹{item.price * item.quantity}</span>
+                      </div>
+                    ))}
+                    {/* Summary strip */}
+                    <div className="bg-gray-50 border-t border-gray-100 px-3 py-2 space-y-1">
+                      <div className="flex justify-between text-gray-400">
+                        <span>Subtotal</span>
+                        <span className="font-medium text-gray-600">₹{(order.items || []).reduce((s, i) => s + i.price * i.quantity, 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-400">
+                        <span>Delivery</span>
+                        <span className={`font-medium ${order.deliveryFee > 0 ? "text-gray-600" : "text-green-600"}`}>
+                          {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "Free"}
+                        </span>
+                      </div>
+                      {order.platformFee && (
+                        <div className="flex justify-between text-gray-400">
+                          <span>Platform Fee</span>
+                          <span className="font-medium text-gray-600">₹{order.platformFee}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-gray-900 font-black border-t border-gray-200 pt-1 text-[13px]">
+                        <span>Total</span>
+                        <span>₹{order.total}</span>
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
+
               </div>
             )}
           </div>

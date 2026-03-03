@@ -127,6 +127,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
       name: product.name,
       price: product.price,
       category: product.category,
+      weightGrams: product.weightGrams || 0,
       thumbnailUrl: product.thumbnailUrl || product.imageUrl,
       quantityPack: product.quantityPack || 1,
       quantity: 1,

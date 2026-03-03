@@ -11,7 +11,8 @@ import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
 
 export default function ProductQuickView({ product, onClose, activeOffer }) {
-  const [quantity, setQuantity] = useState(1);
+  const [localQty, setLocalQty] = useState(1);  // qty selector before adding
+  const [added, setAdded] = useState(false);      // brief "Added!" feedback
   const [discount, setDiscount] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const { addItem, updateQuantity, removeItem, cart } = useCart();
@@ -27,44 +28,60 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
     glassJar: GlassJarIcon,
   };
 
+  // Derived: is this product already in cart?
+  const cartItem = cart.find((i) => i.productId === product?.id);
+  const inCart = !!cartItem;
+  // Show cart qty when in cart, local selector when not
+  const displayQty = inCart ? cartItem.quantity : localQty;
+
   useEffect(() => {
     if (product) {
       if (activeOffer) {
-        // Instant local calculation
         setDiscount(getEffectiveDiscount(product, activeOffer));
       } else {
-        // Fallback to async
         calculateProductDiscount(product).then(setDiscount);
       }
-
-      // Sync with cart quantity if exists
-      const item = cart.find((i) => i.productId === product.id);
-      if (item) setQuantity(item.quantity);
+      // Reset local selector whenever a new product is shown
+      setLocalQty(1);
+      setAdded(false);
     }
-  }, [product, cart, activeOffer]);
+  }, [product?.id, activeOffer]);
 
   if (!product) return null;
 
   const handleAddToCart = () => {
+    if (inCart) {
+      // Already in cart — close modal (button acts as "Go to Cart" hint)
+      onClose();
+      return;
+    }
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
       category: product.category,
+      weightGrams: product.weightGrams || 0,
       thumbnailUrl: product.thumbnailUrl || product.imageUrl,
       quantityPack: product.quantityPack || 1,
-      quantity: quantity,
+      quantity: localQty,
     });
+    // Brief "Added!" feedback — the inCart state will then take over
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
   };
 
   const handleQuantityChange = (delta) => {
-    const newQty = Math.max(1, quantity + delta);
-    setQuantity(newQty);
-
-    // If already in cart, update it
-    const item = cart.find((i) => i.productId === product.id);
-    if (item) {
-      updateQuantity(product.id, newQty);
+    if (inCart) {
+      // Directly update the cart quantity
+      const newQty = cartItem.quantity + delta;
+      if (newQty <= 0) {
+        removeItem(product.id);
+      } else {
+        updateQuantity(product.id, newQty);
+      }
+    } else {
+      // Just move the local selector (min 1)
+      setLocalQty((prev) => Math.max(1, prev + delta));
     }
   };
 
@@ -192,7 +209,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
               >
                 <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
-              <span className="flex-1 text-center font-black text-gray-900 text-sm sm:text-base">{quantity}</span>
+              <span className="flex-1 text-center font-black text-gray-900 text-sm sm:text-base">{displayQty}</span>
               <button
                 onClick={() => handleQuantityChange(1)}
                 className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
@@ -201,14 +218,30 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
               </button>
             </div>
 
-            {/* Add Button */}
-            <button
-              onClick={handleAddToCart}
-              className="flex-1 h-[48px] sm:h-[56px] bg-yellow-accent hover:bg-yellow-accent/90 text-black font-black uppercase tracking-wider sm:tracking-[0.2em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-yellow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-3"
-            >
-              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" />
-              <span className="whitespace-nowrap">Add to Cart</span>
-            </button>
+            {/* Add / In Cart Button */}
+            {inCart ? (
+              <button
+                onClick={onClose}
+                className="flex-1 h-[48px] sm:h-[56px] bg-green-500 hover:bg-green-600 text-white font-black uppercase tracking-wider sm:tracking-[0.15em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {/* <span>✓</span> */}
+                <span className="whitespace-nowrap">View Cart</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className={`flex-1 h-[48px] sm:h-[56px] font-black uppercase tracking-wider sm:tracking-[0.2em] text-[10px] sm:text-xs rounded-2xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-3 ${added
+                    ? "bg-green-500 text-white shadow-green-500/20"
+                    : "bg-yellow-accent hover:bg-yellow-accent/90 text-black shadow-yellow-accent/20"
+                  }`}
+              >
+                {added ? (
+                  <><span>✓</span><span className="whitespace-nowrap">Added!</span></>
+                ) : (
+                  <><ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" /><span className="whitespace-nowrap">Add to Cart</span></>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

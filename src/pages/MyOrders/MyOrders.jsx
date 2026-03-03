@@ -7,6 +7,8 @@ import { useToast } from "../../contexts/ToastContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import UserSidebar from "../../components/UserSidebar";
+import Skeleton from "../../components/common/Skeleton";
+import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 
 export default function MyOrders() {
@@ -130,19 +132,32 @@ export default function MyOrders() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-accent"></div>
+      <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat text-[#191816]">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <UserSidebar userData={userData} />
+            <div className="flex-1 w-full space-y-4">
+              <div className="mb-8">
+                <Skeleton width="200px" height="32px" className="mb-2" />
+                <Skeleton width="300px" height="16px" />
+              </div>
+              {[...Array(5)].map((_, i) => (
+                <OrderRowSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pt-20 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat">
+    <div className="min-h-screen bg-[#F8F9FA] pt-20 lg:pt-24 pb-12 px-4 sm:px-6 lg:px-8 font-montserrat">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           <UserSidebar userData={userData} />
           <div className="flex-1 w-full">
-            <div className="mb-4">
+            <div className="mb-4 lg:block hidden">
               <h1 className="text-4xl font-bold text-[#191816] mb-2 font-serif">Your Orders</h1>
               <p className="text-gray-500 font-medium">Track your recent purchases and manage reorders.</p>
             </div>
@@ -303,6 +318,17 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-50">
+          {/* Track Package – shown when shipment is dispatched (including packed status) */}
+          {order.shiprocket?.awbCode && ["packed", "shipped", "delivered"].includes(order.status) && (
+            <a
+              href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 w-full md:w-auto py-2 sm:py-0 text-[13px] font-bold text-violet-600 hover:text-violet-800 transition-colors"
+            >
+              <span>🚚 Track Package</span>
+            </a>
+          )}
           <button onClick={onToggle} className="flex items-center justify-center gap-1.5 w-full md:w-auto py-2 sm:py-0 text-[13px] font-bold text-gray-900 hover:text-black transition-colors group">
             <span>View Details</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
