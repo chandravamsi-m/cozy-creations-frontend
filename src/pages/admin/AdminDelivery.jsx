@@ -110,93 +110,141 @@ export default function AdminDelivery() {
   }
 
   return (
-    <div className="p-4 sm:p-5 space-y-6">
-      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Store Settings</h2>
+    <div className="p-0 sm:p-5 relative">
+      <div className="p-4 sm:p-8 bg-transparent sm:bg-white sm:rounded-2xl sm:shadow-md sm:border sm:border-gray-100">
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900 mb-6">
+          🚚 Delivery & Store Settings
+        </h1>
 
-      {/* ── Packaging Box Sizes ── */}
-      <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
-        <div className="mb-5 pb-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">📦 Packaging Box Size per Category</h3>
-          <p className="text-xs text-gray-500 mt-1">
-            Enter the packed box dimensions for each candle type. Shipping rates at checkout are
-            calculated automatically using these dimensions and each product's weight.
-          </p>
-        </div>
+        <div className="space-y-8">
+          {/* ── Packaging Section ── */}
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">📦</span>
+              <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider text-xs">Packaging Dimensions</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+              Set default box sizes per category for dynamic shipping calculations.
+            </p>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left pb-3 pr-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="pb-3 px-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Length (cm)</th>
-                <th className="pb-3 px-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Width (cm)</th>
-                <th className="pb-3 px-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Height (cm)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
+            {/* Desktop Table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm border-spacing-y-2 border-separate">
+                <thead>
+                  <tr className="text-left text-gray-400">
+                    <th className="pb-4 font-bold uppercase tracking-wider text-[10px]">Category</th>
+                    <th className="pb-4 px-4 font-bold uppercase tracking-wider text-[10px] text-center">L (cm)</th>
+                    <th className="pb-4 px-4 font-bold uppercase tracking-wider text-[10px] text-center">W (cm)</th>
+                    <th className="pb-4 px-4 font-bold uppercase tracking-wider text-[10px] text-center">H (cm)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-transparent">
+                  {CATEGORIES.map((cat) => {
+                    const pkg = categoryPackaging[cat.id] || { l: "", w: "", h: "" };
+                    return (
+                      <tr key={cat.id} className="group transition-colors">
+                        <td className="py-1.5 pr-4">
+                          <div className="flex items-center gap-3 bg-gray-50/50 p-2.5 rounded-2xl group-hover:bg-gray-100/50 transition-colors">
+                            <span className="text-lg w-9 h-9 flex items-center justify-center bg-white rounded-xl shadow-sm">{cat.icon}</span>
+                            <span className="font-bold text-gray-800 text-sm tracking-tight">{cat.label}</span>
+                          </div>
+                        </td>
+                        {["l", "w", "h"].map((field) => (
+                          <td key={field} className="py-1.5 px-1 text-center">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={pkg[field]}
+                              onChange={(e) => updatePkg(cat.id, field, e.target.value)}
+                              className="w-20 text-center bg-gray-50 border-none rounded-xl py-2.5 px-2 font-bold text-gray-900 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-accent transition-all placeholder:text-gray-300"
+                              placeholder="0"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="sm:hidden space-y-4">
               {CATEGORIES.map((cat) => {
                 const pkg = categoryPackaging[cat.id] || { l: "", w: "", h: "" };
                 return (
-                  <tr key={cat.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3 pr-4">
-                      <span className="flex items-center gap-2 font-semibold text-gray-800">
-                        <span className="text-lg">{cat.icon}</span>
-                        {cat.label}
-                      </span>
-                    </td>
-                    {["l", "w", "h"].map((field) => (
-                      <td key={field} className="py-2.5 px-3 text-center">
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={pkg[field]}
-                          onChange={(e) => updatePkg(cat.id, field, e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          placeholder="—"
-                          className="w-20 text-center border border-gray-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent/50 focus:border-yellow-accent"
-                        />
-                      </td>
-                    ))}
-                  </tr>
+                  <div key={cat.id} className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-xl w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm">{cat.icon}</span>
+                      <span className="font-bold text-gray-900">{cat.label}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { f: "l", l: "Len" },
+                        { f: "w", l: "Wid" },
+                        { f: "h", l: "Hei" }
+                      ].map((item) => (
+                        <div key={item.f} className="space-y-1">
+                          <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest pl-1">{item.l}</label>
+                          <input
+                            type="number"
+                            value={pkg[item.f]}
+                            onChange={(e) => updatePkg(cat.id, item.f, e.target.value)}
+                            className="w-full text-center bg-white border border-gray-100 rounded-xl py-2.5 font-bold text-gray-900 text-xs focus:ring-2 focus:ring-yellow-accent"
+                            placeholder="0"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-gray-400 mt-3 italic">
-          * Product weight is fetched from each product automatically. Shiprocket charges whichever is higher between actual weight and volumetric weight ( L×W×H ÷ 5000 ).
-        </p>
-      </div>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-6 flex items-start gap-2 italic">
+              <span className="text-gray-300">💡</span>
+              Shiprocket uses the higher of actual weight vs volumetric weight (L×W×H ÷ 5000) for calculation.
+            </p>
+          </section>
 
+          <hr className="border-gray-50" />
 
-      {/* ── Payment Options ── */}
-      <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
-        <h3 className="text-base font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100">Payment Options</h3>
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-          <div>
-            <p className="font-bold text-gray-900 text-sm">Cash on Delivery (COD)</p>
-            <p className="text-xs text-gray-500">Allow customers to pay with cash on delivery.</p>
+          {/* ── Payment Section ── */}
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-xl">💳</span>
+              <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider text-xs">Payment Methods</h3>
+            </div>
+            <div className="flex items-center justify-between p-5 bg-gray-50/50 rounded-3xl border border-gray-100 hover:border-green-100 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-xl shadow-sm">💵</div>
+                <div>
+                  <p className="font-bold text-gray-900 text-sm sm:text-base">Cash on Delivery (COD)</p>
+                  <p className="text-[11px] text-gray-500 font-medium tracking-tight">Enable cash payments at the doorstep.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentSettings(p => ({ ...p, isCodEnabled: !p.isCodEnabled }))}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all shrink-0 p-1.5 ${paymentSettings.isCodEnabled ? "bg-green-500" : "bg-gray-200"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${paymentSettings.isCodEnabled ? "translate-x-5" : "translate-x-0"}`} />
+              </button>
+            </div>
+          </section>
+
+          {/* ── Save Button ── */}
+          <div className="flex justify-end pt-8 border-t border-gray-50">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl font-black uppercase tracking-[0.1em] text-[12px] shadow-xl shadow-blue-100 active:scale-95 transition-all disabled:bg-gray-300"
+            >
+              {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
+              {saving ? "SAVING..." : "SAVE"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setPaymentSettings(p => ({ ...p, isCodEnabled: !p.isCodEnabled }))}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 p-1 ${paymentSettings.isCodEnabled ? "bg-green-600" : "bg-gray-300"}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${paymentSettings.isCodEnabled ? "translate-x-5" : "translate-x-0"}`} />
-          </button>
         </div>
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs disabled:bg-gray-300 shadow-lg shadow-blue-100 active:scale-95 transition-all"
-        >
-          {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
-          Save Settings
-        </button>
       </div>
     </div>
   );

@@ -382,7 +382,7 @@ export default function ProductsPage() {
           <aside
             ref={sidebarRef}
             data-section="sidebar"
-            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 sticky top-6 self-start max-h-[calc(100vh-24px)] overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"
+            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[75px] self-start max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"
               }`}
           >
             <h2 className="text-xl font-semibold mb-6">Collections</h2>
