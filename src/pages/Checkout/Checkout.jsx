@@ -120,24 +120,10 @@ export default function Checkout() {
         return;
       }
 
-      const usedFallback = !xpressbeesPartner;
-      if (usedFallback) console.info("XpressBees Surface unavailable — using cheapest courier as fallback.");
-
-      // ── Rate Calculation ───────────────────────────────────────────────
-      // Shiprocket serviceability API returns `freight_charge` = base freight only.
-      // The actual Shiprocket bill adds fuel surcharge, handling fees and 18% GST
-      // which are NOT exposed in this API. We apply:
-      //   finalRate = ceil((freight_charge + cod_charges) × 1.18 × (1 + markupPct/100))
-      // The markupPct is configured by admin in Delivery Settings to match real bills.
       const freight = Number(selectedPartner.freight_charge || selectedPartner.rate || 0);
       const codCharges = isCod ? Number(selectedPartner.cod_charges || 0) : 0;
       const withGst = (freight + codCharges) * 1.18;
       const finalRate = Math.ceil(withGst * (1 + shippingMarkupPct / 100));
-
-      console.log(
-        `💰 Delivery fee: freight=${freight} cod=${codCharges} → +18%GST → +${shippingMarkupPct}%markup = ₹${finalRate}`
-      );
-      // ──────────────────────────────────────────────────────────────────
 
       setServiceabilityInfo({
         available: true,
