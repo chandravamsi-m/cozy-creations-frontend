@@ -6,6 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
+import { getEffectiveShipmentDimensions } from "../../utils/parseDimensions";
 import { CheckCircle } from "lucide-react";
 import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
@@ -33,8 +34,9 @@ export default function Checkout() {
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [serviceabilityInfo, setServiceabilityInfo] = useState(null);
   const [serviceabilityError, setServiceabilityError] = useState(null);
-  // Category packaging config from backend
-  const [packagingConfig, setPackagingConfig] = useState({});
+  // Admin-configured shipping markup % to cover Shiprocket surcharges not in API
+  const [shippingMarkupPct, setShippingMarkupPct] = useState(0); 
+  const packagingBuffer = 3; // Hardcoded 3cm buffer
 
   // Deletion Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -54,13 +56,11 @@ export default function Checkout() {
     return () => setShippingOverride(null);
   }, []);
 
-  // Fetch per-category packaging config once
+  // No longer fetching delivery settings for markup/buffer as they are hardcoded
   useEffect(() => {
-    fetch(`${BACKEND_URL}/settings/packaging`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.categoryPackaging) setPackagingConfig(data.categoryPackaging); })
-      .catch(err => console.warn("Packaging config fetch failed:", err.message));
+    // Keeping this hook for future settings if needed, but currently empty
   }, []);
+
 
   // Check Shiprocket serviceability & get real shipping rate
   const checkServiceability = useCallback(async (pincode) => {
@@ -69,26 +69,28 @@ export default function Checkout() {
     setServiceabilityInfo(null);
     setServiceabilityError(null);
 
+    // Compute total shipment dimensions and weight dynamically from each product's data
     const totals = cart.reduce((acc, item) => {
-      const cat = (item.category || "").toLowerCase();
-      const pkg = packagingConfig[cat];
-      const actualWeight = item.weightGrams ? (item.weightGrams / 1000) : 0.3;
-      const volumetric = (pkg && pkg.l && pkg.w && pkg.h)
-        ? (pkg.l * pkg.w * pkg.h) / 5000
-        : 0;
-
-      acc.actual += (actualWeight * item.quantity);
-      acc.volumetric += (volumetric * item.quantity);
+      const { weightKg, l, w, h } = getEffectiveShipmentDimensions(item);
+      acc.actualWeight += weightKg;
+      acc.l += l;
+      acc.w = Math.max(acc.w, w);
+      acc.h = Math.max(acc.h, h);
       return acc;
-    }, { actual: 0, volumetric: 0 });
+    }, { actualWeight: 0, l: 0, w: 0, h: 0 });
 
-    const totalWeight = Math.max(0.5, Number(Math.max(totals.actual, totals.volumetric).toFixed(2)));
+    // Use only ACTUAL cart weight for the shipping rate
+    const totalWeight = Math.max(0.5, Number(totals.actualWeight.toFixed(2)));
 
     const isCod = paymentMethod === "cod" ? 1 : 0;
 
     try {
+      const finalL = totals.l + packagingBuffer;
+      const finalW = totals.w + packagingBuffer;
+      const finalH = totals.h + packagingBuffer;
+
       const res = await fetch(
-        `${BACKEND_URL}/shipping/check-serviceability?pincode=${pincode}&weight=${totalWeight}&cod=${isCod}`,
+        `${BACKEND_URL}/shipping/check-serviceability?pincode=${pincode}&weight=${totalWeight}&cod=${isCod}&l=${Math.ceil(finalL)}&w=${Math.ceil(finalW)}&h=${Math.ceil(finalH)}&amount=${discountedTotal}`,
         { headers: { Authorization: `Bearer ${idToken}` } }
       );
       const json = await res.json();
@@ -96,33 +98,55 @@ export default function Checkout() {
       if (!res.ok) throw new Error(json.error || "Serviceability check failed");
 
       // Shiprocket returns a list of available couriers
-      const couriers = json.data?.data?.available_courier_companies || [];
+      const allCouriers = json.data?.data?.available_courier_companies || [];
 
-      if (couriers.length === 0) {
+      // Filter to include only Surface couriers
+      const couriers = allCouriers.filter(c => 
+        c.is_surface === true || 
+        (c.courier_name || c.name || "").toLowerCase().includes("surface")
+      );
+
+      // Priority: XpressBees Surface → fallback to cheapest available surface courier
+      const xpressbeesPartner = couriers.find(c =>
+        (c.courier_name || c.name || "").toLowerCase().includes("xpressbees")
+      );
+
+      const selectedPartner = xpressbeesPartner ||
+        couriers.reduce((best, c) => (Number(c.rate) < Number(best.rate) ? c : best), couriers[0]);
+
+      if (!selectedPartner) {
         setServiceabilityInfo({ available: false, rate: null, courierName: null });
-        setShippingOverride(null); // fall back to flat fee
+        setShippingOverride(null);
         return;
       }
 
-      // Pick the cheapest available courier
-      const cheapest = couriers.reduce((best, c) =>
-        (c.rate < best.rate) ? c : best, couriers[0]
-      );
+      const usedFallback = !xpressbeesPartner;
+      if (usedFallback) console.info("XpressBees Surface unavailable — using cheapest courier as fallback.");
 
-      // Sum up everything except COD charges (which are handled by paymentMethod toggle)
-      const rate = Math.ceil(
-        (cheapest.rate || 0) +
-        (cheapest.other_charges || 0) +
-        (cheapest.entry_tax || 0)
+      // ── Rate Calculation ───────────────────────────────────────────────
+      // Shiprocket serviceability API returns `freight_charge` = base freight only.
+      // The actual Shiprocket bill adds fuel surcharge, handling fees and 18% GST
+      // which are NOT exposed in this API. We apply:
+      //   finalRate = ceil((freight_charge + cod_charges) × 1.18 × (1 + markupPct/100))
+      // The markupPct is configured by admin in Delivery Settings to match real bills.
+      const freight = Number(selectedPartner.freight_charge || selectedPartner.rate || 0);
+      const codCharges = isCod ? Number(selectedPartner.cod_charges || 0) : 0;
+      const withGst = (freight + codCharges) * 1.18;
+      const finalRate = Math.ceil(withGst * (1 + shippingMarkupPct / 100));
+
+      console.log(
+        `💰 Delivery fee: freight=${freight} cod=${codCharges} → +18%GST → +${shippingMarkupPct}%markup = ₹${finalRate}`
       );
+      // ──────────────────────────────────────────────────────────────────
+
       setServiceabilityInfo({
         available: true,
-        rate,
-        courierName: cheapest.courier_name || cheapest.name || null,
-        courierId: cheapest.courier_company_id || cheapest.id || null,
-        deliveryDays: cheapest.estimated_delivery_days || cheapest.etd || null,
+        rate: finalRate,
+        courierName: selectedPartner.courier_name || selectedPartner.name || null,
+        courierId: selectedPartner.courier_company_id || selectedPartner.id || null,
+        deliveryDays: selectedPartner.estimated_delivery_days || selectedPartner.etd || null,
       });
-      setShippingOverride(rate);
+      setShippingOverride(finalRate);
     } catch (err) {
       console.error("Serviceability error:", err.message);
       setServiceabilityError("Could not fetch real-time rates. Using standard fee.");
@@ -130,7 +154,7 @@ export default function Checkout() {
     } finally {
       setCheckingServiceability(false);
     }
-  }, [cart, idToken, paymentMethod, setShippingOverride, packagingConfig]);
+  }, [cart, idToken, paymentMethod, setShippingOverride, discountedTotal, shippingMarkupPct]);
 
   // Re-check whenever selected address, payment method, OR cart contents change
   useEffect(() => {
@@ -298,6 +322,8 @@ export default function Checkout() {
           image: item.thumbnailUrl || item.imageUrl,
           category: item.category || null,
           weightGrams: item.weightGrams || 0,
+          dimensions: item.dimensions || null,       // needed for shipment size calculation
+          quantityPack: item.quantityPack || null,   // needed for pack-weight scaling
           customization: customizations[item.productId] || null,
         })),
         deliveryFee: deliveryFee,

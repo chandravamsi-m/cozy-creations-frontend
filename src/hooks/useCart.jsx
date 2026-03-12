@@ -13,7 +13,7 @@ export function CartProvider({ children }) {
       if (exists) {
         return prev.map((p) =>
           p.productId === item.productId
-            ? { ...p, quantity: p.quantity + (item.quantity || 1) }
+            ? { ...p, ...item, quantity: p.quantity + (item.quantity || 1) }
             : p
         );
       }

@@ -128,8 +128,9 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
       price: product.price,
       category: product.category,
       weightGrams: product.weightGrams || 0,
-      thumbnailUrl: product.thumbnailUrl || product.imageUrl,
+      dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,
+      thumbnailUrl: product.thumbnailUrl || product.imageUrl,
       quantity: 1,
     });
     setQuantity(1);

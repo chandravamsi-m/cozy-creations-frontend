@@ -61,8 +61,9 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       price: product.price,
       category: product.category,
       weightGrams: product.weightGrams || 0,
-      thumbnailUrl: product.thumbnailUrl || product.imageUrl,
+      dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,
+      thumbnailUrl: product.thumbnailUrl || product.imageUrl,
       quantity: localQty,
     });
     // Brief "Added!" feedback — the inCart state will then take over
@@ -231,8 +232,8 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
               <button
                 onClick={handleAddToCart}
                 className={`flex-1 h-[48px] sm:h-[56px] font-black uppercase tracking-wider sm:tracking-[0.2em] text-[10px] sm:text-xs rounded-2xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-3 ${added
-                    ? "bg-green-500 text-white shadow-green-500/20"
-                    : "bg-yellow-accent hover:bg-yellow-accent/90 text-black shadow-yellow-accent/20"
+                  ? "bg-green-500 text-white shadow-green-500/20"
+                  : "bg-yellow-accent hover:bg-yellow-accent/90 text-black shadow-yellow-accent/20"
                   }`}
               >
                 {added ? (
