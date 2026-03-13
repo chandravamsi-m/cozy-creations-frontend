@@ -10,6 +10,7 @@ import { getEffectiveShipmentDimensions } from "../../utils/parseDimensions";
 import { CheckCircle } from "lucide-react";
 import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
+import useRazorpay from "../../hooks/useRazorpay";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const MAX_ADDRESSES = 5;
@@ -41,6 +42,7 @@ export default function Checkout() {
   // Deletion Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState(null);
+  const { isReady: razorpayReady } = useRazorpay();
 
   // Redirect if cart empty or not logged in (double check)
   React.useEffect(() => {
@@ -452,6 +454,10 @@ export default function Checkout() {
           color: "#FACC15",
         },
       };
+
+      if (!window.Razorpay || !razorpayReady) {
+        throw new Error("Payment gateway is still loading. Please wait a moment.");
+      }
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
