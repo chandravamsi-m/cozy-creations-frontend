@@ -453,6 +453,11 @@ export default function Checkout() {
         theme: {
           color: "#FACC15",
         },
+        retry: {
+          enabled: true,
+          max_count: 3
+        },
+        timeout: 60
       };
 
       if (!window.Razorpay || !razorpayReady) {
