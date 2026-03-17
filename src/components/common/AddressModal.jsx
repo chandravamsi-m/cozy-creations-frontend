@@ -52,13 +52,13 @@ export default function AddressModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4 font-montserrat">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4 font-montserrat" role="dialog" aria-modal="true" aria-labelledby="address-modal-title">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="bg-gray-50 px-6 py-3 flex justify-between items-center border-b border-gray-100">
-          <h2 className="font-bold text-gray-900 text-sm">{address ? "Edit Address" : "Add New Address"}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="w-4 h-4" />
+          <h2 id="address-modal-title" className="font-bold text-gray-900 text-sm">{address ? "Edit Address" : "Add New Address"}</h2>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close address form">
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-3">

@@ -75,16 +75,17 @@ export default function Navbar({
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">
           {/* LOGO */}
-          <div
-            className="h-10 w-28 relative overflow-hidden cursor-pointer"
-            onClick={() => navigate("/")}
+          <a
+            href="/"
+            className="h-10 w-28 relative overflow-hidden cursor-pointer inline-block"
+            aria-label="Go to Cozy Creations home"
           >
             <img
               src={logo}
-              alt="Logo"
+              alt="Cozy Creations"
               className="absolute w-[100%] h-[100%] object-contain"
             />
-          </div>
+          </a>
 
           {/* DESKTOP NAVIGATION */}
           <div className="hidden md:flex gap-10 text-xs text-white uppercase">
@@ -131,8 +132,12 @@ export default function Navbar({
             {user ? (
               <div className="relative hidden md:block" ref={desktopDropdownRef}>
                 <button
+                  type="button"
                   onClick={() => setDesktopProfileOpen((prev) => !prev)}
                   className="flex items-center gap-2 text-white text-xs hover:text-yellow-accent transition-colors"
+                  aria-haspopup="menu"
+                  aria-expanded={desktopProfileOpen}
+                  aria-label="Account menu"
                 >
                   <div className="w-7 h-7 rounded-full bg-white/20 border border-white/10 flex items-center justify-center text-white font-semibold">
                     {(user.displayName || user.email).charAt(0).toUpperCase()}
@@ -178,6 +183,7 @@ export default function Navbar({
               </div>
             ) : (
               <button
+                type="button"
                 onClick={openLoginModal}
                 className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs font-semibold text-black hover:bg-yellow-500 transition-colors"
               >
@@ -187,6 +193,7 @@ export default function Navbar({
 
             {/* Mobile Shop Now (Smaller version next to cart) */}
             <button
+              type="button"
               onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
               className="nav-shop-now sm:hidden flex items-center justify-center border border-yellow-accent/30 text-yellow-accent px-3 py-1.5 rounded-md text-[10px] font-bold transition-all active:scale-90 mr-1 relative z-10"
             >
@@ -195,8 +202,10 @@ export default function Navbar({
 
             {/* CART BUTTON (Visible on both Mobile & Desktop) */}
             <button
+              type="button"
               onClick={() => navigate("/cart")}
               className="relative flex items-center justify-center text-white p-2"
+              aria-label="View cart"
             >
               <img src={cartIcon} alt="Cart" className="w-6 h-6" />
               {cartCount > 0 && (
@@ -208,10 +217,14 @@ export default function Navbar({
 
             {/* MOBILE MENU TOGGLE */}
               <button
+                type="button"
                 className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white"
                 onClick={() => setMenuOpen((prev) => !prev)}
+                aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-nav-menu"
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-6 h-6" aria-hidden="true" />
               </button>
           </div>
         </div>
@@ -222,6 +235,7 @@ export default function Navbar({
             ? "opacity-100 translate-y-0 scale-100"
             : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
             }`}
+          id="mobile-nav-menu"
         >
           <NavLink
             to="/"

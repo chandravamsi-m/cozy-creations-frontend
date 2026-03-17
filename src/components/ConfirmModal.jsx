@@ -41,6 +41,10 @@ const ConfirmModal = ({
     <div
       className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+      aria-describedby="confirm-modal-description"
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full p-4 animate-in zoom-in slide-in-from-bottom-2 duration-300"
@@ -52,11 +56,11 @@ const ConfirmModal = ({
           </div>
 
           <div className="flex-1 text-center sm:text-left">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">
+            <h3 id="confirm-modal-title" className="text-lg font-bold text-gray-900 mb-1">
               {title}
             </h3>
 
-            <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+            <p id="confirm-modal-description" className="text-sm text-gray-600 mb-5 leading-relaxed">
               {message}
             </p>
 

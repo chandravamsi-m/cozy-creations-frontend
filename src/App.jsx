@@ -6,7 +6,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import MainLayout from "./layouts/MainLayout";
 import { ProductsProvider } from "./contexts/ProductsContext";
-import { AuthProvider } from "./contexts/AuthContext"; // ⭐ REQUIRED
 import { LoginModalProvider, useLoginModal } from "./contexts/LoginModalContext";
 import LoginModal from "./components/LoginModal";
 import { CartProvider } from "./hooks/useCart";
@@ -214,24 +213,22 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <LoginModalProvider>
-          <CartProvider>
-            <ProductsProvider>
-              <BrowserRouter>
-                <AppContent
-                  heroRef={heroRef}
-                  productSectionRef={productSectionRef}
-                  stickyNavRef={stickyNavRef}
-                  menuOpen={menuOpen}
-                  setMenuOpen={setMenuOpen}
-                />
-              </BrowserRouter>
-            </ProductsProvider>
-          </CartProvider>
-        </LoginModalProvider>
-      </ToastProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <LoginModalProvider>
+        <CartProvider>
+          <ProductsProvider>
+            <BrowserRouter>
+              <AppContent
+                heroRef={heroRef}
+                productSectionRef={productSectionRef}
+                stickyNavRef={stickyNavRef}
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+              />
+            </BrowserRouter>
+          </ProductsProvider>
+        </CartProvider>
+      </LoginModalProvider>
+    </ToastProvider>
   );
 }
