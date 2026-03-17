@@ -13,6 +13,7 @@ import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { useProducts } from "../../contexts/ProductsContext";
+import usePageSEO from "../../hooks/usePageSEO";
 
 // Cloudinary hero image
 const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307253/image_3_i18muy.webp";
@@ -54,6 +55,12 @@ function ContactCard({ icon, title, value, children, delay = 0 }) {
 export default function ContactUs() {
   const { user } = useAuth();
   const { openLoginModal } = useLoginModal();
+  usePageSEO({
+    title: "Contact Us — Bulk Orders & Custom Requests",
+    description:
+      "Get in touch with Cozy Creations for bulk candle orders, custom requests, or any questions. Based in Hyderabad. Email: cozycandlecorner13@gmail.com | Phone: +91 8019401322.",
+    path: "/contact",
+  });
 
   const [formData, setFormData] = useState({
     name: "",

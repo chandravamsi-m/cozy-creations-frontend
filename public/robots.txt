@@ -1,0 +1,15 @@
+# Robots.txt for cozycreations.in
+# https://cozycreations.in
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /profile
+Disallow: /my-orders
+Disallow: /addresses
+Disallow: /checkout
+Disallow: /cart
+
+# Sitemap
+Sitemap: https://cozycreations.in/sitemap.xml

@@ -11,6 +11,7 @@ const HOME_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767
 
 import searchBold from "../../assets/svgs/search-bold.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
+import usePageSEO from "../../hooks/usePageSEO";
 
 import {
   INITIAL_FEATURES,
@@ -19,6 +20,12 @@ import {
 } from "../../utils/constants";
 
 export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen }) {
+  usePageSEO({
+    title: "Handcrafted Candles — Shop Online",
+    description:
+      "Discover handcrafted candles made with love. Explore our floral, animal, festive, spiral & glass jar collections. Premium soy wax candles for home décor & gifting.",
+    path: "/",
+  });
 
   const navigate = useNavigate();
   // Home collections IDs aren't 1:1 with product category values in Firestore.

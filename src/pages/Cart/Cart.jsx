@@ -4,12 +4,14 @@ import { useCart } from "../../hooks/useCart";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLoginModal } from "../../contexts/LoginModalContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import ProductQuickView from "../../components/ProductQuickView";
 import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { calculateProductDiscount } from "../../utils/offerUtils";
+import { ShoppingBag } from "lucide-react";
 
 const FRAGRANCE_OPTIONS = [
   "Rose",
@@ -45,9 +47,10 @@ export default function CartPage() {
   const {
     cart, updateQuantity, removeItem, clearCart,
     totalPrice, totalDiscountAmount, discountedTotal,
-    platformFee, finalTotal,
+    deliveryFee, platformFee, isPlatformFeeEnabled, finalTotal,
     itemDiscounts, loadingDiscounts
   } = useCart();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const { user, idToken } = useAuth();
   const { openLoginModal } = useLoginModal();
@@ -177,7 +180,7 @@ export default function CartPage() {
             </div>
             <button
               onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
-              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors group whitespace-nowrap"
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors group whitespace-nowrap"
             >
               <span className="group-hover:-translate-x-0.5 transition-transform font-black">←</span>
               CONTINUE SHOPPING
@@ -188,7 +191,7 @@ export default function CartPage() {
           {cart.length === 0 && (
             <div className="bg-white border border-gray-200 rounded-2xl p-8 sm:p-10 text-center shadow-sm">
               <div className="w-14 h-14 rounded-2xl bg-yellow-accent/60 grid place-items-center mx-auto text-2xl">
-                🛒
+                <ShoppingBag className="w-8 h-8 text-black" />
               </div>
               <h2 className="mt-4 text-xl font-semibold text-gray-900">Your cart is empty</h2>
               <p className="mt-2 text-sm text-gray-600">

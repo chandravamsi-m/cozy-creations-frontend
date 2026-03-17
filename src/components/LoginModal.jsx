@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 
 export default function LoginModal({ closeModal }) {
   const navigate = useNavigate();
@@ -158,8 +158,8 @@ export default function LoginModal({ closeModal }) {
                 ? "Reset Password"
                 : "Create Account"}
           </h2>
-          <button onClick={closeModal} className="text-gray-500 text-xl hover:text-black">
-            ✕
+          <button onClick={closeModal} className="text-gray-500 hover:text-black transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
         {/* TABS */}

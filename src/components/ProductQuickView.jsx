@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 import { calculateProductDiscount, getEffectiveDiscount } from "../utils/offerUtils";
-import { X, ShoppingCart, Plus, Minus } from "lucide-react";
+import { X, ShoppingCart, Plus, Minus, CheckCircle2 } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../assets/svgs/animal-icon.svg";
@@ -237,7 +237,10 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                   }`}
               >
                 {added ? (
-                  <><span>✓</span><span className="whitespace-nowrap">Added!</span></>
+                  <>
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="whitespace-nowrap">Added!</span>
+                  </>
                 ) : (
                   <><ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" /><span className="whitespace-nowrap">Add to Cart</span></>
                 )}

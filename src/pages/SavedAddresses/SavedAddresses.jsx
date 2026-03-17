@@ -7,6 +7,7 @@ import { useToast } from "../../contexts/ToastContext";
 import UserSidebar from "../../components/UserSidebar";
 import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
+import { Home, Briefcase, MapPin, Pencil, Trash2, Plus } from "lucide-react";
 
 const MAX_ADDRESSES = 5;
 
@@ -203,7 +204,7 @@ export default function SavedAddresses() {
                   : "bg-yellow-accent text-black shadow-yellow-accent/20 hover:scale-105"
                   }`}
               >
-                <span className="text-base sm:text-lg">+</span>
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                 Add New Address
               </button>
             </div>
@@ -225,8 +226,14 @@ export default function SavedAddresses() {
                     )}
 
                     <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl shadow-sm flex items-center justify-center text-sm sm:text-lg border border-gray-50 group-hover:scale-110 transition-transform">
-                        {addr.type === "Home" ? "🏠" : addr.type === "Office" ? "💼" : "📍"}
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl shadow-sm flex items-center justify-center border border-gray-50 group-hover:scale-110 transition-transform">
+                        {addr.type === "Home" ? (
+                          <Home className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                        ) : addr.type === "Office" ? (
+                          <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                        ) : (
+                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                        )}
                       </div>
                       <div>
                         <h3 className="font-bold text-gray-900 text-[11px] sm:text-sm">{addr.type}</h3>
@@ -251,7 +258,7 @@ export default function SavedAddresses() {
                         }}
                         className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
                       >
-                        ✎ Edit
+                        <Pencil className="w-3 h-3" /> Edit
                       </button>
                       <button
                         onClick={(e) => {
@@ -260,7 +267,7 @@ export default function SavedAddresses() {
                         }}
                         className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-red-500 hover:text-red-600 transition-colors"
                       >
-                        🗑 Remove
+                        <Trash2 className="w-3 h-3" /> Remove
                       </button>
                       {!addr.isDefault && (
                         <button
@@ -283,8 +290,8 @@ export default function SavedAddresses() {
                     }}
                     className="border-2 border-dashed border-gray-100 rounded-2xl sm:rounded-3xl p-3 sm:p-6 flex flex-col items-center justify-center gap-2 sm:gap-3 hover:border-yellow-accent/50 hover:bg-gray-50/50 transition-all min-h-[140px] sm:min-h-[160px] group"
                   >
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 text-base sm:text-xl group-hover:bg-yellow-accent group-hover:text-black transition-colors">
-                      +
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-yellow-accent group-hover:text-black transition-colors">
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <p className="text-[11px] sm:text-sm font-bold text-gray-400 group-hover:text-gray-900 transition-colors text-center">Add Address</p>
                   </button>

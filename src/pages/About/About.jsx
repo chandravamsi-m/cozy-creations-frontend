@@ -10,11 +10,18 @@ import collection3 from '../../assets/images/collection-3.webp';
 import collection4 from '../../assets/images/collection-4.webp';
 import collection5 from '../../assets/images/collection-5.webp';
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
+import usePageSEO from "../../hooks/usePageSEO";
 
 // Cloudinary hero image
 const ABOUT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307254/image_6_dal1ii.webp";
 
 export default function About() {
+  usePageSEO({
+    title: "About Us — Our Story",
+    description:
+      "Cozy Creations crafts premium handmade candles with passion and artistry. Learn about our journey, our soy & gel wax process, and our unique floral, festive & custom candle collections.",
+    path: "/about",
+  });
   const stickyNavRef = useRef(null);
   const afterHeroRef = useRef(null);
   const journeySectionRef = useRef(null);

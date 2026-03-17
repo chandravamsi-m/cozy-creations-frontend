@@ -5,6 +5,7 @@ import whatsapp3 from '../assets/images/whatsapp-3.webp';
 import mailRounded from '../assets/svgs/mail-rounded.svg';
 import call from '../assets/svgs/call.svg';
 import instagram from '../assets/svgs/instagram-fill.svg';
+import { MapPin } from 'lucide-react';
 
 
 export default function Footer() {
@@ -52,7 +53,7 @@ export default function Footer() {
                                 <span>8019401322</span>
                             </p>
                             <p className="flex items-start gap-2">
-                                <span>📍</span>
+                                <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
                                 <span>Hyderabad, Gajularamaram</span>
                             </p>
                         </div>

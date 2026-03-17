@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { db } from "../../firebase";
 import { collection, getDocs } from "firebase/firestore";
+import { Gift, Loader2, Image as ImageIcon, Coins, ChevronDown } from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -239,8 +240,8 @@ export default function AdminOffers() {
   return (
     <div className="p-0 sm:p-5 relative">
       <div className="p-4 sm:p-6 bg-transparent sm:bg-white sm:rounded-2xl sm:shadow-md sm:border sm:border-gray-100">
-        <h1 className="text-xl font-black text-gray-900 mb-5">
-          🎁 Manage Offers & Discounts
+        <h1 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-2">
+          <Gift className="w-6 h-6 text-yellow-500" /> Manage Offers & Discounts
         </h1>
 
         <form onSubmit={handleSave} className="space-y-6">
@@ -292,7 +293,11 @@ export default function AdminOffers() {
                 ) : (
                   <label className="cursor-pointer flex flex-col items-center gap-2 p-4 text-center">
                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
-                      {uploading ? "⌛" : "🖼️"}
+                      {uploading ? (
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-6 h-6" />
+                      )}
                     </div>
                     <div>
                       <p className="text-xs font-bold text-gray-900">{uploading ? "Uploading..." : "Click to Upload"}</p>
@@ -346,7 +351,7 @@ export default function AdminOffers() {
             <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span>💰</span> Enable Discount
+                  <Coins className="w-5 h-5 text-blue-600" /> Enable Discount
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   {offerSettings.hasDiscount ? "Discounts will be applied to products" : "No discounts active"}
@@ -495,8 +500,8 @@ export default function AdminOffers() {
                                 </option>
                               ))}
                             </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">
-                              ▼
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                              <ChevronDown className="w-4 h-4" />
                             </div>
                           </div>
                         </div>

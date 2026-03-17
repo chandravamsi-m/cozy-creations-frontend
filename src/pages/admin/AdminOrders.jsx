@@ -5,6 +5,16 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
+import { 
+  CheckCircle, 
+  RefreshCw, 
+  Truck, 
+  Loader2, 
+  Tag, 
+  ExternalLink, 
+  Phone, 
+  ArrowRight 
+} from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -28,6 +38,14 @@ export default function AdminOrders() {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     }, 100);
+  };
+  
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("Copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy:", err);
+    });
   };
 
   const parseTimestamp = (ts) => {
@@ -90,7 +108,7 @@ export default function AdminOrders() {
             : o
         )
       );
-      showToast(`✅ Shipment created! AWB: ${data.shiprocket?.awbCode || "Pending"}`);
+      showToast(`Shipment created! AWB: ${data.shiprocket?.awbCode || "Pending"}`);
     } catch (err) {
       console.error("Create shipment error:", err);
       showToast(err.message || "Failed to create shipment", "error");
@@ -117,7 +135,7 @@ export default function AdminOrders() {
               : o
           )
         );
-        showToast(`🔄 Status synced: ${data.srStatus}`);
+        showToast(`Status synced: ${data.srStatus}`);
       }
     } catch (err) {
       console.error("Sync error:", err);
@@ -183,13 +201,13 @@ export default function AdminOrders() {
                 </span>
                 {/* Shiprocket AWB badge */}
                 {order.shiprocket?.awbCode && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); copyToClipboard(order.shiprocket.awbCode); }}
-                    className="px-2 py-1 rounded text-xs font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 border border-violet-200 flex items-center gap-1 transition-colors"
-                    title="Click to copy AWB"
-                  >
-                    🚚 AWB: {order.shiprocket.awbCode}
-                  </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); copyToClipboard(order.shiprocket.awbCode); }}
+                      className="px-2 py-1 rounded text-xs font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 border border-violet-200 flex items-center gap-1 transition-colors"
+                      title="Click to copy AWB"
+                    >
+                      <Truck className="w-3 h-3" /> AWB: {order.shiprocket.awbCode}
+                    </button>
                 )}
               </div>
             </div>
@@ -224,39 +242,39 @@ export default function AdminOrders() {
 
               {/* Shiprocket: Create Shipment – show if no shipment yet and order is confirmed/packed */}
               {!order.shiprocket?.shipmentId && ["confirmed", "packed", "pending"].includes(order.status) && (
-                <button
-                  onClick={() => handleCreateShipment(order)}
-                  disabled={creatingShipment === order.id}
-                  className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded w-full sm:w-auto text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                >
-                  {creatingShipment === order.id ? (
-                    <><span className="animate-spin">⏳</span> Creating...</>
-                  ) : (
-                    <>🚚 Create Shipment</>
-                  )}
-                </button>
+                  <button
+                    onClick={() => handleCreateShipment(order)}
+                    disabled={creatingShipment === order.id}
+                    className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded w-full sm:w-auto text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                  >
+                    {creatingShipment === order.id ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
+                    ) : (
+                      <><Truck className="w-4 h-4" /> Create Shipment</>
+                    )}
+                  </button>
               )}
 
               {/* Shiprocket: Print Label – show once shipment exists */}
               {order.shiprocket?.shipmentId && (
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => handleGenerateLabel(order)}
-                    disabled={generatingLabel === order.id}
-                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded flex-1 sm:flex-none text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                  >
-                    {generatingLabel === order.id ? (
-                      <><span className="animate-spin">⏳</span> Generating...</>
-                    ) : (
-                      <>🏷️ Print Label</>
-                    )}
-                  </button>
+                    <button
+                      onClick={() => handleGenerateLabel(order)}
+                      disabled={generatingLabel === order.id}
+                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded flex-1 sm:flex-none text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                    >
+                      {generatingLabel === order.id ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                      ) : (
+                        <><Tag className="w-4 h-4" /> Print Label</>
+                      )}
+                    </button>
                   <button
                     onClick={() => handleSyncStatus(order.id)}
                     className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded flex-1 sm:flex-none text-[10px] font-black uppercase tracking-wider transition-all border border-blue-100 flex items-center justify-center gap-1"
                     title="Sync with Shiprocket"
                   >
-                    🔄 Sync
+                    <RefreshCw className="w-3 h-3" /> Sync
                   </button>
                   {order.shiprocket.awbCode && (
                     <a
@@ -265,7 +283,7 @@ export default function AdminOrders() {
                       rel="noopener noreferrer"
                       className="px-3 py-2 bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 rounded flex-1 sm:flex-none text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      🔗 Live Track
+                      <ExternalLink className="w-4 h-4" /> Live Track
                     </a>
                   )}
                 </div>
@@ -286,7 +304,9 @@ export default function AdminOrders() {
                         <p className="font-bold text-gray-900">{order.shippingAddress.fullName}</p>
                         <p>{order.shippingAddress.street}</p>
                         <p>{order.shippingAddress.city}, {order.shippingAddress.state} — {order.shippingAddress.pincode}</p>
-                        <p className="text-gray-400 pt-0.5">📞 {order.shippingAddress.phone}</p>
+                        <p className="text-gray-400 pt-0.5 flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> {order.shippingAddress.phone}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -294,7 +314,9 @@ export default function AdminOrders() {
                   {/* Shiprocket */}
                   {order.shiprocket && (
                     <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">🚚 Shiprocket</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                        <Truck className="w-3 h-3" /> Shiprocket
+                      </p>
                       <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2 text-[12px] space-y-1">
                         <div className="flex justify-between">
                           <span className="text-gray-400 font-medium">Status</span>
@@ -314,7 +336,7 @@ export default function AdminOrders() {
                               target="_blank" rel="noopener noreferrer"
                               className="font-bold text-violet-600 hover:underline text-[11px]"
                             >
-                              {order.shiprocket.awbCode} →
+                              {order.shiprocket.awbCode} <ArrowRight className="w-3 h-3" />
                             </a>
                           </div>
                         )}
@@ -356,7 +378,7 @@ export default function AdminOrders() {
                           {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "Free"}
                         </span>
                       </div>
-                      {order.platformFee && (
+                      {order.platformFee > 0 && (
                         <div className="flex justify-between text-gray-400">
                           <span>Platform Fee</span>
                           <span className="font-medium text-gray-600">₹{order.platformFee}</span>

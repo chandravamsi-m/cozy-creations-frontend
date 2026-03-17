@@ -5,6 +5,7 @@ import logo from "../assets/images/logo image.webp";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
 import { useLoginModal } from "../contexts/LoginModalContext";
+import { Menu, ChevronDown, ChevronUp } from "lucide-react";
 
 import cartIcon from "../assets/svgs/cart-icon.svg";
 
@@ -137,7 +138,7 @@ export default function Navbar({
                     {(user.displayName || user.email).charAt(0).toUpperCase()}
                   </div>
                   <span className="max-w-[90px] truncate">{firstName || "Account"}</span>
-                  <span className="text-[10px]">▼</span>
+                  <ChevronDown className="w-3 h-3 text-white/60 group-hover:text-yellow-accent transition-colors" />
                 </button>
 
                 {desktopProfileOpen && (
@@ -206,12 +207,12 @@ export default function Navbar({
             </button>
 
             {/* MOBILE MENU TOGGLE */}
-            <button
-              className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white text-2xl"
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              ☰
-            </button>
+              <button
+                className="md:hidden h-10 w-10 inline-flex items-center justify-center text-white"
+                onClick={() => setMenuOpen((prev) => !prev)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
           </div>
         </div>
 
@@ -267,9 +268,11 @@ export default function Navbar({
                   </div>
                   <span className="max-w-[140px] truncate">{firstName || "Account"}</span>
                 </div>
-                <span className="text-xs">
-                  {mobileProfileOpen ? "▲" : "▼"}
-                </span>
+                {mobileProfileOpen ? (
+                  <ChevronUp className="w-4 h-4 text-white/60" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-white/60" />
+                )}
               </button>
 
               {mobileProfileOpen && (

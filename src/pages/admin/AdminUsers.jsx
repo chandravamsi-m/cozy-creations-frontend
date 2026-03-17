@@ -6,6 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { deleteUser, createUser } from "../../api/adminUsers";
 import ConfirmModal from "../../components/ConfirmModal";
+import { Plus, X, AlertTriangle } from "lucide-react";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
@@ -255,9 +256,9 @@ export default function AdminUsers() {
         <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 truncate">User Management</h2>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="shrink-0 text-[11px] sm:text-sm bg-black text-white hover:bg-gray-800 px-3 sm:px-4 py-1.5 rounded-lg font-bold shadow-sm transition-all active:scale-95 whitespace-nowrap"
+          className="shrink-0 text-[11px] sm:text-sm bg-black text-white hover:bg-gray-800 px-3 sm:px-4 py-1.5 rounded-lg font-bold shadow-sm transition-all active:scale-95 whitespace-nowrap flex items-center gap-2"
         >
-          + Add User
+          <Plus className="w-3 h-3 sm:w-4 sm:h-4" /> Add User
         </button>
       </div>
 
@@ -380,7 +381,7 @@ export default function AdminUsers() {
                   onClick={() => setSelectedUser(null)}
                   className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 p-2 rounded-full transition-colors"
                 >
-                  <span className="text-xl leading-none">✕</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -565,7 +566,7 @@ export default function AdminUsers() {
                 <div className="pt-6 border-t border-red-100">
                   <div className="bg-red-50 rounded-2xl p-5 border border-red-100">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-lg">⚠️</span>
+                      <AlertTriangle className="w-5 h-5 text-red-600" />
                       <h4 className="font-bold text-red-700 uppercase text-xs tracking-wider">Danger Zone</h4>
                     </div>
                     <p className="text-xs text-red-600 mb-4 opacity-80">
@@ -623,7 +624,7 @@ export default function AdminUsers() {
                 onClick={() => setShowCreateModal(false)}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-500 p-2 rounded-full transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 

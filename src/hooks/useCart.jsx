@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, createContext, useContext } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { calculateProductDiscount } from "../utils/offerUtils";
+import { useSettings } from "../contexts/SettingsContext";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useLocalStorage("cozy_cart", []);
+  const { settings } = useSettings();
 
   const addItem = (item) => {
     setCart((prev) => {
@@ -38,18 +40,9 @@ export function CartProvider({ children }) {
 
   // shippingOverride: set by Checkout when Shiprocket returns a real rate.
   const [shippingOverride, setShippingOverride] = useState(null);
-  const [deliverySettings, setDeliverySettings] = useState({ amount: 0, freeDeliveryThreshold: 0 });
 
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [loadingDiscounts, setLoadingDiscounts] = useState(false);
-
-  // Fetch Delivery Settings once
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/settings/delivery`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.delivery) setDeliverySettings(data.delivery); })
-      .catch(err => console.warn("Delivery settings fetch failed:", err.message));
-  }, []);
 
   // Fetch discounts whenever cart changes
   useEffect(() => {
@@ -99,21 +92,24 @@ export function CartProvider({ children }) {
   }, [cart, itemDiscounts]);
 
   const discountedTotal = totalPrice - totalDiscountAmount;
-  const PLATFORM_FEE = 80;
 
-  // Delivery fee logic:
-  // 1. If Shiprocket returned a rate (shippingOverride), use it.
-  // 2. Otherwise, check if total qualifies for free delivery.
-  // 3. Otherwise, use the standard delivery amount from settings.
+  // Platform Fee dynamic logic
+  const platformFee = useMemo(() => {
+    if (!settings.payment?.isPlatformFeeEnabled) return 0;
+    return Number(settings.payment?.platformFee) || 0;
+  }, [settings.payment]);
+
+  // Delivery fee logic using shared settings:
   const deliveryFee = useMemo(() => {
     if (shippingOverride !== null) return shippingOverride;
-    if (deliverySettings.freeDeliveryThreshold > 0 && discountedTotal >= deliverySettings.freeDeliveryThreshold) {
+    const { freeDeliveryThreshold, amount } = settings.delivery || { freeDeliveryThreshold: 0, amount: 0 };
+    if (freeDeliveryThreshold > 0 && discountedTotal >= freeDeliveryThreshold) {
       return 0;
     }
-    return deliverySettings.amount || 0;
-  }, [shippingOverride, deliverySettings, discountedTotal]);
+    return amount || 0;
+  }, [shippingOverride, settings.delivery, discountedTotal]);
 
-  const finalTotal = cart.length > 0 ? discountedTotal + deliveryFee + PLATFORM_FEE : 0;
+  const finalTotal = cart.length > 0 ? discountedTotal + deliveryFee + platformFee : 0;
 
   return (
     <CartContext.Provider
@@ -128,7 +124,8 @@ export function CartProvider({ children }) {
         totalDiscountAmount,
         discountedTotal,
         deliveryFee,
-        platformFee: PLATFORM_FEE,
+        platformFee,
+        isPlatformFeeEnabled: !!settings.payment?.isPlatformFeeEnabled,
         finalTotal,
         itemDiscounts,
         loadingDiscounts,

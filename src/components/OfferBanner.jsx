@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gift } from 'lucide-react';
+import { Gift, X } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -67,10 +67,10 @@ export default function OfferBanner() {
               e.stopPropagation();
               setIsMinimized(true);
             }}
-            className="absolute right-2 top-2 w-6 h-6 bg-black/20 backdrop-blur-md hover:bg-black/40 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg z-30 transition-all border border-white/20"
+            className="absolute right-2 top-2 w-6 h-6 bg-black/20 backdrop-blur-md hover:bg-black/40 rounded-full flex items-center justify-center text-white shadow-lg z-30 transition-all border border-white/20"
             title="Minimize"
           >
-            ✕
+            <X className="w-3 h-3" />
           </button>
 
           {/* Banner Image Area - TOP HALF */}

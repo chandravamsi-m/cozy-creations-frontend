@@ -1,6 +1,7 @@
 {
   "short_name": "Cozy Creations",
-  "name": "Cozy Creations",
+  "name": "Cozy Creations — Handcrafted Candles",
+  "description": "Shop handcrafted candles — floral, animal, festive, spiral & glass jar collections. Premium soy wax candles from Hyderabad, India.",
   "icons": [
     {
       "src": "/favicon.png",
@@ -8,8 +9,8 @@
       "type": "image/png"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#F5C518",
+  "background_color": "#FBFAF9"
 }

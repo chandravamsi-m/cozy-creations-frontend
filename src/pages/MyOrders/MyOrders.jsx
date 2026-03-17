@@ -9,7 +9,20 @@ import { db } from "../../firebase";
 import UserSidebar from "../../components/UserSidebar";
 import Skeleton from "../../components/common/Skeleton";
 import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { 
+  Search, 
+  SlidersHorizontal, 
+  ChevronDown, 
+  CheckCircle2, 
+  Truck, 
+  XCircle, 
+  Clock, 
+  Building2, 
+  Package, 
+  AlertCircle,
+  ShoppingBag,
+  Flame
+} from "lucide-react";
 
 export default function MyOrders() {
   const { user } = useAuth();
@@ -104,20 +117,20 @@ export default function MyOrders() {
   const getStatusConfig = (status) => {
     const s = status?.toLowerCase() || "";
     if (s === "delivered")
-      return { color: "text-[#2D8A39] bg-[#E8F5E9]", label: "DELIVERED", icon: "✓" };
+      return { color: "text-[#2D8A39] bg-[#E8F5E9]", label: "DELIVERED", icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
     if (s === "shipped" || s === "in transit")
-      return { color: "text-[#1976D2] bg-[#E3F2FD]", label: "IN TRANSIT", icon: "🚚" };
+      return { color: "text-[#1976D2] bg-[#E3F2FD]", label: "IN TRANSIT", icon: <Truck className="w-3.5 h-3.5" /> };
     if (s === "cancelled")
-      return { color: "text-red-500 bg-red-50", label: "CANCELLED", icon: "✕" };
+      return { color: "text-red-500 bg-red-50", label: "CANCELLED", icon: <XCircle className="w-3.5 h-3.5" /> };
     if (s === "pending")
-      return { color: "text-yellow-600 bg-yellow-50", label: "PENDING", icon: "⏳" };
+      return { color: "text-yellow-600 bg-yellow-50", label: "PENDING", icon: <Clock className="w-3.5 h-3.5" /> };
     if (s === "confirmed")
-      return { color: "text-teal-600 bg-teal-50", label: "CONFIRMED", icon: "🏢" };
+      return { color: "text-teal-600 bg-teal-50", label: "CONFIRMED", icon: <Building2 className="w-3.5 h-3.5" /> };
     if (s === "packed")
-      return { color: "text-indigo-600 bg-indigo-50", label: "PACKED", icon: "📦" };
+      return { color: "text-indigo-600 bg-indigo-50", label: "PACKED", icon: <Package className="w-3.5 h-3.5" /> };
     if (s === "completed")
-      return { color: "text-[#795548] bg-[#EFEBE9]", label: "COMPLETED", icon: "⌛" };
-    return { color: "text-gray-500 bg-gray-50", label: s.toUpperCase(), icon: "•" };
+      return { color: "text-[#795548] bg-[#EFEBE9]", label: "COMPLETED", icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
+    return { color: "text-gray-500 bg-gray-50", label: s.toUpperCase(), icon: <AlertCircle className="w-3.5 h-3.5" /> };
   };
 
   const formatDate = (date) => {
@@ -205,7 +218,9 @@ export default function MyOrders() {
 
             {filteredOrders.length === 0 ? (
               <div className="bg-white rounded-3xl p-20 text-center shadow-sm border border-gray-50">
-                <div className="w-24 h-24 mx-auto mb-6 bg-gray-50 rounded-3xl flex items-center justify-center text-4xl shadow-inner">🛍️</div>
+                <div className="w-24 h-24 mx-auto mb-6 bg-gray-50 rounded-3xl flex items-center justify-center shadow-inner">
+                  <ShoppingBag className="w-12 h-12 text-gray-300" />
+                </div>
                 <h4 className="text-xl font-bold text-gray-900 mb-2">No orders found</h4>
                 <p className="text-gray-400 mb-8 max-w-xs mx-auto font-medium leading-relaxed">
                   {searchTerm ? "Try adjusting your search terms." : "Your shopping cart is waiting to be filled with our cozy creations."}
@@ -265,8 +280,8 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Total</p>
               <p className="text-sm font-black text-gray-900">₹{order.total}</p>
             </div>
-            <div className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest ${status.color}`}>
-              {status.label}
+            <div className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest flex items-center gap-1.5 ${status.color}`}>
+              {status.icon} {status.label}
             </div>
           </div>
           <div className="hidden sm:flex justify-between items-center pt-1 border-t border-gray-100/50">
@@ -274,8 +289,8 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Total Amount</p>
               <p className="text-sm sm:text-base font-black text-gray-900">₹{order.total}</p>
             </div>
-            <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest ${status.color}`}>
-              {status.label}
+            <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest flex items-center gap-1.5 ${status.color}`}>
+              {status.icon} {status.label}
             </div>
           </div>
         </div>
@@ -286,7 +301,7 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
           <div className="flex -space-x-4 flex-shrink-0">
             {order.items?.slice(0, 2).map((item, idx) => (
               <div key={idx} className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-xl border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
-                {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-2xl">🕯️</span>}
+                {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <Flame className="w-8 h-8 text-yellow-500/30" />}
               </div>
             ))}
             {order.items?.length > 2 && (
@@ -326,7 +341,7 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 w-full md:w-auto py-2 sm:py-0 text-[13px] font-bold text-violet-600 hover:text-violet-800 transition-colors"
             >
-              <span>🚚 Track Package</span>
+              <Truck className="w-4 h-4" /> <span>Track Package</span>
             </a>
           )}
           <button onClick={onToggle} className="flex items-center justify-center gap-1.5 w-full md:w-auto py-2 sm:py-0 text-[13px] font-bold text-gray-900 hover:text-black transition-colors group">
@@ -345,7 +360,13 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
                 {order.items?.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 bg-gray-50/50 rounded-xl border border-gray-50 transition-colors hover:bg-white hover:shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-base">{item.image ? <img src={item.image} className="w-full h-full object-cover rounded-lg" /> : "🕯️"}</div>
+                      <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-base">
+                        {item.image ? (
+                          <img src={item.image} className="w-full h-full object-cover rounded-lg" />
+                        ) : (
+                          <Flame className="w-5 h-5 text-yellow-500/30" />
+                        )}
+                      </div>
                       <div>
                         <p className="font-bold text-gray-900 text-[13px]">{item.name || "Custom Candle"}</p>
                         <p className="text-[10px] text-gray-400 font-medium tracking-wide">QTY: {item.quantity} • ₹{(item.totalAmount || item.itemTotal || (item.price * item.quantity)) / item.quantity}/unit</p>
@@ -385,7 +406,7 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
                       {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "FREE"}
                     </span>
                   </div>
-                  {order.platformFee && (
+                  {order.platformFee > 0 && (
                     <div className="flex justify-between items-center text-[12px]">
                       <span className="text-gray-400 font-medium">Platform Fee</span>
                       <span className="font-bold text-gray-900">₹{order.platformFee}</span>

@@ -1,6 +1,6 @@
-// src/components/UserSidebar.jsx
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { User, Package, MapPin } from "lucide-react";
 
 /**
  * Reusable Sidebar for User Profile pages (Profile, Orders, etc.)
@@ -11,9 +11,9 @@ export default function UserSidebar({ userData }) {
   const location = useLocation();
 
   const sidebarLinks = [
-    { id: "profile", label: "Personal Profile", shortLabel: "Profile", icon: "👤", path: "/profile" },
-    { id: "orders", label: "Order History", shortLabel: "Orders", icon: "📦", path: "/my-orders" },
-    { id: "addresses", label: "Saved Addresses", shortLabel: "Addresses", icon: "📍", path: "/addresses" },
+    { id: "profile", label: "Personal Profile", shortLabel: "Profile", icon: User, path: "/profile" },
+    { id: "orders", label: "Order History", shortLabel: "Orders", icon: Package, path: "/my-orders" },
+    { id: "addresses", label: "Saved Addresses", shortLabel: "Addresses", icon: MapPin, path: "/addresses" },
   ];
 
   return (
@@ -44,8 +44,8 @@ export default function UserSidebar({ userData }) {
                   : "text-gray-500 hover:text-gray-900 lg:hover:bg-white/50"
                   }`}
               >
-                <span className={`text-[13px] lg:text-base transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110 grayscale opacity-70"}`}>
-                  {link.icon}
+                <span className={`transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110 opacity-70"}`}>
+                  <link.icon className="w-4 h-4" />
                 </span>
                 <span className="tracking-tight">
                   <span className="lg:hidden">{link.shortLabel}</span>

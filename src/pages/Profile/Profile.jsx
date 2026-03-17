@@ -111,7 +111,7 @@ export default function Profile() {
     setPwSaving(true);
     try {
       await changeUserPassword(current, next);
-      showToast("Password changed successfully! 🔒");
+      showToast("Password changed successfully!");
       setPwForm({ current: "", next: "", confirm: "" });
       setShowPasswordSection(false);
     } catch (err) {

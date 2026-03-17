@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { INDIAN_STATES } from '../../utils/constants';
+import { X } from 'lucide-react';
 
 export default function AddressModal({
   isOpen,
@@ -56,7 +57,9 @@ export default function AddressModal({
       <div className="relative bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="bg-gray-50 px-6 py-3 flex justify-between items-center border-b border-gray-100">
           <h2 className="font-bold text-gray-900 text-sm">{address ? "Edit Address" : "Add New Address"}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-3">
           {showTypeSelect && (
@@ -65,7 +68,7 @@ export default function AddressModal({
               <select
                 value={formData.type}
                 onChange={(e) => setFormData(p => ({ ...p, type: e.target.value }))}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-3 pr-8 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat"
               >
                 <option value="Home">Home</option>
                 <option value="Office">Office</option>
@@ -133,7 +136,7 @@ export default function AddressModal({
                 value={formData.state}
                 onChange={(e) => setFormData(p => ({ ...p, state: e.target.value }))}
                 required
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent"
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-3 pr-8 py-2 text-sm font-bold focus:ring-1 focus:ring-yellow-accent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat"
               >
                 <option value="" disabled>Select State</option>
                 {INDIAN_STATES.map(s => (

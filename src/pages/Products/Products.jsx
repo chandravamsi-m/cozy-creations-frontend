@@ -18,6 +18,8 @@ import AnimalIcon from "../../assets/svgs/animal-icon.svg";
 import FestiveIcon from "../../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../../assets/svgs/glass-jar-icon.svg";
+import usePageSEO from "../../hooks/usePageSEO";
+import { Sparkles } from "lucide-react";
 
 // COLLECTIONS LIST
 const COLLECTIONS = {
@@ -44,6 +46,12 @@ const getMobileSortLabel = (label) => {
 
 export default function ProductsPage() {
   const location = useLocation();
+  usePageSEO({
+    title: "Shop Candles — All Collections",
+    description:
+      "Browse our handcrafted candle collections — floral, animal, festive, spiral & glass jar. Filter by category, sort by price, and find the perfect candle for your home.",
+    path: "/products",
+  });
   const {
     products: contextProducts,
     loading: contextLoading,
@@ -414,7 +422,7 @@ export default function ProductsPage() {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
                 <div className="flex items-start gap-2">
-                  <span className="text-lg flex-shrink-0">✨</span>
+                  <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-gray-700 leading-relaxed">
                     <span className="font-semibold text-gray-900">Customize your order</span>{" "}
                     with fragrance & color options in your cart.

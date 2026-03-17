@@ -8,7 +8,7 @@ import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, 
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/ConfirmModal";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, Plus, X } from "lucide-react";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -599,14 +599,18 @@ export default function AdminProducts() {
                   </span>
                 </>
               ) : (
-                "📄 Catalogue"
+                <>
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Catalogue</span>
+                </>
               )}
             </button>
             <button
               onClick={handleOpenAddModal}
-              className="flex-1 sm:flex-none px-4 py-2 bg-black text-white rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 h-10"
+              className="flex-1 sm:flex-none px-4 py-2 bg-black text-white rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-gray-800 transition-all active:scale-95 h-10 flex items-center justify-center gap-2"
             >
-              + New Product
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>New Product</span>
             </button>
           </div>
         </div>
@@ -620,9 +624,9 @@ export default function AdminProducts() {
           </p>
           <button
             onClick={handleOpenAddModal}
-            className="mt-4 px-4 py-2 bg-black text-white rounded"
+            className="mt-4 px-4 py-2 bg-black text-white rounded flex items-center gap-2 mx-auto"
           >
-            + Add Product
+            <Plus className="w-4 h-4" /> Add Product
           </button>
         </div>
       )}
@@ -665,7 +669,7 @@ export default function AdminProducts() {
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all"
                 aria-label="Close"
               >
-                <span className="text-2xl">×</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
 

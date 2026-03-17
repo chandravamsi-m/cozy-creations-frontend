@@ -3,11 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { sendOrderConfirmation } from "../../api/email";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { getEffectiveShipmentDimensions } from "../../utils/parseDimensions";
-import { CheckCircle } from "lucide-react";
+import { 
+  CheckCircle, 
+  Home, 
+  Briefcase, 
+  MapPin, 
+  PencilLine, 
+  Trash2, 
+  CreditCard, 
+  Truck, 
+  AlertTriangle, 
+  Loader2, 
+  Check, 
+  ArrowRight, 
+  ShieldCheck, 
+  Package, 
+  Leaf 
+} from "lucide-react";
 import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
 import useRazorpay from "../../hooks/useRazorpay";
@@ -17,8 +34,9 @@ const MAX_ADDRESSES = 5;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, clearCart, deliveryFee, platformFee, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride } = useCart();
+  const { cart, clearCart, deliveryFee, platformFee, isPlatformFeeEnabled, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride } = useCart();
   const { user, idToken } = useAuth();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [completedOrderId, setCompletedOrderId] = useState(null);
@@ -170,6 +188,9 @@ export default function Checkout() {
           if (addresses.length > 0) {
             const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
             setSelectedAddressId(defaultAddr.id);
+          } else if (!isOrderComplete) {
+            // Proactive Onboarding: Open modal if no addresses exist
+            setIsModalOpen(true);
           }
         }
       } catch (err) {
@@ -177,7 +198,7 @@ export default function Checkout() {
       }
     };
     fetchAddresses();
-  }, [user]);
+  }, [user, isOrderComplete]);
 
   // Fetch Payment Settings
   React.useEffect(() => {
@@ -242,7 +263,7 @@ export default function Checkout() {
       setEditingAddress(null);
     } catch (err) {
       console.error("Save address error:", err);
-      alert("Failed to save address.");
+      showToast("Failed to save address.", "error");
     } finally {
       setSavingAddress(false);
     }
@@ -269,7 +290,7 @@ export default function Checkout() {
       }
     } catch (err) {
       console.error("Error removing address:", err);
-      alert("Failed to remove address.");
+      showToast("Failed to remove address.", "error");
     } finally {
       setAddressToDelete(null);
     }
@@ -280,12 +301,12 @@ export default function Checkout() {
     // Determine which address to use
     let finalAddress = savedAddresses.find(a => a.id === selectedAddressId);
     if (!finalAddress) {
-      alert("Please select a shipping address.");
+      showToast("Please select or add a shipping address first.", "error");
       return;
     }
 
     if (!idToken) {
-      alert("Session expired. Please login again.");
+      showToast("Your session has expired. Please login again.", "error");
       return;
     }
 
@@ -442,7 +463,7 @@ export default function Checkout() {
             }
           } catch (err) {
             console.error(err);
-            alert("Payment verification failed. Contact support.");
+            showToast("Payment verification failed. Please contact support if the amount was deducted.", "error");
           }
         },
         prefill: {
@@ -468,7 +489,7 @@ export default function Checkout() {
       razorpay.open();
     } catch (err) {
       console.error("Order error:", err);
-      alert(err.message);
+      showToast(err.message || "An error occurred while placing your order.", "error");
     } finally {
       setLoading(false);
     }
@@ -522,9 +543,9 @@ export default function Checkout() {
                     >
                       <div className="flex items-start justify-between mb-1.5 sm:mb-2">
                         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-                          <div className={`shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-sm sm:text-base transition-all shadow-sm border border-gray-50 group-hover:scale-110 ${selectedAddressId === addr.id ? "bg-white text-black" : "bg-white text-gray-400"
+                          <div className={`shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all shadow-sm border border-gray-50 group-hover:scale-110 ${selectedAddressId === addr.id ? "bg-white text-black" : "bg-white text-gray-400"
                             }`}>
-                            {addr.type === "Home" ? "🏠" : addr.type === "Office" ? "💼" : "📍"}
+                            {addr.type === "Home" ? <Home className="w-4 h-4 sm:w-5 sm:h-5" /> : addr.type === "Office" ? <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" /> : <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />}
                           </div>
                           <div className="min-w-0">
                             <p className="text-[11px] sm:text-[13px] font-bold text-gray-900 leading-tight">{addr.type || "Address"}</p>
@@ -548,24 +569,24 @@ export default function Checkout() {
                       </div>
 
                       <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-3 sm:gap-4">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditAddress(addr);
-                          }}
-                          className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
-                        >
-                          ✎ Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveAddress(addr.id);
-                          }}
-                          className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
-                        >
-                          🗑 Del
-                        </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditAddress(addr);
+                            }}
+                            className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
+                          >
+                            <PencilLine className="w-3 h-3" /> Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAddress(addr.id);
+                            }}
+                            className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" /> Del
+                          </button>
                       </div>
                     </div>
                   ))}
@@ -606,7 +627,7 @@ export default function Checkout() {
                     <div className="flex items-center gap-2.5">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "online" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
                         }`}>
-                        💳
+                        <CreditCard className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
@@ -636,10 +657,10 @@ export default function Checkout() {
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
                           }`}>
-                          🚚
-                        </div>
+                            <Truck className="w-5 h-5" />
+                          </div>
                         <div>
                           <p className="text-sm font-bold text-gray-900">Cash on Delivery (COD)</p>
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Pay at Doorstep</p>
@@ -674,16 +695,16 @@ export default function Checkout() {
                         alt={item.name}
                         loading="lazy"
                       />
-                      <div className="absolute top-1 right-1 bg-black text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
-                        {item.quantity}
-                      </div>
                     </div>
                     <div className="flex-1 min-w-0 py-1">
-                      <p className="font-bold text-gray-900 text-sm line-clamp-1 group-hover:text-yellow-600 transition-colors uppercase tracking-tight">
+                      <p className="font-bold text-gray-900 text-sm line-clamp-1 uppercase tracking-tight">
                         {item.name}
                       </p>
-                      <p className="text-sm font-black text-gray-900 mt-2">
-                        ₹{item.price.toLocaleString()}
+                      <p className="text-sm font-black text-gray-900 mt-2 flex items-center gap-2">
+                        <span>₹{item.price.toLocaleString()}</span>
+                        <span className="text-base font-black text-yellow-600/70">
+                          × {item.quantity}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -705,38 +726,47 @@ export default function Checkout() {
                   <div className="flex-1">
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Shipping Fee</span>
 
-                    {serviceabilityInfo?.available === false && (
-                      <p className="text-[10px] text-red-500 font-bold mt-0.5">⚠️ Limited delivery options</p>
+                    {!selectedAddressId && (
+                      <p className="text-[10px] text-yellow-600 font-bold mt-0.5">Enter address to calculate</p>
                     )}
-                    {serviceabilityError && !checkingServiceability && (
+                      {selectedAddressId && serviceabilityInfo?.available === false && (
+                        <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Limited delivery options
+                        </p>
+                      )}
+                    {selectedAddressId && serviceabilityError && !checkingServiceability && (
                       <p className="text-[10px] text-gray-400 font-medium mt-0.5">Using standard rate</p>
                     )}
                   </div>
                   <span className="text-sm font-semibold text-gray-900 shrink-0">
                     {checkingServiceability ? (
                       <span className="flex items-center gap-1 text-gray-400 text-xs font-medium">
-                        <span className="animate-spin text-base">⏳</span>
+                        <Loader2 className="w-3 h-3 animate-spin" />
                         Calculating...
                       </span>
+                    ) : !selectedAddressId ? (
+                      <span className="text-gray-400">—</span>
                     ) : deliveryFee === 0 ? (
                       <span className="text-green-600 flex items-center gap-1.5">
-                        <span className="text-[10px]">✓</span> FREE
+                        <Check className="w-3 h-3" /> FREE
                       </span>
                     ) : (
                       `₹${deliveryFee.toLocaleString()}`
                     )}
                   </span>
                 </div>
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Platform Fee</span>
-                  <span className="text-sm font-semibold text-gray-900">₹{platformFee.toLocaleString()}</span>
-                </div>
+                {isPlatformFeeEnabled && (
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Platform Fee</span>
+                    <span className="text-sm font-semibold text-gray-900">₹{platformFee.toLocaleString()}</span>
+                  </div>
+                )}
 
                 <div className="pt-2 border-t border-gray-100 flex justify-between items-end px-1">
                   <span className="text-md font-bold text-gray-900 uppercase tracking-tight">Total</span>
                   <div className="text-right">
                     <p className="text-xl font-bold text-gray-900 tracking-tighter leading-none">
-                      ₹{finalTotal.toLocaleString()}
+                      ₹{(selectedAddressId ? finalTotal : (discountedTotal + platformFee)).toLocaleString()}
                     </p>
                     {checkingServiceability && (
                       <p className="text-[10px] text-gray-400 font-medium mt-0.5">Updating...</p>
@@ -754,22 +784,28 @@ export default function Checkout() {
                   <span className="text-md font-bold text-black uppercase tracking-wider">
                     {loading ? "Processing..." : checkingServiceability ? "Calculating Shipping..." : "Complete Purchase"}
                   </span>
-                  {!loading && !checkingServiceability && <span className="text-black transition-colors">→</span>}
+                  {!loading && !checkingServiceability && <ArrowRight className="w-5 h-5 text-black transition-transform group-hover:translate-x-1" />}
                 </div>
               </button>
 
               {/* Trust Badges */}
               <div className="grid grid-cols-3 gap-2 px-1">
                 <div className="flex flex-col items-center text-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-lg">🛡️</div>
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
+                    <ShieldCheck className="w-6 h-6 text-gray-400" />
+                  </div>
                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Secure</span>
                 </div>
                 <div className="flex flex-col items-center text-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-lg">📦</div>
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
+                    <Package className="w-6 h-6 text-gray-400" />
+                  </div>
                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Hand-Packed</span>
                 </div>
                 <div className="flex flex-col items-center text-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-lg">🍃</div>
+                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
+                    <Leaf className="w-6 h-6 text-gray-400" />
+                  </div>
                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Eco-Friendly</span>
                 </div>
               </div>
