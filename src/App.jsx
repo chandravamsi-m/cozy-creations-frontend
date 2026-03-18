@@ -16,6 +16,8 @@ import OfferBanner from "./components/OfferBanner";
 
 import { ToastProvider } from "./contexts/ToastContext";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 // Lazy pages
 const Home = lazy(() => import("./pages/Home/Home"));
 const About = lazy(() => import("./pages/About/About"));
@@ -211,6 +213,20 @@ export default function App() {
   const stickyNavRef = useRef(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // One-time backend warmup to reduce Render cold start delay
+  useEffect(() => {
+    const KEY = "cc_backend_pinged";
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(KEY)) return;
+    sessionStorage.setItem(KEY, "1");
+
+    if (!BACKEND_URL) return;
+
+    fetch(`${BACKEND_URL}/health`).catch(() => {
+      // best-effort warmup; errors are safe to ignore
+    });
+  }, []);
 
   return (
     <ToastProvider>
