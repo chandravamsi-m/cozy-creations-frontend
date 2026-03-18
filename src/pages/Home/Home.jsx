@@ -248,14 +248,14 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
         id="collections"
         ref={collectionsSectionRef}
         data-section="collections"
-        className="relative w-full bg-white py-8 md:py-12 z-10"
+        className="relative w-full bg-white py-8 md:py-16 lg:py-20 z-10"
       >
         <div className="max-w-[1280px] mx-auto px-4">
           <h2
-            className={`font-['Montserrat:Regular',sans-serif] font-normal text-4xl md:text-5xl text-black uppercase mb-8 text-center transition-all duration-700 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+            className={`font-semibold text-3xl md:text-4xl text-black capitalize mb-6 md:mb-8 text-center transition-all duration-700 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            Our Collections
+            OUR COLLECTIONS
           </h2>
         </div>
 
