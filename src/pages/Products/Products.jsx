@@ -49,7 +49,7 @@ export default function ProductsPage() {
   usePageSEO({
     title: "Shop Candles — All Collections",
     description:
-      "Browse our handcrafted candle collections — floral, animal, festive, spiral & glass jar. Filter by category, sort by price, and find the perfect candle for your home.",
+      "Browse our handcrafted candle collections — floral, animal, festive, special & glass jar. Filter by category, sort by price, and find the perfect candle for your home.",
     path: "/products",
   });
   const {

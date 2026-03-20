@@ -1,8 +1,9 @@
 import React from "react";
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ToastProvider } from "../../contexts/ToastContext";
 import ConfirmModal from "../../components/ConfirmModal";
+import Skeleton from "../../components/common/Skeleton";
 import {
   Menu,
   X,
@@ -12,12 +13,22 @@ import {
   Users,
   Gift,
   Truck,
+  LayoutDashboard
 } from "lucide-react";
 
 export default function AdminLayout() {
   const { user, isAdmin, loading, logoutUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const mainRef = React.useRef(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  // Automatically scroll main content to top on route change
+  React.useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTo(0, 0);
+    }
+  }, [location.pathname]);
 
   React.useEffect(() => {
     if (loading) return;
@@ -37,8 +48,24 @@ export default function AdminLayout() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      <div className="h-screen flex bg-gray-50 overflow-hidden">
+        {/* Sidebar Skeleton (hidden on mobile) */}
+        <div className="hidden md:flex flex-col w-64 bg-gray-900 p-5 space-y-4 shrink-0">
+          <Skeleton width="150px" height="28px" className="mb-6 opacity-20" />
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} width="100%" height="40px" borderRadius="8px" className="opacity-20" />
+          ))}
+        </div>
+        {/* Main content Skeleton */}
+        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+          <Skeleton width="250px" height="36px" className="mb-8" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+             {[...Array(4)].map((_, i) => (
+               <Skeleton key={i} height="120px" borderRadius="16px" />
+             ))}
+          </div>
+          <Skeleton height="350px" borderRadius="16px" />
+        </div>
       </div>
     );
   }
@@ -109,6 +136,11 @@ export default function AdminLayout() {
 
           <nav className="flex flex-col gap-2">
             <Link to="/admin" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
+              <LayoutDashboard className="w-5 h-5 text-gray-400" />
+              <span>Dashboard</span>
+            </Link>
+
+            <Link to="/admin/products" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
               <Package className="w-5 h-5 text-gray-400" />
               <span>Products</span>
             </Link>
@@ -148,7 +180,7 @@ export default function AdminLayout() {
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 p-4 sm:p-6 h-full overflow-y-auto pt-20 md:pt-6">
+        <main ref={mainRef} className="flex-1 p-4 sm:p-6 h-full overflow-y-auto pt-20 md:pt-6">
           <Outlet />
         </main>
       </div>

@@ -23,7 +23,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
   usePageSEO({
     title: "Handcrafted Candles — Shop Online",
     description:
-      "Discover handcrafted candles made with love. Explore our floral, animal, festive, spiral & glass jar collections. Premium soy wax candles for home décor & gifting.",
+      "Discover handcrafted candles made with love. Explore our floral, animal, festive, special & glass jar collections. Premium soy & gel wax candles for home décor & gifting.",
     path: "/",
   });
 

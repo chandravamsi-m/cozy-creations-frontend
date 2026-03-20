@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
+import Skeleton from "../../components/common/Skeleton";
 import { useSettings } from "../../contexts/SettingsContext";
 import { Banknote, Settings } from "lucide-react";
 
@@ -58,8 +59,13 @@ export default function AdminDelivery() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      <div className="p-4 sm:p-8 space-y-6">
+        <Skeleton width="300px" height="32px" className="mb-8" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton height="250px" borderRadius="16px" className="w-full" />
+          <Skeleton height="250px" borderRadius="16px" className="w-full" />
+        </div>
+        <Skeleton height="150px" borderRadius="16px" className="w-full" />
       </div>
     );
   }

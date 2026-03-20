@@ -219,7 +219,7 @@ export default function About() {
             className={`text-base md:text-lg font-semibold text-black text-center capitalize mb-12 md:mb-16 max-w-4xl mx-2 md:mx-auto px-0 transition-all duration-700 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            Our collections include floral candles, animal-shaped candles, jar candles, spiral designs, festive specials, and personalized gift candles—perfect for home décor and gifting.
+            Our collections include floral candles, animal-shaped candles, jar candles, special designs, festive specials, and personalized gift candles—perfect for home décor and gifting.
           </p>
 
           {/* Collections Grid - Responsive Structured Layout */}
@@ -285,20 +285,20 @@ export default function About() {
                 </div>
               </div>
 
-              {/* Spiral Collection */}
+              {/* special Collection */}
               <div
                 className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "400ms" }}
               >
                 <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
-                  spiral collection
+                  special collection
                 </p>
                 <div className="relative w-full h-[220px] sm:h-[250px] md:h-[300px] lg:h-[303px]">
                   <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
                     <img
                       src={collection4}
-                      alt="Spiral Collection"
+                      alt="special Collection"
                       className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                     />
                   </div>

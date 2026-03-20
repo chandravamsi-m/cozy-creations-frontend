@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { db } from "../../firebase";
+import Skeleton from "../../components/common/Skeleton";
 import { collection, getDocs } from "firebase/firestore";
 import { Gift, Loader2, Image as ImageIcon, Coins, ChevronDown } from "lucide-react";
 
@@ -228,10 +229,15 @@ export default function AdminOffers() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading offer settings...</p>
+      <div className="p-4 sm:p-8 space-y-8">
+        <Skeleton width="320px" height="36px" className="mb-4" />
+        <div className="space-y-6">
+          <Skeleton height="80px" borderRadius="12px" className="w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Skeleton height="300px" borderRadius="16px" className="w-full" />
+            <Skeleton height="300px" borderRadius="16px" className="w-full" />
+          </div>
+          <Skeleton height="120px" borderRadius="12px" className="w-full" />
         </div>
       </div>
     );

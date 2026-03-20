@@ -28,6 +28,7 @@ const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
 // Removed OrderSuccess lazy import
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 const AdminBulkProducts = lazy(() =>
   import("./pages/admin/AdminBulkProducts")
@@ -193,7 +194,8 @@ function AppContent({
 
           {/* ADMIN ROUTES */}
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminProducts />} />
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
             <Route path="bulk-products" element={<AdminBulkProducts />} />
             <Route path="products/:id/edit" element={<AdminEditProduct />} />
             <Route path="orders" element={<AdminOrders />} />
