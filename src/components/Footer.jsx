@@ -31,7 +31,6 @@ export default function Footer() {
                             <Link to="/contact" className="hover:text-yellow-accent transition-colors">Contact Us</Link>
                         </div>
 
-
                         <div className="flex flex-col gap-4 text-sm items-start">
                             <p className="flex items-center gap-2">
                                 <img src={instagram} alt="Instagram" className="w-4 h-4 flex-shrink-0" />
@@ -63,9 +62,17 @@ export default function Footer() {
                     <div className="hidden lg:block w-[280px] h-[1px] flex-shrink-0"></div>
                 </div>
 
-                <div className="w-full h-[1px] bg-white mt-6 mb-4"></div>
-
-                <div className="text-center text-xs text-white">© 2025 Cozy Creations. All rights reserved.</div>
+                <div className="w-full h-[1px] bg-white mt-6 mb-4 opacity-20"></div>
+                
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] md:text-xs text-white opacity-80">
+                    <div>© 2025 Cozy Creations. All rights reserved.</div>
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 uppercase tracking-wider">
+                        <Link to="/privacy-policy" className="hover:text-yellow-accent transition-colors">Privacy Policy</Link>
+                        <Link to="/terms-and-conditions" className="hover:text-yellow-accent transition-colors">Terms & Conditions</Link>
+                        <Link to="/refund-policy" className="hover:text-yellow-accent transition-colors">Refund & Cancellation</Link>
+                        <Link to="/shipping-policy" className="hover:text-yellow-accent transition-colors">Shipping & Delivery</Link>
+                    </div>
+                </div>
             </div>
         </div>
     );

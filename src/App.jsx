@@ -41,6 +41,10 @@ const AdminDelivery = lazy(() => import("./pages/admin/AdminDelivery"));
 const Profile = lazy(() => import("./pages/Profile/Profile"));
 const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
 const SavedAddresses = lazy(() => import("./pages/SavedAddresses/SavedAddresses"));
+const PrivacyPolicy = lazy(() => import("./pages/Policies/PrivacyPolicy"));
+const TermsAndConditions = lazy(() => import("./pages/Policies/TermsAndConditions"));
+const RefundPolicy = lazy(() => import("./pages/Policies/RefundPolicy"));
+const ShippingPolicy = lazy(() => import("./pages/Policies/ShippingPolicy"));
 
 // Component with routing
 function AppContent({
@@ -187,6 +191,10 @@ function AppContent({
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
             <Route path="/addresses" element={<ProtectedRoute><SavedAddresses /></ProtectedRoute>} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
 // Redundant Route Removed
             <Route path="*" element={<NotFound />} />
