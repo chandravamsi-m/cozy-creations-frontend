@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../../contexts/ToastContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { getAuth } from "firebase/auth";
 import UserSidebar from "../../components/UserSidebar";
 import Skeleton from "../../components/common/Skeleton";
 import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
@@ -106,6 +107,48 @@ export default function MyOrders() {
       });
       setOrders(sorted);
       setFilteredOrders(sorted);
+
+      // ── Silent auto-sync: heal AWB + update status for active shipments ──
+      const needsSync = sorted.filter(
+        (o) =>
+          o.shiprocket?.shipmentId &&
+          !["delivered", "cancelled"].includes(o.status?.toLowerCase())
+      );
+      if (needsSync.length > 0) {
+        const auth = getAuth();
+        const idToken = await auth.currentUser?.getIdToken();
+        if (idToken) {
+          const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+          needsSync.forEach(async (order) => {
+            try {
+              const res = await fetch(`${BACKEND_URL}/api/shipping/auto-sync-awb/${order.id}`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${idToken}` },
+              });
+              const data = await res.json();
+              if (data?.success) {
+                // Patch local state with healed AWB and/or new status
+                setOrders((prev) =>
+                  prev.map((o) => {
+                    if (o.id !== order.id) return o;
+                    return {
+                      ...o,
+                      ...(data.localStatus ? { status: data.localStatus } : {}),
+                      shiprocket: {
+                        ...o.shiprocket,
+                        ...(data.awbCode ? { awbCode: data.awbCode } : {}),
+                        ...(data.srStatus ? { status: data.srStatus } : {}),
+                      },
+                    };
+                  })
+                );
+              }
+            } catch (_) {
+              // Silent — never break the page
+            }
+          });
+        }
+      }
     } catch (error) {
       console.error("Error loading orders:", error);
       showToast("Failed to load orders", "error");
@@ -333,8 +376,8 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-50">
-          {/* Track Package – shown when shipment is dispatched (including packed status) */}
-          {order.shiprocket?.awbCode && ["packed", "shipped", "delivered"].includes(order.status) && (
+          {/* Track Package – shown when shipment is dispatched or scheduled */}
+          {order.shiprocket?.awbCode && order.status?.toLowerCase() !== "cancelled" && (
             <a
               href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
               target="_blank"

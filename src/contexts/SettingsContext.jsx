@@ -19,7 +19,7 @@ export function SettingsProvider({ children }) {
       }
     }
     return {
-      delivery: { isActive: false, amount: 0, freeDeliveryThreshold: 0 },
+      delivery: { isActive: false, amount: 0, freeDeliveryThreshold: 0, isShippingFeeEnabled: true },
       payment: { isCodEnabled: true, isPlatformFeeEnabled: false, platformFee: 0 },
       offer: { isActive: false }
     };

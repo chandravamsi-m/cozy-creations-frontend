@@ -101,6 +101,10 @@ export function CartProvider({ children }) {
 
   // Delivery fee logic using shared settings:
   const deliveryFee = useMemo(() => {
+    if (settings.delivery && settings.delivery.isShippingFeeEnabled === false) {
+      return 0;
+    }
+    
     if (shippingOverride !== null) return shippingOverride;
     const { freeDeliveryThreshold, amount } = settings.delivery || { freeDeliveryThreshold: 0, amount: 0 };
     if (freeDeliveryThreshold > 0 && discountedTotal >= freeDeliveryThreshold) {

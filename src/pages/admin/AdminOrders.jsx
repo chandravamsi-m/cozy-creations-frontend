@@ -76,15 +76,73 @@ export default function AdminOrders() {
         };
       });
       setOrders(list);
+      return list;
     } catch (err) {
       console.error("Error loading orders:", err);
       showToast("Failed to load orders", "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const silentAdminSync = async (ordersList) => {
+    if (!idToken) return;
+    const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+    const now = Date.now();
+
+    // Only sync active orders that haven't been synced in 30+ minutes
+    const staleOrders = ordersList.filter((o) => {
+      if (!o.shiprocket?.shipmentId) return false;
+      if (["delivered", "cancelled"].includes(o.status?.toLowerCase())) return false;
+      const lastUpdate = o.shiprocket?.lastUpdate ? new Date(o.shiprocket.lastUpdate).getTime() : 0;
+      return now - lastUpdate > STALE_THRESHOLD_MS;
+    });
+
+    if (staleOrders.length === 0) return;
+
+    // Throttle: process max 5 at a time to avoid rate limits
+    const chunks = [];
+    for (let i = 0; i < staleOrders.length; i += 5) {
+      chunks.push(staleOrders.slice(i, i + 5));
+    }
+
+    for (const chunk of chunks) {
+      await Promise.all(
+        chunk.map(async (order) => {
+          try {
+            const res = await fetch(`${BACKEND_URL}/api/admin/orders/${order.id}/sync`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${idToken}` },
+            });
+            const data = await res.json();
+            if (data?.success) {
+              setOrders((prev) =>
+                prev.map((o) => {
+                  if (o.id !== order.id) return o;
+                  return {
+                    ...o,
+                    ...(data.localStatus ? { status: data.localStatus } : {}),
+                    shiprocket: {
+                      ...o.shiprocket,
+                      ...(data.awbCode ? { awbCode: data.awbCode } : {}),
+                      ...(data.srStatus ? { status: data.srStatus, lastUpdate: new Date().toISOString() } : {}),
+                    },
+                  };
+                })
+              );
+            }
+          } catch (_) {
+            // Silent — never disrupt the admin view
+          }
+        })
+      );
+    }
   };
 
   useEffect(() => {
-    loadOrders();
+    loadOrders().then((list) => {
+      if (list) silentAdminSync(list);
+    });
   }, []);
 
 

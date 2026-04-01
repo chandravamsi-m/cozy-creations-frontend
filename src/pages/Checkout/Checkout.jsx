@@ -459,7 +459,8 @@ export default function Checkout() {
                 shippingAddress: orderData.shippingAddress
               });
             } else {
-              throw new Error("Payment verification failed");
+              const errData = await verifyRes.json().catch(() => ({}));
+              throw new Error(errData.error || "Payment verification failed on server");
             }
           } catch (err) {
             console.error(err);
