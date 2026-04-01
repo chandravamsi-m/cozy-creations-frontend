@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getImageSrc } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 import { calculateProductDiscount, getEffectiveDiscount } from "../utils/offerUtils";
@@ -11,6 +12,7 @@ import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
 
 export default function ProductQuickView({ product, onClose, activeOffer }) {
+  const navigate = useNavigate();
   const [localQty, setLocalQty] = useState(1);  // qty selector before adding
   const [added, setAdded] = useState(false);      // brief "Added!" feedback
   const [discount, setDiscount] = useState(null);
@@ -51,7 +53,8 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   const handleAddToCart = () => {
     if (inCart) {
-      // Already in cart — close modal (button acts as "Go to Cart" hint)
+      // Already in cart — navigate to cart then close modal
+      navigate("/cart");
       onClose();
       return;
     }
@@ -203,27 +206,30 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
           {/* Cart Interaction */}
           <div className="mt-auto pt-4 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4">
             {/* Quantity Controls */}
-            <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[110px] sm:w-auto h-[48px] sm:h-[56px] sm:min-w-[140px]">
+            <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[105px] sm:w-auto h-[44px] sm:h-[48px] sm:min-w-[130px]">
               <button
                 onClick={() => handleQuantityChange(-1)}
-                className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
+                className="w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
               >
-                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
-              <span className="flex-1 text-center font-black text-gray-900 text-sm sm:text-base">{displayQty}</span>
+              <span className="flex-1 text-center font-black text-gray-900 text-xs sm:text-base">{displayQty}</span>
               <button
                 onClick={() => handleQuantityChange(1)}
-                className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
+                className="w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
               >
-                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
 
             {/* Add / In Cart Button */}
             {inCart ? (
               <button
-                onClick={onClose}
-                className="flex-1 h-[48px] sm:h-[56px] bg-green-500 hover:bg-green-600 text-white font-black uppercase tracking-wider sm:tracking-[0.15em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                onClick={() => {
+                  navigate("/cart");
+                  onClose();
+                }}
+                className="flex-1 h-[44px] sm:h-[48px] bg-green-500 hover:bg-green-600 text-white font-black uppercase tracking-wider sm:tracking-[0.15em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {/* <span>✓</span> */}
                 <span className="whitespace-nowrap">View Cart</span>
@@ -231,7 +237,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             ) : (
               <button
                 onClick={handleAddToCart}
-                className={`flex-1 h-[48px] sm:h-[56px] font-black uppercase tracking-wider sm:tracking-[0.2em] text-[10px] sm:text-xs rounded-2xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-3 ${added
+                className={`flex-1 h-[44px] sm:h-[48px] font-black uppercase tracking-wider sm:tracking-[0.2em] text-[10px] sm:text-xs rounded-2xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-3 ${added
                   ? "bg-green-500 text-white shadow-green-500/20"
                   : "bg-yellow-accent hover:bg-yellow-accent/90 text-black shadow-yellow-accent/20"
                   }`}

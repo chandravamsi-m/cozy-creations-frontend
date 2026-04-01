@@ -390,7 +390,7 @@ export default function CartPage() {
                     <button
                       onClick={handleCheckout}
                       disabled={cart.length === 0}
-                      className="mt-5 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-3 rounded-xl text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="mt-5 w-full bg-yellow-accent hover:bg-yellow-accent/90 py-2.5 rounded-xl text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                       Proceed to Checkout →
                     </button>

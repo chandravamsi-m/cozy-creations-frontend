@@ -30,7 +30,7 @@ import AddressModal from "../../components/common/AddressModal";
 import useRazorpay from "../../hooks/useRazorpay";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const MAX_ADDRESSES = 5;
+const MAX_ADDRESSES = 10;
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -549,7 +549,7 @@ export default function Checkout() {
                             {addr.type === "Home" ? <Home className="w-4 h-4 sm:w-5 sm:h-5" /> : addr.type === "Office" ? <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" /> : <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[11px] sm:text-[13px] font-bold text-gray-900 leading-tight">{addr.type || "Address"}</p>
+                            <p className="text-[11px] sm:text-[13px] font-bold text-gray-900 leading-tight">{addr.addressType || addr.type || "Address"}</p>
                             {addr.isDefault && <span className="text-[8px] sm:text-[9px] font-black text-yellow-600 uppercase tracking-wider block sm:inline">DEFAULT</span>}
                           </div>
                         </div>
@@ -561,9 +561,22 @@ export default function Checkout() {
 
                       <div className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-2 ml-1">
                         <p className="text-[11px] sm:text-[12px] font-bold text-gray-900 leading-tight break-words">{addr.fullName}</p>
-                        <p className="text-[10px] sm:text-[12px] text-gray-500 leading-[1.2] font-medium break-words line-clamp-2">
-                          {addr.street}
-                        </p>
+                        {addr.houseNo ? (
+                          <>
+                            <p className="text-[10px] sm:text-[12px] text-gray-500 leading-[1.2] font-medium break-words line-clamp-1">
+                              {addr.houseNo}, {addr.area}
+                            </p>
+                            {addr.landmark && (
+                              <p className="text-[9px] sm:text-[11px] text-gray-400 italic">
+                                Near {addr.landmark}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-[10px] sm:text-[12px] text-gray-500 leading-[1.2] font-medium break-words line-clamp-2">
+                            {addr.street}
+                          </p>
+                        )}
                         <p className="text-[10px] sm:text-[12px] text-gray-500 leading-[1.2] font-medium break-words">
                           {addr.city}, {addr.state} {addr.pincode}
                         </p>
@@ -779,7 +792,7 @@ export default function Checkout() {
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading || checkingServiceability}
-                className="group relative w-full h-14 bg-yellow-accent hover:brightness-105 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                className="group relative w-full h-12 bg-yellow-accent hover:brightness-105 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
                 <div className="absolute inset-0 flex items-center justify-center gap-2 transition-transform">
                   <span className="text-md font-bold text-black uppercase tracking-wider">
@@ -791,21 +804,21 @@ export default function Checkout() {
 
               {/* Trust Badges */}
               <div className="grid grid-cols-3 gap-2 px-1">
-                <div className="flex flex-col items-center text-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6 text-gray-400" />
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-gray-400" />
                   </div>
                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Secure</span>
                 </div>
-                <div className="flex flex-col items-center text-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Package className="w-6 h-6 text-gray-400" />
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-gray-400" />
                   </div>
                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Hand-Packed</span>
                 </div>
-                <div className="flex flex-col items-center text-center gap-1">
-                  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Leaf className="w-6 h-6 text-gray-400" />
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
+                    <Leaf className="w-5 h-5 text-gray-400" />
                   </div>
                   <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Eco-Friendly</span>
                 </div>

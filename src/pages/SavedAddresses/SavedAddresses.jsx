@@ -9,7 +9,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
 import { Home, Briefcase, MapPin, Pencil, Trash2, Plus } from "lucide-react";
 
-const MAX_ADDRESSES = 5;
+const MAX_ADDRESSES = 10;
 
 export default function SavedAddresses() {
   const { user } = useAuth();
@@ -236,13 +236,28 @@ export default function SavedAddresses() {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-900 text-[11px] sm:text-sm">{addr.type}</h3>
+                        <h3 className="font-bold text-gray-900 text-[11px] sm:text-sm">{addr.addressType || addr.type}</h3>
                       </div>
                     </div>
 
                     <div className="space-y-0.5 mb-2 overflow-hidden">
                       <p className="font-bold text-gray-900 text-[11px] sm:text-[13px] truncate">{addr.fullName}</p>
-                      <p className="text-gray-500 text-[10px] sm:text-[13px] leading-tight sm:leading-relaxed line-clamp-2">{addr.street}</p>
+                      {addr.houseNo ? (
+                        <>
+                          <p className="text-gray-500 text-[10px] sm:text-[13px] leading-tight sm:leading-relaxed line-clamp-1">
+                            {addr.houseNo}, {addr.area}
+                          </p>
+                          {addr.landmark && (
+                            <p className="text-gray-400 text-[9px] sm:text-[11px] italic truncate">
+                              Near {addr.landmark}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-gray-500 text-[10px] sm:text-[13px] leading-tight sm:leading-relaxed line-clamp-2">
+                          {addr.street}
+                        </p>
+                      )}
                       <p className="text-gray-500 text-[10px] sm:text-[13px] leading-tight sm:leading-relaxed line-clamp-1">
                         {addr.city}{addr.state ? `, ${addr.state}` : ""}
                       </p>
