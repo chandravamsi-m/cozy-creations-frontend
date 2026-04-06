@@ -148,7 +148,7 @@ export default function Checkout() {
       const freight = Number(selectedPartner.freight_charge || selectedPartner.rate || 0);
       const codCharges = isCod ? Number(selectedPartner.cod_charges || 0) : 0;
       const withGst = (freight + codCharges) * 1.18;
-      const finalRate = Math.ceil(withGst * (1 + shippingMarkupPct / 100));
+      const finalRate = Math.max(0, Math.ceil(withGst * (1 + shippingMarkupPct / 100)));
 
       setServiceabilityInfo({
         available: true,
