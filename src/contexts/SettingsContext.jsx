@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from "../lib/api";
 
 const SettingsContext = createContext(null);
 
@@ -27,7 +28,7 @@ export function SettingsProvider({ children }) {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/settings/public`);
+      const res = await apiFetch("/settings/public");
       if (res.ok) {
         const data = await res.json();
         setSettings(data);

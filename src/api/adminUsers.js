@@ -1,7 +1,7 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../lib/api";
 
 export async function deleteUser(uid, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/users/${uid}`, {
+  const res = await apiFetch(`/admin/users/${uid}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${idToken}`,
@@ -15,8 +15,9 @@ export async function deleteUser(uid, idToken) {
 
   return res.json();
 }
+
 export async function createUser(userData, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/users`, {
+  const res = await apiFetch("/admin/users", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

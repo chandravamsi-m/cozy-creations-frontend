@@ -1,5 +1,5 @@
 // src/pages/MyOrders/MyOrders.jsx
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { getUserOrders } from "../../api/userOrders";
 import { useNavigate } from "react-router-dom";
@@ -10,9 +10,11 @@ import { getAuth } from "firebase/auth";
 import UserSidebar from "../../components/UserSidebar";
 import Skeleton from "../../components/common/Skeleton";
 import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
+import { apiUrl } from "../../lib/api";
+import { formatShiprocketStatus, getOrderStatusConfig, shouldShowShiprocketStatus } from "../../utils/orderStatus";
+import { getOrderAmountBreakdown } from "../../utils/orderAmounts";
 import { 
   Search, 
-  SlidersHorizontal, 
   ChevronDown, 
   CheckCircle2, 
   Truck, 
@@ -24,6 +26,9 @@ import {
   ShoppingBag,
   Flame
 } from "lucide-react";
+
+const AUTO_SYNC_THRESHOLD_MS = 60 * 60 * 1000;
+const AUTO_SYNC_LIMIT = 3;
 
 export default function MyOrders() {
   const { user } = useAuth();
@@ -37,13 +42,6 @@ export default function MyOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("recent");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    if (user) {
-      loadOrders();
-      loadUserData();
-    }
-  }, [user]);
 
   useEffect(() => {
     let list = [...orders];
@@ -76,7 +74,7 @@ export default function MyOrders() {
     setFilteredOrders(list);
   }, [searchTerm, orders, sortBy, statusFilter]);
 
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
@@ -90,9 +88,9 @@ export default function MyOrders() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [user]);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       const userOrders = await getUserOrders(user.uid);
       const sorted = [...userOrders].sort((a, b) => {
@@ -107,21 +105,30 @@ export default function MyOrders() {
       });
       setOrders(sorted);
       setFilteredOrders(sorted);
+      setLoading(false);
+
+      const getLastShiprocketSyncTime = (order) => {
+        const value = order?.shiprocket?.lastUpdate || order?.shiprocket?.lastSyncAttempt || null;
+        if (!value) return 0;
+        const parsed = new Date(value).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+      const now = Date.now();
 
       // ── Silent auto-sync: heal AWB + update status for active shipments ──
       const needsSync = sorted.filter(
         (o) =>
-          o.shiprocket?.shipmentId &&
-          !["delivered", "cancelled"].includes(o.status?.toLowerCase())
-      );
+          (o.shiprocket?.shipmentId || o.shiprocket?.orderId) &&
+          !["delivered", "cancelled"].includes(o.status?.toLowerCase()) &&
+          now - getLastShiprocketSyncTime(o) > AUTO_SYNC_THRESHOLD_MS
+      ).slice(0, AUTO_SYNC_LIMIT);
       if (needsSync.length > 0) {
         const auth = getAuth();
         const idToken = await auth.currentUser?.getIdToken();
         if (idToken) {
-          const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-          needsSync.forEach(async (order) => {
+          for (const order of needsSync) {
             try {
-              const res = await fetch(`${BACKEND_URL}/api/shipping/auto-sync-awb/${order.id}`, {
+              const res = await fetch(apiUrl(`/shipping/auto-sync-awb/${order.id}`), {
                 method: "POST",
                 headers: { Authorization: `Bearer ${idToken}` },
               });
@@ -136,17 +143,41 @@ export default function MyOrders() {
                       ...(data.localStatus ? { status: data.localStatus } : {}),
                       shiprocket: {
                         ...o.shiprocket,
+                        ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
+                        ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
+                        ...(data.courierName ? { courierName: data.courierName } : {}),
                         ...(data.awbCode ? { awbCode: data.awbCode } : {}),
                         ...(data.srStatus ? { status: data.srStatus } : {}),
+                        ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
+                        ...(data.srStatus ? { lastUpdate: data.lastSyncAttempt || new Date().toISOString() } : {}),
+                      },
+                    };
+                  })
+                );
+              } else if (data?.cleaned || data?.reason === "no_awb") {
+                setOrders((prev) =>
+                  prev.map((o) => {
+                    if (o.id !== order.id) return o;
+                    return {
+                      ...o,
+                      status: data.localStatus || o.status,
+                      shiprocket: {
+                        ...o.shiprocket,
+                        ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
+                        ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
+                        ...(data.courierName ? { courierName: data.courierName } : {}),
+                        awbCode: null,
+                        status: null,
+                        ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
                       },
                     };
                   })
                 );
               }
-            } catch (_) {
+            } catch {
               // Silent — never break the page
             }
-          });
+          }
         }
       }
     } catch (error) {
@@ -155,25 +186,26 @@ export default function MyOrders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast, user]);
+
+  useEffect(() => {
+    if (user) {
+      loadOrders();
+      loadUserData();
+    }
+  }, [user, loadOrders, loadUserData]);
 
   const getStatusConfig = (status) => {
+    const base = getOrderStatusConfig(status);
     const s = status?.toLowerCase() || "";
-    if (s === "delivered")
-      return { color: "text-[#2D8A39] bg-[#E8F5E9]", label: "DELIVERED", icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
-    if (s === "shipped" || s === "in transit")
-      return { color: "text-[#1976D2] bg-[#E3F2FD]", label: "IN TRANSIT", icon: <Truck className="w-3.5 h-3.5" /> };
-    if (s === "cancelled")
-      return { color: "text-red-500 bg-red-50", label: "CANCELLED", icon: <XCircle className="w-3.5 h-3.5" /> };
-    if (s === "pending")
-      return { color: "text-yellow-600 bg-yellow-50", label: "PENDING", icon: <Clock className="w-3.5 h-3.5" /> };
-    if (s === "confirmed")
-      return { color: "text-teal-600 bg-teal-50", label: "CONFIRMED", icon: <Building2 className="w-3.5 h-3.5" /> };
-    if (s === "packed")
-      return { color: "text-indigo-600 bg-indigo-50", label: "PACKED", icon: <Package className="w-3.5 h-3.5" /> };
-    if (s === "completed")
-      return { color: "text-[#795548] bg-[#EFEBE9]", label: "COMPLETED", icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
-    return { color: "text-gray-500 bg-gray-50", label: s.toUpperCase(), icon: <AlertCircle className="w-3.5 h-3.5" /> };
+    if (s === "delivered") return { ...base, icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
+    if (s === "shipped") return { ...base, icon: <Truck className="w-3.5 h-3.5" /> };
+    if (s === "cancelled") return { ...base, icon: <XCircle className="w-3.5 h-3.5" /> };
+    if (s === "pending") return { ...base, icon: <Clock className="w-3.5 h-3.5" /> };
+    if (s === "confirmed") return { ...base, icon: <Building2 className="w-3.5 h-3.5" /> };
+    if (s === "packed") return { ...base, icon: <Package className="w-3.5 h-3.5" /> };
+    if (s === "completed") return { ...base, icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
+    return { ...base, icon: <AlertCircle className="w-3.5 h-3.5" /> };
   };
 
   const formatDate = (date) => {
@@ -303,6 +335,7 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
   const status = getStatusConfig(order.status);
   const mainItem = order.items?.[0] || {};
   const othersCount = (order.items?.length || 1) - 1;
+  const { subtotal, discountTotal, shippingFee, platformFee } = getOrderAmountBreakdown(order);
 
   return (
     <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 transition-all hover:shadow-md">
@@ -373,11 +406,16 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
               };
               return <p className="text-[10px] sm:text-xs text-gray-400 font-medium">{labels[s] || "Updated on"} {formatDate(timestamp)}</p>;
             })()}
+            {shouldShowShiprocketStatus(order.status, order.shiprocket?.status) && order.status?.toLowerCase() !== "cancelled" && (
+              <p className="text-[10px] sm:text-xs text-violet-600 font-semibold mt-1">
+                Shipping: {formatShiprocketStatus(order.shiprocket.status)}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-50">
           {/* Track Package – shown when shipment is dispatched or scheduled */}
-          {order.shiprocket?.awbCode && order.status?.toLowerCase() !== "cancelled" && (
+          {order.shiprocket?.awbCode && !["cancelled", "delivered"].includes(order.status?.toLowerCase()) && (
             <a
               href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
               target="_blank"
@@ -441,18 +479,24 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
                   </div>
                   <div className="flex justify-between items-center text-[12px]">
                     <span className="text-gray-400 font-medium">Subtotal</span>
-                    <span className="font-bold text-gray-900">₹{(order.items || []).reduce((s, i) => s + (i.totalAmount || i.itemTotal || (i.price * i.quantity)), 0)}</span>
+                    <span className="font-bold text-gray-900">Rs {subtotal}</span>
                   </div>
+                  {discountTotal > 0 && (
+                    <div className="flex justify-between items-center text-[12px]">
+                      <span className="text-green-600 font-medium">Discount</span>
+                      <span className="font-bold text-green-600">-Rs {discountTotal}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-[12px]">
                     <span className="text-gray-400 font-medium">Shipping Fee</span>
-                    <span className={`font-bold ${order.deliveryFee > 0 ? "text-gray-900" : "text-green-600"}`}>
-                      {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "FREE"}
+                    <span className={`font-bold ${shippingFee > 0 ? "text-gray-900" : "text-green-600"}`}>
+                      {shippingFee > 0 ? `Rs ${shippingFee}` : "FREE"}
                     </span>
                   </div>
-                  {order.platformFee > 0 && (
+                  {platformFee > 0 && (
                     <div className="flex justify-between items-center text-[12px]">
                       <span className="text-gray-400 font-medium">Platform Fee</span>
-                      <span className="font-bold text-gray-900">₹{order.platformFee}</span>
+                      <span className="font-bold text-gray-900">Rs {platformFee}</span>
                     </div>
                   )}
                   <div className="pt-1.5 border-t border-gray-100 flex justify-between items-center">

@@ -34,7 +34,6 @@ export default function AdminBulkProducts() {
     customizableFragrance: true,
     customizableColor: true,
     altText: "",
-    inventory: "",
   });
 
   const [bulkPricingTiers, setBulkPricingTiers] = useState([]);
@@ -107,18 +106,22 @@ export default function AdminBulkProducts() {
       category: p.category || "",
       waxType: p.waxType || "soy",
       waxTypeOther: p.waxTypeOther || "",
-      weightGrams: p.weightGrams || "",
+      weightGrams: String(p.weightGrams ?? ""),
       burnTimeHours: p.burnTimeHours || "",
       dimensions: p.dimensions || "",
       dimensionUnit: p.dimensionUnit || "cm",
-      price: p.price || "",
-      quantityPack: p.quantityPack || "",
+      price: String(p.price ?? ""),
+      quantityPack: String(p.quantityPack ?? ""),
       customizableFragrance: p.customizableFragrance !== false,
       customizableColor: p.customizableColor !== false,
       altText: p.altText || "",
-      inventory: p.inventory || "",
     });
-    setBulkPricingTiers(p.bulkPricingTiers || []);
+    setBulkPricingTiers(
+        (p.bulkPricingTiers || []).map((tier) => ({
+          minQty: String(tier.minQty ?? ""),
+          pricePerPc: String(tier.pricePerPc ?? ""),
+        }))
+      );
     setPreview(p.imageUrl || null);
     setShowEditModal(true);
   };

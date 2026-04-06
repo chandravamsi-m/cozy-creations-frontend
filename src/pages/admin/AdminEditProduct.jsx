@@ -5,14 +5,16 @@ import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { updateProduct } from "../../api/adminProducts";
+import {
+  coerceAdminNumberInput,
+  getStableAdminNumberValue,
+  parseAdminNumber,
+  preventNumberWheelChange,
+} from "../../utils/adminNumberInputs";
 
-// You can override these via Vite env vars:
-// - VITE_CLOUDINARY_CLOUD_NAME
-// - VITE_CLOUDINARY_UPLOAD_PRESET
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dlrtaxlcl";
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "cozy_unsigned";
-// Cloudinary (free tier / many presets) commonly enforce a 10MB upload limit.
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10,485,760 bytes
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const KNOWN_CATEGORIES = ["flower", "animal", "festive", "special", "glassJar"];
 const KNOWN_WAX_TYPES = ["soy", "gel"];
@@ -23,9 +25,14 @@ export default function AdminEditProduct() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
 
+  const [product, setProduct] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const scrollToTop = () => {
     setTimeout(() => {
-      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
+      const scrollable = document.querySelector("main.overflow-y-auto") || document.querySelector("main");
       if (scrollable) {
         scrollable.scrollTo({ top: 0, behavior: "smooth" });
       } else {
@@ -34,13 +41,6 @@ export default function AdminEditProduct() {
     }, 100);
   };
 
-  const [product, setProduct] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Fetch product from Firestore
   useEffect(() => {
     const load = async () => {
       const ref = doc(db, "products", id);
@@ -54,44 +54,51 @@ export default function AdminEditProduct() {
       const data = snap.data();
       const initialWaxType = data.waxType || "soy";
       const isKnownWaxType = KNOWN_WAX_TYPES.includes(initialWaxType);
+
       setProduct({
         name: data.name || "",
         category: data.category || "",
-        price: data.price || 0,
-        weightGrams: data.weightGrams || 0,
+        price: getStableAdminNumberValue(data.price ?? ""),
+        weightGrams: getStableAdminNumberValue(data.weightGrams ?? ""),
         waxType: isKnownWaxType ? initialWaxType : "other",
         waxTypeOther: isKnownWaxType ? "" : initialWaxType,
-        quantityPack: data.quantityPack || 1,
+        quantityPack: getStableAdminNumberValue(data.quantityPack ?? ""),
         burnTimeHours: data.burnTimeHours || "",
         dimensions: data.dimensions ? data.dimensions.replace(/\s*(cm|mm)$/i, "") : "",
         dimensionUnit: data.dimensions && /mm$/i.test(data.dimensions) ? "mm" : "cm",
         customizableFragrance: data.customizableFragrance ?? true,
         customizableColor: data.customizableColor ?? true,
         altText: data.altText || "",
-        inventory: data.inventory ?? 0, // ⭐ include inventory
-        imageUrl: data.imageUrl,
+        imageUrl: data.imageUrl || "",
       });
 
-      setPreview(data.imageUrl); // show existing image
+      setPreview(data.imageUrl || null);
     };
 
     load();
-  }, [id]);
+  }, [id, showToast]);
 
-  // Update field
   const updateField = (field, value) => {
     setProduct((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Image change handler
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleIntegerFieldChange = (field, value) => {
+    updateField(field, coerceAdminNumberInput(String(product?.[field] ?? ""), value));
+  };
+
+  const handleDecimalFieldChange = (field, value) => {
+    updateField(
+      field,
+      coerceAdminNumberInput(String(product?.[field] ?? ""), value, { allowDecimal: true })
+    );
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
     setImageFile(file);
     if (file) setPreview(URL.createObjectURL(file));
   };
 
-  // Compress/convert image to WebP by reducing dimensions (keep quality high).
-  // This keeps uploads under Cloudinary's file size limits without changing the rest of the flow.
   const compressToWebpUnderLimit = async (file, maxBytes = MAX_UPLOAD_BYTES) => {
     if (!(file instanceof File) || !file.type.startsWith("image/")) return file;
 
@@ -105,7 +112,7 @@ export default function AdminEditProduct() {
         img.onerror = reject;
       });
 
-      const quality = 0.95; // keep quality high; reduce dimensions first
+      const quality = 0.95;
       let scale = 1;
 
       for (let attempt = 0; attempt < 8; attempt++) {
@@ -130,7 +137,6 @@ export default function AdminEditProduct() {
           return new File([blob], webpName, { type: "image/webp" });
         }
 
-        // Reduce dimensions further (not quality) to lower size.
         scale *= 0.85;
       }
 
@@ -140,29 +146,28 @@ export default function AdminEditProduct() {
     }
   };
 
-  // Upload to Cloudinary
   const uploadToCloudinary = async (file) => {
     const form = new FormData();
     form.append("file", file);
     form.append("upload_preset", UPLOAD_PRESET);
 
-    const res = await fetch(
+    const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
       { method: "POST", body: form }
     );
 
     let data = null;
     try {
-      data = await res.json();
+      data = await response.json();
     } catch {
-      // ignore JSON parse failure; we'll throw a generic error below
+      data = null;
     }
 
-    if (!res.ok) {
+    if (!response.ok) {
       const cloudinaryMsg =
         data?.error?.message ||
         data?.message ||
-        `Upload failed (HTTP ${res.status})`;
+        `Upload failed (HTTP ${response.status})`;
       throw new Error(cloudinaryMsg);
     }
 
@@ -171,34 +176,29 @@ export default function AdminEditProduct() {
     return data.secure_url;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
-    setMsg("");
 
     try {
       let imageUrl = product.imageUrl;
 
-      // Upload new image only if selected
       if (imageFile) {
         const fileToUpload = await compressToWebpUnderLimit(imageFile, MAX_UPLOAD_BYTES);
         imageUrl = await uploadToCloudinary(fileToUpload);
       }
 
       const payload = {
-        // Don't persist helper-only UI fields like waxTypeOther
-        ...(() => {
-          const { waxTypeOther, ...rest } = product;
-          return rest;
-        })(),
-        price: Number(product.price),
-        weightGrams: Number(product.weightGrams),
-        quantityPack: Number(product.quantityPack),
-        inventory: Number(product.inventory),
-        dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
+        ...product,
+        price: parseAdminNumber(product.price),
+        weightGrams: parseAdminNumber(product.weightGrams),
+        quantityPack: parseAdminNumber(product.quantityPack),
+        dimensions: product.dimensions
+          ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}`
+          : "",
         waxType: product.waxType === "other" ? (product.waxTypeOther || "other") : product.waxType,
         imageUrl,
-        altText: product.name, // Auto-set from product name
+        altText: product.name,
       };
 
       await updateProduct(id, payload, idToken);
@@ -206,8 +206,8 @@ export default function AdminEditProduct() {
       showToast("Product updated successfully");
       scrollToTop();
       setTimeout(() => navigate("/admin"), 800);
-    } catch (err) {
-      showToast(err.message || "Failed to update product", "error");
+    } catch (error) {
+      showToast(error.message || "Failed to update product", "error");
     }
 
     setLoading(false);
@@ -244,7 +244,6 @@ export default function AdminEditProduct() {
             className="border p-2 w-full rounded"
           >
             <option value="">Select Category</option>
-            {/* Preserve any existing category value not in our known list */}
             {product.category && !KNOWN_CATEGORIES.includes(product.category) && (
               <option value={product.category}>{product.category} (current)</option>
             )}
@@ -256,7 +255,6 @@ export default function AdminEditProduct() {
           </select>
         </div>
 
-        {/* ROW 1 */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-wax-type" className="text-sm font-medium text-gray-800">
@@ -289,9 +287,12 @@ export default function AdminEditProduct() {
             <div className="relative w-full">
               <input
                 id="edit-product-weight"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={product.weightGrams}
-                onChange={(e) => updateField("weightGrams", e.target.value)}
+                onChange={(e) => handleIntegerFieldChange("weightGrams", e.target.value)}
+                onWheel={preventNumberWheelChange}
                 placeholder="Weight"
                 className="border p-2 pr-12 w-full rounded"
               />
@@ -302,7 +303,6 @@ export default function AdminEditProduct() {
           </div>
         </div>
 
-        {/* ROW 2 */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-burn-time" className="text-sm font-medium text-gray-800">
@@ -348,7 +348,6 @@ export default function AdminEditProduct() {
           </div>
         </div>
 
-        {/* ROW 3 */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-price" className="text-sm font-medium text-gray-800">
@@ -356,9 +355,12 @@ export default function AdminEditProduct() {
             </label>
             <input
               id="edit-product-price"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.]?[0-9]*"
               value={product.price}
-              onChange={(e) => updateField("price", e.target.value)}
+              onChange={(e) => handleDecimalFieldChange("price", e.target.value)}
+              onWheel={preventNumberWheelChange}
               placeholder="Price"
               className="border p-2 w-full rounded"
             />
@@ -371,15 +373,17 @@ export default function AdminEditProduct() {
           </label>
           <input
             id="edit-product-quantity-pack"
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={product.quantityPack}
-            onChange={(e) => updateField("quantityPack", e.target.value)}
+            onChange={(e) => handleIntegerFieldChange("quantityPack", e.target.value)}
+            onWheel={preventNumberWheelChange}
             placeholder="Quantity Per Pack"
             className="border p-2 w-full rounded"
           />
         </div>
 
-        {/* ROW: Customizations */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="space-y-1 w-full">
             <label htmlFor="edit-product-custom-fragrance" className="text-sm font-medium text-gray-800">
@@ -412,30 +416,13 @@ export default function AdminEditProduct() {
           </div>
         </div>
 
-
-        {/* ⭐ INVENTORY FIELD */}
-        <div className="space-y-1">
-          <label htmlFor="edit-product-inventory" className="text-sm font-medium text-gray-800">
-            Inventory <span className="text-gray-500 text-xs">(optional)</span>
-          </label>
-          <input
-            id="edit-product-inventory"
-            type="number"
-            value={product.inventory}
-            onChange={(e) => updateField("inventory", e.target.value)}
-            placeholder="Inventory"
-            className="border p-2 w-full rounded"
-          />
-        </div>
-
-        {/* Image Upload */}
         <div>
           <label className="text-sm font-medium text-gray-800 block mb-1">
             Product Image <span className="text-red-600">*</span>
           </label>
           <input type="file" accept="image/*" onChange={handleFileChange} />
           {preview && (
-            <img src={preview} className="w-32 mt-2 rounded border" />
+            <img src={preview} className="w-32 mt-2 rounded border" alt="Preview" />
           )}
         </div>
 

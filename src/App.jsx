@@ -8,15 +8,13 @@ import MainLayout from "./layouts/MainLayout";
 import { ProductsProvider } from "./contexts/ProductsContext";
 import { LoginModalProvider, useLoginModal } from "./contexts/LoginModalContext";
 import LoginModal from "./components/LoginModal";
-import { CartProvider } from "./hooks/useCart";
 import { useAuth } from "./contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OfferBanner from "./components/OfferBanner";
 
 import { ToastProvider } from "./contexts/ToastContext";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { rootUrl } from "./lib/api";
 
 // Lazy pages
 const Home = lazy(() => import("./pages/Home/Home"));
@@ -54,7 +52,6 @@ function AppContent({
   menuOpen,
   setMenuOpen,
 }) {
-  const { openLoginModal } = useLoginModal();
   const location = useLocation();
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
@@ -231,9 +228,9 @@ export default function App() {
     if (sessionStorage.getItem(KEY)) return;
     sessionStorage.setItem(KEY, "1");
 
-    if (!BACKEND_URL) return;
+    if (!rootUrl()) return;
 
-    fetch(`${BACKEND_URL}/health`).catch(() => {
+    fetch(rootUrl("/health")).catch(() => {
       // best-effort warmup; errors are safe to ignore
     });
   }, []);
@@ -241,19 +238,17 @@ export default function App() {
   return (
     <ToastProvider>
       <LoginModalProvider>
-        <CartProvider>
-          <ProductsProvider>
-            <BrowserRouter>
-              <AppContent
-                heroRef={heroRef}
-                productSectionRef={productSectionRef}
-                stickyNavRef={stickyNavRef}
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-              />
-            </BrowserRouter>
-          </ProductsProvider>
-        </CartProvider>
+        <ProductsProvider>
+          <BrowserRouter>
+            <AppContent
+              heroRef={heroRef}
+              productSectionRef={productSectionRef}
+              stickyNavRef={stickyNavRef}
+              menuOpen={menuOpen}
+              setMenuOpen={setMenuOpen}
+            />
+          </BrowserRouter>
+        </ProductsProvider>
       </LoginModalProvider>
     </ToastProvider>
   );

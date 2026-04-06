@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   getAuth,
   onAuthStateChanged,
+  onIdTokenChanged,
   signInWithPopup,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -16,11 +17,13 @@ import {
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { sendWelcomeEmail, sendPasswordResetEmail as sendBackendResetEmail } from "../api/email";
+import { useRef } from "react";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const auth = getAuth();
+  const lastInitializedUidRef = useRef(null);
 
   const [user, setUser] = useState(null);
   const [idToken, setIdToken] = useState(null);
@@ -109,13 +112,19 @@ export function AuthProvider({ children }) {
   // AUTH STATE LISTENER
   // ------------------------------------------
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    const unsubAuth = onAuthStateChanged(auth, async (u) => {
       setUser(u);
 
-      if (u) {
-        const token = await u.getIdToken();
-        setIdToken(token);
+      if (!u) {
+        lastInitializedUidRef.current = null;
+        setIdToken(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
 
+      if (lastInitializedUidRef.current !== u.uid) {
+        lastInitializedUidRef.current = u.uid;
         const email = u.email || "";
         if (email) {
           // IMPORTANT: allowCreation is FALSE by default here
@@ -123,15 +132,30 @@ export function AuthProvider({ children }) {
           await createUserDocument(u, email, false);
         }
         await checkAdminRole(u.uid);
-      } else {
-        setIdToken(null);
-        setIsAdmin(false);
       }
 
       setLoading(false);
     });
 
-    return () => unsub();
+    const unsubToken = onIdTokenChanged(auth, async (u) => {
+      if (!u) {
+        setIdToken(null);
+        return;
+      }
+
+      try {
+        const token = await u.getIdToken();
+        setIdToken(token);
+      } catch (error) {
+        console.error("AuthContext: Failed to refresh ID token:", error);
+        setIdToken(null);
+      }
+    });
+
+    return () => {
+      unsubAuth();
+      unsubToken();
+    };
   }, []);
 
   // ------------------------------------------

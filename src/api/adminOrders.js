@@ -1,7 +1,7 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiUrl } from "../lib/api";
 
 export async function listAdminOrders(idToken, { limit } = {}) {
-  const url = new URL(`${BACKEND_URL}/admin/orders`);
+  const url = new URL(apiUrl("/admin/orders"));
   if (limit) url.searchParams.set("limit", String(limit));
 
   const res = await fetch(url.toString(), {
@@ -16,7 +16,7 @@ export async function listAdminOrders(idToken, { limit } = {}) {
 }
 
 export async function getAdminOrderDetails(orderId, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/orders/${orderId}`, {
+  const res = await fetch(apiUrl(`/admin/orders/${orderId}`), {
     method: "GET",
     headers: {
       Authorization: `Bearer ${idToken}`,
@@ -28,7 +28,7 @@ export async function getAdminOrderDetails(orderId, idToken) {
 }
 
 export async function updateAdminOrderStatus(orderId, status, idToken, expectedDeliveryDate) {
-  const res = await fetch(`${BACKEND_URL}/admin/orders/${orderId}`, {
+  const res = await fetch(apiUrl(`/admin/orders/${orderId}`), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -41,4 +41,15 @@ export async function updateAdminOrderStatus(orderId, status, idToken, expectedD
   return res.json();
 }
 
+export async function cancelAdminOrder(orderId, idToken) {
+  const res = await fetch(apiUrl(`/admin/orders/${orderId}/cancel`), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
 
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Failed to cancel order");
+  return data;
+}

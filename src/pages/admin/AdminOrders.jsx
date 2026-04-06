@@ -1,5 +1,5 @@
 // src/pages/admin/AdminOrders.jsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
@@ -15,8 +15,33 @@ import {
   Phone, 
   ArrowRight 
 } from "lucide-react";
+import { apiFetch } from "../../lib/api";
+import { cancelAdminOrder } from "../../api/adminOrders";
+import { formatShiprocketStatus, getOrderStatusConfig, shouldShowShiprocketStatus } from "../../utils/orderStatus";
+import { getOrderAmountBreakdown } from "../../utils/orderAmounts";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+function parseOrderTimestamp(ts) {
+  if (!ts) return null;
+  if (typeof ts?.toDate === "function") return ts.toDate();
+  if (typeof ts?.seconds === "number") return new Date(ts.seconds * 1000);
+  if (typeof ts?._seconds === "number") return new Date(ts._seconds * 1000);
+  if (typeof ts === "string" || typeof ts === "number") {
+    const d = new Date(ts);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+function getOrderTimeValue(value) {
+  if (!value) return 0;
+  if (typeof value?.getTime === "function") return value.getTime();
+  const parsed = parseOrderTimestamp(value);
+  return parsed?.getTime() || 0;
+}
+
+const AUTO_SYNC_THRESHOLD_MS = 60 * 60 * 1000;
+const AUTO_SYNC_LIMIT = 5;
+
 
 export default function AdminOrders() {
   const { idToken } = useAuth();
@@ -29,17 +54,6 @@ export default function AdminOrders() {
   const [creatingShipment, setCreatingShipment] = useState(null);
   const [generatingLabel, setGeneratingLabel] = useState(null);
 
-  const scrollToTop = () => {
-    setTimeout(() => {
-      const scrollable = document.querySelector('main.overflow-y-auto') || document.querySelector('main');
-      if (scrollable) {
-        scrollable.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    }, 100);
-  };
-  
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
       showToast("Copied to clipboard!");
@@ -48,19 +62,21 @@ export default function AdminOrders() {
     });
   };
 
-  const parseTimestamp = (ts) => {
-    if (!ts) return null;
-    if (typeof ts?.toDate === "function") return ts.toDate();
-    if (typeof ts?.seconds === "number") return new Date(ts.seconds * 1000);
-    if (typeof ts?._seconds === "number") return new Date(ts._seconds * 1000);
-    if (typeof ts === "string" || typeof ts === "number") {
-      const d = new Date(ts);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    return null;
+  const getLastShiprocketSyncTime = (order) => {
+    const value = order?.shiprocket?.lastUpdate || order?.shiprocket?.lastSyncAttempt || null;
+    if (!value) return 0;
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
   };
 
-  const loadOrders = async () => {
+  const formatShiprocketDateTime = (value) => {
+    if (!value) return "—";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "—";
+    return parsed.toLocaleString();
+  };
+
+  const loadOrders = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -71,8 +87,8 @@ export default function AdminOrders() {
         return {
           id: d.id,
           ...data,
-          createdAt: parseTimestamp(data.createdAt),
-          updatedAt: parseTimestamp(data.updatedAt),
+          createdAt: parseOrderTimestamp(data.createdAt),
+          updatedAt: parseOrderTimestamp(data.updatedAt),
         };
       });
       setOrders(list);
@@ -83,24 +99,23 @@ export default function AdminOrders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const silentAdminSync = async (ordersList) => {
+  const silentAdminSync = useCallback(async (ordersList) => {
     if (!idToken) return;
-    const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
     const now = Date.now();
 
-    // Only sync active orders that haven't been synced in 30+ minutes
-    const staleOrders = ordersList.filter((o) => {
-      if (!o.shiprocket?.shipmentId) return false;
-      if (["delivered", "cancelled"].includes(o.status?.toLowerCase())) return false;
-      const lastUpdate = o.shiprocket?.lastUpdate ? new Date(o.shiprocket.lastUpdate).getTime() : 0;
-      return now - lastUpdate > STALE_THRESHOLD_MS;
-    });
+    const staleOrders = ordersList
+      .filter((o) => {
+        if (!o.shiprocket?.shipmentId && !o.shiprocket?.orderId) return false;
+        if (["delivered", "cancelled"].includes(o.status?.toLowerCase())) return false;
+        return now - getLastShiprocketSyncTime(o) > AUTO_SYNC_THRESHOLD_MS;
+      })
+      .sort((a, b) => getOrderTimeValue(b.createdAt) - getOrderTimeValue(a.createdAt))
+      .slice(0, AUTO_SYNC_LIMIT);
 
     if (staleOrders.length === 0) return;
 
-    // Throttle: process max 5 at a time to avoid rate limits
     const chunks = [];
     for (let i = 0; i < staleOrders.length; i += 5) {
       chunks.push(staleOrders.slice(i, i + 5));
@@ -110,7 +125,7 @@ export default function AdminOrders() {
       await Promise.all(
         chunk.map(async (order) => {
           try {
-            const res = await fetch(`${BACKEND_URL}/api/admin/orders/${order.id}/sync`, {
+            const res = await apiFetch(`/admin/orders/${order.id}/sync`, {
               method: "POST",
               headers: { Authorization: `Bearer ${idToken}` },
             });
@@ -124,26 +139,50 @@ export default function AdminOrders() {
                     ...(data.localStatus ? { status: data.localStatus } : {}),
                     shiprocket: {
                       ...o.shiprocket,
+                      ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
+                      ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
+                      ...(data.courierName ? { courierName: data.courierName } : {}),
                       ...(data.awbCode ? { awbCode: data.awbCode } : {}),
-                      ...(data.srStatus ? { status: data.srStatus, lastUpdate: new Date().toISOString() } : {}),
+                      ...(data.srStatus ? { status: data.srStatus } : {}),
+                      ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
+                      ...(data.srStatus ? { lastUpdate: data.lastSyncAttempt || new Date().toISOString() } : {}),
+                    },
+                  };
+                })
+              );
+            } else if (data?.cleaned || data?.lastSyncAttempt) {
+              setOrders((prev) =>
+                prev.map((o) => {
+                  if (o.id !== order.id) return o;
+                  return {
+                    ...o,
+                    status: data.localStatus || o.status,
+                    shiprocket: {
+                      ...o.shiprocket,
+                      ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
+                      ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
+                      ...(data.courierName ? { courierName: data.courierName } : {}),
+                      awbCode: null,
+                      status: null,
+                      ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
                     },
                   };
                 })
               );
             }
-          } catch (_) {
+          } catch {
             // Silent — never disrupt the admin view
           }
         })
       );
     }
-  };
+  }, [idToken]);
 
   useEffect(() => {
     loadOrders().then((list) => {
       if (list) silentAdminSync(list);
     });
-  }, []);
+  }, [loadOrders, silentAdminSync]);
 
 
   // ── Shiprocket: Create Shipment ────────────────────────────────────────────
@@ -151,7 +190,7 @@ export default function AdminOrders() {
     if (!idToken) { showToast("Not authenticated.", "error"); return; }
     setCreatingShipment(order.id);
     try {
-      const res = await fetch(`${BACKEND_URL}/orders/create-shipment`, {
+      const res = await apiFetch("/orders/create-shipment", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ orderId: order.id }),
@@ -178,18 +217,54 @@ export default function AdminOrders() {
   const handleSyncStatus = async (orderId) => {
     if (!idToken) { showToast("Not authenticated.", "error"); return; }
     try {
-      const res = await fetch(`${BACKEND_URL}/admin/orders/${orderId}/sync`, {
+      const res = await apiFetch(`/admin/orders/${orderId}/sync`, {
         method: "POST",
         headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Sync failed");
+      if (!res.ok) {
+        if (data?.cleaned || data?.lastSyncAttempt) {
+          setOrders((prev) =>
+            prev.map((o) =>
+              o.id === orderId
+                ? {
+                    ...o,
+                    status: data.localStatus || o.status,
+                    shiprocket: {
+                      ...o.shiprocket,
+                      ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
+                      ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
+                      ...(data.courierName ? { courierName: data.courierName } : {}),
+                      awbCode: null,
+                      status: null,
+                      ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
+                    },
+                  }
+                : o
+            )
+          );
+        }
+        throw new Error(data.error || "Sync failed");
+      }
 
       if (data.success) {
         setOrders((prev) =>
           prev.map((o) =>
             o.id === orderId
-              ? { ...o, status: data.localStatus, shiprocket: { ...o.shiprocket, status: data.srStatus, lastUpdate: new Date().toISOString() } }
+              ? {
+                  ...o,
+                  status: data.localStatus,
+                  shiprocket: {
+                    ...o.shiprocket,
+                    ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
+                    ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
+                    ...(data.courierName ? { courierName: data.courierName } : {}),
+                    ...(data.awbCode ? { awbCode: data.awbCode } : {}),
+                    ...(data.srStatus ? { status: data.srStatus } : {}),
+                    ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
+                    ...(data.srStatus ? { lastUpdate: data.lastSyncAttempt || new Date().toISOString() } : {}),
+                  }
+                }
               : o
           )
         );
@@ -201,12 +276,59 @@ export default function AdminOrders() {
     }
   };
 
+  const handleCancelOrder = async (order) => {
+    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+
+    const currentStatus = String(order.status || "").toLowerCase();
+    if (["cancelled", "delivered"].includes(currentStatus)) {
+      showToast(`Order is already ${currentStatus}.`, "error");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      order.shiprocket?.shipmentId
+        ? "This will mark the order as cancelled in our application. If the shipment was cancelled in Shiprocket too, this keeps the order state aligned locally. Continue?"
+        : "Mark this order as cancelled in our application?"
+    );
+    if (!confirmed) return;
+
+    try {
+      const result = await cancelAdminOrder(order.id, idToken);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === order.id
+            ? {
+                ...o,
+                status: "cancelled",
+                shiprocket: {
+                  ...o.shiprocket,
+                  ...(result.cancelledInShiprocket ? { status: "CANCELLED" } : {}),
+                  lastUpdate: new Date().toISOString(),
+                  lastSyncAttempt: new Date().toISOString(),
+                },
+              }
+            : o
+        )
+      );
+      if (result.cancelledInShiprocket) {
+        showToast("Order cancelled in Shiprocket and our application");
+      } else if (result.shiprocketAttempted) {
+        showToast("Order cancelled locally. Shiprocket cancellation did not complete.", "error");
+      } else {
+        showToast("Order cancelled in our application");
+      }
+    } catch (err) {
+      console.error("Cancel order error:", err);
+      showToast(err.message || "Failed to cancel order", "error");
+    }
+  };
+
   // ── Shiprocket: Generate Label ─────────────────────────────────────────────
   const handleGenerateLabel = async (order) => {
     if (!idToken) { showToast("Not authenticated.", "error"); return; }
     setGeneratingLabel(order.id);
     try {
-      const res = await fetch(`${BACKEND_URL}/orders/generate-label/${order.id}`, {
+      const res = await apiFetch(`/orders/generate-label/${order.id}`, {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await res.json();
@@ -226,15 +348,6 @@ export default function AdminOrders() {
     }
   };
 
-  const statusColors = {
-    pending: "bg-yellow-200 text-yellow-800",
-    confirmed: "bg-blue-200 text-blue-800",
-    packed: "bg-indigo-200 text-indigo-800",
-    shipped: "bg-purple-200 text-purple-800",
-    delivered: "bg-green-200 text-green-800",
-    cancelled: "bg-red-200 text-red-800",
-  };
-
   return (
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">All Orders</h2>
@@ -249,14 +362,25 @@ export default function AdminOrders() {
       {!loading && orders.length === 0 && <p>No orders found.</p>}
 
       <div className="space-y-4">
-        {orders.map((order) => (
+        {orders.map((order) => {
+          const statusLower = String(order.status || "").toLowerCase();
+          const isTerminalOrder = ["cancelled", "delivered"].includes(statusLower);
+          const hasShiprocketIdentity = !!(order.shiprocket?.shipmentId || order.shiprocket?.orderId);
+          const { subtotal, discountTotal, shippingFee, platformFee } = getOrderAmountBreakdown(order);
+
+          return (
           <div key={order.id} className="border rounded-lg p-4 shadow-sm bg-white">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
               <p className="font-semibold text-gray-800">Order #{order.id}</p>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[order.status] || "bg-gray-200 text-gray-800"}`}>
-                  {order.status}
+                <span className={`px-2 py-1 rounded text-xs font-medium ${getOrderStatusConfig(order.status).color}`}>
+                  {getOrderStatusConfig(order.status).label.toLowerCase()}
                 </span>
+                {shouldShowShiprocketStatus(order.status, order.shiprocket?.status) && (
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-violet-50 text-violet-700 border border-violet-100">
+                    {formatShiprocketStatus(order.shiprocket.status)}
+                  </span>
+                )}
                 {/* Shiprocket AWB badge */}
                 {order.shiprocket?.awbCode && (
                     <button
@@ -299,7 +423,16 @@ export default function AdminOrders() {
               </button>
 
               {/* Shiprocket: Create Shipment – show if no shipment yet and order is confirmed/packed */}
-              {!order.shiprocket?.shipmentId && ["confirmed", "packed", "pending"].includes(order.status) && (
+              {!["cancelled", "delivered"].includes(String(order.status || "").toLowerCase()) && (
+                <button
+                  onClick={() => handleCancelOrder(order)}
+                  className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded w-full sm:w-auto text-sm font-bold border border-red-100 transition-colors"
+                >
+                  Cancel Order
+                </button>
+              )}
+
+              {!order.shiprocket?.shipmentId && !order.shiprocket?.orderId && ["confirmed", "packed", "pending"].includes(order.status) && (
                   <button
                     onClick={() => handleCreateShipment(order)}
                     disabled={creatingShipment === order.id}
@@ -314,8 +447,16 @@ export default function AdminOrders() {
               )}
 
               {/* Shiprocket: Print Label – show once shipment exists */}
-              {order.shiprocket?.shipmentId && (
+              {!isTerminalOrder && hasShiprocketIdentity && (
                 <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleSyncStatus(order.id)}
+                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded flex-1 sm:flex-none text-[10px] font-black uppercase tracking-wider transition-all border border-blue-100 flex items-center justify-center gap-1"
+                    title="Sync with Shiprocket"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Sync
+                  </button>
+                  {order.shiprocket.awbCode && (
                     <button
                       onClick={() => handleGenerateLabel(order)}
                       disabled={generatingLabel === order.id}
@@ -327,13 +468,7 @@ export default function AdminOrders() {
                         <><Tag className="w-4 h-4" /> Print Label</>
                       )}
                     </button>
-                  <button
-                    onClick={() => handleSyncStatus(order.id)}
-                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded flex-1 sm:flex-none text-[10px] font-black uppercase tracking-wider transition-all border border-blue-100 flex items-center justify-center gap-1"
-                    title="Sync with Shiprocket"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Sync
-                  </button>
+                  )}
                   {order.shiprocket.awbCode && (
                     <a
                       href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
@@ -386,6 +521,18 @@ export default function AdminOrders() {
                             <span className="font-bold text-gray-800">{order.shiprocket?.courierName || order.courierName}</span>
                           </div>
                         )}
+                        {order.shiprocket?.orderId && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Shiprocket Order ID</span>
+                            <span className="font-bold text-gray-800">{order.shiprocket.orderId}</span>
+                          </div>
+                        )}
+                        {order.shiprocket?.shipmentId && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Shipment ID</span>
+                            <span className="font-bold text-gray-800">{order.shiprocket.shipmentId}</span>
+                          </div>
+                        )}
                         {order.shiprocket.awbCode && (
                           <div className="flex justify-between items-center pt-0.5">
                             <span className="text-gray-400 font-medium">AWB</span>
@@ -398,6 +545,12 @@ export default function AdminOrders() {
                             </a>
                           </div>
                         )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-400 font-medium">Last Sync</span>
+                          <span className="font-bold text-gray-800">
+                            {formatShiprocketDateTime(order.shiprocket?.lastUpdate || order.shiprocket?.lastSyncAttempt)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -428,18 +581,24 @@ export default function AdminOrders() {
                     <div className="bg-gray-50 border-t border-gray-100 px-3 py-2 space-y-1">
                       <div className="flex justify-between text-gray-400">
                         <span>Subtotal</span>
-                        <span className="font-medium text-gray-600">₹{(order.items || []).reduce((s, i) => s + i.price * i.quantity, 0)}</span>
+                        <span className="font-medium text-gray-600">Rs {subtotal}</span>
                       </div>
+                      {discountTotal > 0 && (
+                        <div className="flex justify-between text-gray-400">
+                          <span className="text-green-600">Discount</span>
+                          <span className="font-medium text-green-600">-Rs {discountTotal}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-gray-400">
-                        <span>Courier Fee</span>
-                        <span className={`font-medium ${order.deliveryFee > 0 ? "text-gray-600" : "text-green-600"}`}>
-                          {order.deliveryFee > 0 ? `₹${order.deliveryFee}` : "Free"}
+                        <span>Shipping Fee</span>
+                        <span className={`font-medium ${shippingFee > 0 ? "text-gray-600" : "text-green-600"}`}>
+                          {shippingFee > 0 ? `Rs ${shippingFee}` : "Free"}
                         </span>
                       </div>
-                      {order.platformFee > 0 && (
+                      {platformFee > 0 && (
                         <div className="flex justify-between text-gray-400">
                           <span>Platform Fee</span>
-                          <span className="font-medium text-gray-600">₹{order.platformFee}</span>
+                          <span className="font-medium text-gray-600">Rs {platformFee}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-gray-900 font-black border-t border-gray-200 pt-1 text-[13px]">
@@ -453,7 +612,7 @@ export default function AdminOrders() {
               </div>
             )}
           </div>
-        ))}
+        )})}
       </div>
     </div>
   );

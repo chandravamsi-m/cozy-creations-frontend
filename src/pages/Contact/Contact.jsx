@@ -11,9 +11,9 @@ import pin from "../../assets/svgs/ion_pin.svg";
 import instagram from "../../assets/svgs/instagram-fill.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { useProducts } from "../../contexts/ProductsContext";
 import usePageSEO from "../../hooks/usePageSEO";
+import { apiFetch } from "../../lib/api";
 
 // Cloudinary hero image
 const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307253/image_3_i18muy.webp";
@@ -56,7 +56,7 @@ export default function ContactUs() {
   const { user } = useAuth();
   const { openLoginModal } = useLoginModal();
   usePageSEO({
-    title: "Contact Us — Bulk Orders & Custom Requests",
+    title: "Contact Us - Bulk Orders & Custom Requests",
     description:
       "Get in touch with Cozy Creations for bulk candle orders, custom requests, or any questions. Based in Hyderabad. Email: cozycandlecorner13@gmail.com | Phone: +91 8019401322.",
     path: "/contact",
@@ -248,8 +248,8 @@ export default function ContactUs() {
 
     try {
       // Find product name from products list
-      const selectedProduct = products.find(p => p.id === formData.product);
-      const productName = selectedProduct?.name || selectedProduct?.productName || "";
+      const selectedProduct = products.find((p) => p.value === formData.product);
+      const productName = selectedProduct?.label || "";
 
       const payload = {
         name: formData.name,
@@ -264,7 +264,7 @@ export default function ContactUs() {
       };
 
       // backend may not be ready; this will fail gracefully
-      const resp = await fetch(`${BACKEND_URL}/contact`, {
+      const resp = await apiFetch("/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

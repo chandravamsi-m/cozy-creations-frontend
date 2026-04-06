@@ -25,6 +25,7 @@ import {
   Cell,
   Legend
 } from "recharts";
+import { apiFetch } from "../../lib/api";
 
 const PIE_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -51,7 +52,7 @@ export default function AdminDashboard() {
       try {
         setLoading(true);
         const token = await user.getIdToken();
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/admin/dashboard-stats`, {
+        const res = await apiFetch("/admin/dashboard-stats", {
           headers: {
             Authorization: `Bearer ${token}`
           }

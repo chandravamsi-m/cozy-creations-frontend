@@ -6,8 +6,13 @@ import { db } from "../../firebase";
 import Skeleton from "../../components/common/Skeleton";
 import { collection, getDocs } from "firebase/firestore";
 import { Gift, Loader2, Image as ImageIcon, Coins, ChevronDown } from "lucide-react";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../../lib/api";
+import {
+  coerceAdminNumberInput,
+  getStableAdminNumberValue,
+  parseAdminNumber,
+  preventNumberWheelChange,
+} from "../../utils/adminNumberInputs";
 
 const CATEGORIES = [
   { value: "flower", label: "Flower" },
@@ -65,7 +70,7 @@ export default function AdminOffers() {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/admin/offers`, {
+      const res = await apiFetch("/admin/offers", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -74,7 +79,11 @@ export default function AdminOffers() {
       if (!res.ok) throw new Error("Failed to fetch offer settings");
 
       const data = await res.json();
-      setOfferSettings((prev) => ({ ...prev, ...data.offer }));
+      setOfferSettings((prev) => ({
+        ...prev,
+        ...data.offer,
+        discountValue: getStableAdminNumberValue(data.offer?.discountValue ?? 0),
+      }));
     } catch (err) {
       showToast(err.message, "error");
     } finally {
@@ -140,20 +149,27 @@ export default function AdminOffers() {
       setSaving(true);
 
       const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/admin/offers`, {
+      const res = await apiFetch("/admin/offers", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(offerSettings),
+        body: JSON.stringify({
+          ...offerSettings,
+          discountValue: parseAdminNumber(offerSettings.discountValue),
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to save offer settings");
 
       const data = await res.json();
       showToast("Offer saved successfully!");
-      setOfferSettings((prev) => ({ ...prev, ...data.offer }));
+      setOfferSettings((prev) => ({
+        ...prev,
+        ...data.offer,
+        discountValue: getStableAdminNumberValue(data.offer?.discountValue ?? 0),
+      }));
 
       // Smooth scroll to top of the main container to show success message and preview
       setTimeout(() => {
@@ -403,16 +419,21 @@ export default function AdminOffers() {
                     Discount Value
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    value={offerSettings.discountValue === 0 && offerSettings.discountValue !== "0" ? "" : offerSettings.discountValue}
-                    onChange={(e) => {
-                      const val = e.target.value;
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*[.]?[0-9]*"
+                    value={offerSettings.discountValue}
+                    onChange={(e) =>
                       setOfferSettings((prev) => ({
                         ...prev,
-                        discountValue: val === "" ? "" : parseFloat(val) || 0
-                      }));
-                    }}
+                        discountValue: coerceAdminNumberInput(
+                          String(prev.discountValue ?? ""),
+                          e.target.value,
+                          { allowDecimal: true }
+                        )
+                      }))
+                    }
+                    onWheel={preventNumberWheelChange}
                     placeholder={offerSettings.discountType === "percentage" ? "20" : "100"}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-400"
                   />

@@ -4,8 +4,13 @@ import { useAuth } from "../../contexts/AuthContext";
 import Skeleton from "../../components/common/Skeleton";
 import { useSettings } from "../../contexts/SettingsContext";
 import { Banknote, Settings, Truck } from "lucide-react";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../../lib/api";
+import {
+  coerceAdminNumberInput,
+  getStableAdminNumberValue,
+  parseAdminNumber,
+  preventNumberWheelChange,
+} from "../../utils/adminNumberInputs";
 
 export default function AdminDelivery() {
   const { idToken } = useAuth();
@@ -32,19 +37,30 @@ export default function AdminDelivery() {
   const fetchSettings = async () => {
     try {
       const [payRes, delRes] = await Promise.all([
-        fetch(`${BACKEND_URL}/settings/payment`),
-        fetch(`${BACKEND_URL}/settings/delivery`)
+        apiFetch("/settings/payment"),
+        apiFetch("/settings/delivery")
       ]);
 
       if (payRes.ok) {
         const d = await payRes.json();
-        if (d.payment) setPaymentSettings(d.payment);
+        if (d.payment) {
+          setPaymentSettings({
+            ...d.payment,
+            platformFee: getStableAdminNumberValue(d.payment.platformFee ?? 0),
+          });
+        }
       }
       if (delRes.ok) {
         const d = await delRes.json();
-        if (d.delivery) setDeliverySettings(d.delivery);
+        if (d.delivery) {
+          setDeliverySettings({
+            ...d.delivery,
+            amount: getStableAdminNumberValue(d.delivery.amount ?? 0),
+            freeDeliveryThreshold: getStableAdminNumberValue(d.delivery.freeDeliveryThreshold ?? 0),
+          });
+        }
       }
-    } catch (err) {
+    } catch {
       showToast("Failed to load settings", "error");
     } finally {
       setLoading(false);
@@ -55,15 +71,22 @@ export default function AdminDelivery() {
     setSaving(true);
     try {
       const [payRes, delRes] = await Promise.all([
-        fetch(`${BACKEND_URL}/admin/settings/payment`, {
+        apiFetch("/admin/settings/payment", {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify(paymentSettings),
+          body: JSON.stringify({
+            ...paymentSettings,
+            platformFee: parseAdminNumber(paymentSettings.platformFee),
+          }),
         }),
-        fetch(`${BACKEND_URL}/admin/settings/delivery`, {
+        apiFetch("/admin/settings/delivery", {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify(deliverySettings),
+          body: JSON.stringify({
+            ...deliverySettings,
+            amount: parseAdminNumber(deliverySettings.amount),
+            freeDeliveryThreshold: parseAdminNumber(deliverySettings.freeDeliveryThreshold),
+          }),
         })
       ]);
 
@@ -73,7 +96,7 @@ export default function AdminDelivery() {
       await refreshSettings();
 
       showToast("Settings saved!", "success");
-    } catch (err) {
+    } catch {
       showToast("Failed to save settings", "error");
     } finally {
       setSaving(false);
@@ -151,9 +174,17 @@ export default function AdminDelivery() {
                 <div className="p-4 bg-white border border-blue-100 rounded-xl space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Fee Amount (₹)</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*[.]?[0-9]*"
                     value={paymentSettings.platformFee}
-                    onChange={(e) => setPaymentSettings(p => ({ ...p, platformFee: e.target.value }))}
+                    onChange={(e) =>
+                      setPaymentSettings((p) => ({
+                        ...p,
+                        platformFee: coerceAdminNumberInput(String(p.platformFee ?? ""), e.target.value, { allowDecimal: true }),
+                      }))
+                    }
+                    onWheel={preventNumberWheelChange}
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium shadow-inner"
                     placeholder="e.g. 80"
                   />

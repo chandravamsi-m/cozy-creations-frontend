@@ -1,5 +1,9 @@
 import React from "react";
 import { ChevronDown, ImagePlus } from "lucide-react";
+import {
+  coerceAdminNumberInput,
+  preventNumberWheelChange,
+} from "../../utils/adminNumberInputs";
 
 const ProductForm = ({
   isEdit,
@@ -16,7 +20,32 @@ const ProductForm = ({
   addTier,
   removeTier,
   updateTier
-}) => (
+}) => {
+  const handleIntegerFieldChange = (field, value) => {
+    updateField(field, coerceAdminNumberInput(String(product[field] ?? ""), value));
+  };
+
+  const handleDecimalFieldChange = (field, value) => {
+    updateField(
+      field,
+      coerceAdminNumberInput(String(product[field] ?? ""), value, { allowDecimal: true })
+    );
+  };
+
+  const handleTierChange = (index, field, value, { allowDecimal = false } = {}) => {
+    if (field === "minQty") {
+      updateTier(index, field, value);
+      return;
+    }
+
+    updateTier(
+      index,
+      field,
+      coerceAdminNumberInput(String(bulkPricingTiers[index]?.[field] ?? ""), value, { allowDecimal })
+    );
+  };
+
+  return (
   <form onSubmit={onSubmit} className="space-y-4">
     {/* Product Name */}
     <div className="space-y-1">
@@ -102,9 +131,12 @@ const ProductForm = ({
         <div className="relative">
           <input
             id="product-weight"
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={product.weightGrams}
-            onChange={(e) => updateField("weightGrams", e.target.value)}
+            onChange={(e) => handleIntegerFieldChange("weightGrams", e.target.value)}
+            onWheel={preventNumberWheelChange}
             placeholder="Weight"
             className="border border-gray-300 p-2 pr-12 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
             required
@@ -141,9 +173,12 @@ const ProductForm = ({
         </label>
         <input
           id="product-quantity-pack"
-          type="number"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={product.quantityPack}
-          onChange={(e) => updateField("quantityPack", e.target.value)}
+          onChange={(e) => handleIntegerFieldChange("quantityPack", e.target.value)}
+          onWheel={preventNumberWheelChange}
           placeholder="1"
           className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
           required
@@ -156,9 +191,12 @@ const ProductForm = ({
         </label>
         <input
           id="product-price"
-          type="number"
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]*[.]?[0-9]*"
           value={product.price}
-          onChange={(e) => updateField("price", e.target.value)}
+          onChange={(e) => handleDecimalFieldChange("price", e.target.value)}
+          onWheel={preventNumberWheelChange}
           placeholder="Price"
           className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
           required
@@ -215,8 +253,8 @@ const ProductForm = ({
                     <input
                       type="text"
                       value={tier.minQty}
-                      onChange={(e) => updateTier(index, "minQty", e.target.value)}
-                      placeholder="e.g. 15"
+                      onChange={(e) => handleTierChange(index, "minQty", e.target.value)}
+                      placeholder="e.g. 15 or 25+"
                       className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-blue-500 outline-none h-9 text-sm"
                     />
                   </div>
@@ -225,13 +263,14 @@ const ProductForm = ({
                       Price per Piece (₹)
                     </label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*[.]?[0-9]*"
                       value={tier.pricePerPc}
-                      onChange={(e) => updateTier(index, "pricePerPc", e.target.value)}
+                      onChange={(e) => handleTierChange(index, "pricePerPc", e.target.value, { allowDecimal: true })}
+                      onWheel={preventNumberWheelChange}
                       placeholder="e.g. 54"
                       className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-blue-500 outline-none h-9 text-sm"
-                      min="0"
-                      step="0.01"
                     />
                   </div>
                 </div>
@@ -242,49 +281,33 @@ const ProductForm = ({
       </div>
     </div>
 
-    {/* Row: Dimensions & Inventory (Optional) */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <div className="space-y-1">
-        <label htmlFor="product-dimensions" className="text-sm font-medium text-gray-800">
-          Dimensions <span className="text-gray-500 text-xs">(optional)</span>
-        </label>
-        <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden focus-within:ring-1 focus-within:ring-black h-10 bg-white">
-          <input
-            id="product-dimensions"
-            type="text"
-            value={product.dimensions}
-            onChange={(e) => updateField("dimensions", e.target.value)}
-            placeholder="e.g. 10x15"
-            className="flex-1 p-2 outline-none border-none text-sm h-full"
-          />
-          <div className="relative h-full">
-            <select
-              value={product.dimensionUnit}
-              onChange={(e) => updateField("dimensionUnit", e.target.value)}
-              className="appearance-none bg-gray-50 text-[10px] font-bold uppercase tracking-widest pl-4 pr-10 h-full border-l border-gray-100 outline-none cursor-pointer hover:bg-gray-100 transition-colors"
-            >
-              <option value="cm">cm</option>
-              <option value="mm">mm</option>
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <ChevronDown className="w-4 h-4" />
-            </div>
+    {/* Dimensions (Optional) */}
+    <div className="space-y-1">
+      <label htmlFor="product-dimensions" className="text-sm font-medium text-gray-800">
+        Dimensions <span className="text-gray-500 text-xs">(optional)</span>
+      </label>
+      <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden focus-within:ring-1 focus-within:ring-black h-10 bg-white">
+        <input
+          id="product-dimensions"
+          type="text"
+          value={product.dimensions}
+          onChange={(e) => updateField("dimensions", e.target.value)}
+          placeholder="e.g. 10x15"
+          className="flex-1 p-2 outline-none border-none text-sm h-full"
+        />
+        <div className="relative h-full">
+          <select
+            value={product.dimensionUnit}
+            onChange={(e) => updateField("dimensionUnit", e.target.value)}
+            className="appearance-none bg-gray-50 text-[10px] font-bold uppercase tracking-widest pl-4 pr-10 h-full border-l border-gray-100 outline-none cursor-pointer hover:bg-gray-100 transition-colors"
+          >
+            <option value="cm">cm</option>
+            <option value="mm">mm</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <ChevronDown className="w-4 h-4" />
           </div>
         </div>
-      </div>
-
-      <div className="space-y-1">
-        <label htmlFor="product-inventory" className="text-sm font-medium text-gray-800">
-          Inventory <span className="text-gray-500 text-xs">(optional)</span>
-        </label>
-        <input
-          id="product-inventory"
-          type="number"
-          value={product.inventory}
-          onChange={(e) => updateField("inventory", e.target.value)}
-          placeholder="Default 100"
-          className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10 text-sm"
-        />
       </div>
     </div>
 
@@ -392,6 +415,7 @@ const ProductForm = ({
       </button>
     </div>
   </form >
-);
+  );
+};
 
 export default ProductForm;

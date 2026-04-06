@@ -9,6 +9,9 @@ import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/ConfirmModal";
 import { Loader2, FileText, Plus, X } from "lucide-react";
+import {
+  parseAdminNumber,
+} from "../../utils/adminNumberInputs";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -38,7 +41,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [catalogueLoading, setCatalogueLoading] = useState(false);
   const [catalogueProgress, setCatalogueProgress] = useState(0);
-  const [catalogueStatus, setCatalogueStatusText] = useState("");
+  const [, setCatalogueStatusText] = useState("");
 
   // Bulk pricing tiers state (optional)
   const [bulkPricingTiers, setBulkPricingTiers] = useState([]);
@@ -50,7 +53,7 @@ export default function AdminProducts() {
 
   // Form states
   const [formLoading, setFormLoading] = useState(false);
-  const [formMsg, setFormMsg] = useState(""); // Keeping for inline validation/errors
+  const [, setFormMsg] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [product, setProduct] = useState({
@@ -67,7 +70,6 @@ export default function AdminProducts() {
     customizableFragrance: true,
     customizableColor: true,
     altText: "",
-    inventory: "",
   });
 
   // Confirm Modal state
@@ -276,7 +278,6 @@ export default function AdminProducts() {
       customizableFragrance: true,
       customizableColor: true,
       altText: "",
-      inventory: "",
     });
     setImageFile(null);
     setPreview(null);
@@ -308,22 +309,26 @@ export default function AdminProducts() {
       setProduct({
         name: data.name || "",
         category: data.category || "",
-        price: data.price || 0,
-        weightGrams: data.weightGrams || 0,
+        price: String(data.price ?? ""),
+        weightGrams: String(data.weightGrams ?? ""),
         waxType: isKnownWaxType ? data.waxType : "other",
         waxTypeOther: isKnownWaxType ? "" : data.waxType,
         burnTimeHours: data.burnTimeHours || "",
         dimensions: data.dimensions ? data.dimensions.replace(/cm|mm/gi, "") : "",
         dimensionUnit: data.dimensionUnit || "cm",
-        quantityPack: data.quantityPack || "",
+        quantityPack: String(data.quantityPack ?? ""),
         customizableFragrance: data.customizableFragrance ?? true,
         customizableColor: data.customizableColor ?? true,
         altText: data.altText || "",
-        inventory: data.inventory || "",
       });
       setPreview(data.imageUrl);
       setImageFile(null);
-      setBulkPricingTiers(data.bulkPricing || []); // Load existing tiers
+      setBulkPricingTiers(
+        (data.bulkPricingTiers || data.bulkPricing || []).map((tier) => ({
+          minQty: String(tier.minQty ?? ""),
+          pricePerPc: String(tier.pricePerPc ?? ""),
+        }))
+      );
       setShowEditModal(true);
     } catch (error) {
       console.error("Error loading product:", error);
@@ -398,7 +403,9 @@ export default function AdminProducts() {
     let data = null;
     try {
       data = await res.json();
-    } catch { }
+    } catch {
+      data = null;
+    }
     if (!res.ok) {
       const cloudinaryMsg = data?.error?.message || data?.message || `Upload failed (HTTP ${res.status})`;
       throw new Error(cloudinaryMsg);
@@ -447,21 +454,20 @@ export default function AdminProducts() {
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
       const payload = {
         ...productWithoutWaxTypeOther,
-        price: Number(product.price),
-        weightGrams: Number(product.weightGrams),
-        quantityPack: Number(product.quantityPack),
+        price: parseAdminNumber(product.price),
+        weightGrams: parseAdminNumber(product.weightGrams),
+        quantityPack: parseAdminNumber(product.quantityPack),
         burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
-        inventory: product.inventory ? Number(product.inventory) : 100,
         imageUrl,
         altText: product.name,
         thumbnailUrl: imageUrl,
         bulkPricingTiers: bulkPricingTiers.map(tier => ({
           minQty: String(tier.minQty),
-          pricePerPc: Number(tier.pricePerPc)
+          pricePerPc: parseAdminNumber(tier.pricePerPc)
         })).filter(tier => tier.minQty && tier.pricePerPc > 0)
       };
       await createProduct(payload, idToken);
@@ -509,21 +515,20 @@ export default function AdminProducts() {
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
       const payload = {
         ...productWithoutWaxTypeOther,
-        price: Number(product.price),
-        weightGrams: Number(product.weightGrams),
-        quantityPack: Number(product.quantityPack),
+        price: parseAdminNumber(product.price),
+        weightGrams: parseAdminNumber(product.weightGrams),
+        quantityPack: parseAdminNumber(product.quantityPack),
         burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
-        inventory: product.inventory ? Number(product.inventory) : 100,
         imageUrl,
         altText: product.name,
         thumbnailUrl: imageUrl,
         bulkPricingTiers: bulkPricingTiers.map(tier => ({
           minQty: String(tier.minQty),
-          pricePerPc: Number(tier.pricePerPc)
+          pricePerPc: parseAdminNumber(tier.pricePerPc)
         })).filter(tier => tier.minQty && tier.pricePerPc > 0)
       };
       await updateProduct(editingProductId, payload, idToken);

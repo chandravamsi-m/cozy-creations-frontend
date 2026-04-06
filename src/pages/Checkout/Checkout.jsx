@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { sendOrderConfirmation } from "../../api/email";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { getAuth } from "firebase/auth";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { getEffectiveShipmentDimensions } from "../../utils/parseDimensions";
 import { 
@@ -28,8 +28,7 @@ import {
 import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
 import useRazorpay from "../../hooks/useRazorpay";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch, apiUrl } from "../../lib/api";
 const MAX_ADDRESSES = 10;
 
 export default function Checkout() {
@@ -84,7 +83,7 @@ export default function Checkout() {
 
   // Check Shiprocket serviceability & get real shipping rate
   const checkServiceability = useCallback(async (pincode) => {
-    if (!pincode || !idToken) return;
+    if (!pincode || !user) return;
     setCheckingServiceability(true);
     setServiceabilityInfo(null);
     setServiceabilityError(null);
@@ -105,13 +104,19 @@ export default function Checkout() {
     const isCod = paymentMethod === "cod" ? 1 : 0;
 
     try {
+      const auth = getAuth();
+      const freshToken = await auth.currentUser?.getIdToken();
+      if (!freshToken) {
+        throw new Error("Authentication token unavailable");
+      }
+
       const finalL = totals.l + packagingBuffer;
       const finalW = totals.w + packagingBuffer;
       const finalH = totals.h + packagingBuffer;
 
       const res = await fetch(
-        `${BACKEND_URL}/shipping/check-serviceability?pincode=${pincode}&weight=${totalWeight}&cod=${isCod}&l=${Math.ceil(finalL)}&w=${Math.ceil(finalW)}&h=${Math.ceil(finalH)}&amount=${discountedTotal}`,
-        { headers: { Authorization: `Bearer ${idToken}` } }
+        `${apiUrl("/shipping/check-serviceability")}?pincode=${pincode}&weight=${totalWeight}&cod=${isCod}&l=${Math.ceil(finalL)}&w=${Math.ceil(finalW)}&h=${Math.ceil(finalH)}&amount=${discountedTotal}`,
+        { headers: { Authorization: `Bearer ${freshToken}` } }
       );
       const json = await res.json();
 
@@ -160,7 +165,7 @@ export default function Checkout() {
     } finally {
       setCheckingServiceability(false);
     }
-  }, [cart, idToken, paymentMethod, setShippingOverride, discountedTotal, shippingMarkupPct]);
+  }, [cart, user, paymentMethod, setShippingOverride, discountedTotal, shippingMarkupPct]);
 
   // Re-check whenever selected address, payment method, OR cart contents change
   useEffect(() => {
@@ -204,7 +209,7 @@ export default function Checkout() {
   React.useEffect(() => {
     const fetchPaymentSettings = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/settings/payment`);
+        const res = await apiFetch("/settings/payment");
         if (res.ok) {
           const data = await res.json();
           if (data.payment) {
@@ -325,31 +330,18 @@ export default function Checkout() {
       const orderData = {
         items: cart.map((item) => ({
           productId: item.productId,
-          name: item.name,
           quantity: item.quantity,
-          price: item.price,
-          image: item.thumbnailUrl || item.imageUrl,
-          category: item.category || null,
-          weightGrams: item.weightGrams || 0,
-          dimensions: item.dimensions || null,       // needed for shipment size calculation
-          quantityPack: item.quantityPack || null,   // needed for pack-weight scaling
           customization: customizations[item.productId] || null,
         })),
-        deliveryFee: deliveryFee,
-        platformFee: platformFee,
-        total: finalTotal,
         shippingAddress: finalAddress,
         customerName: finalAddress.fullName,
         userEmail: user.email,
-        courierId: serviceabilityInfo?.courierId || null,
-        courierName: serviceabilityInfo?.courierName || null,
       };
 
 
       // FORK: ONLINE VS COD
       if (paymentMethod === "cod") {
-        const codUrl = `${BACKEND_URL}/orders/place-cod`;
-        const response = await fetch(codUrl, {
+        const response = await apiFetch("/orders/place-cod", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -378,21 +370,11 @@ export default function Checkout() {
         localStorage.removeItem("cc_cart_customizations_v1");
         setCompletedOrderId(orderId);
 
-        // Send Order Confirmation Email (Non-blocking)
-        sendOrderConfirmation(user.email, {
-          orderId,
-          items: orderData.items,
-          total: orderData.total,
-          customerName: orderData.customerName, // Fix: Include name for personalization
-          paymentMethod: "cod",
-          shippingAddress: orderData.shippingAddress
-        });
         return;
       }
 
       // ONLINE PAYMENT (RAZORPAY)
-      const paymentUrl = `${BACKEND_URL}/orders/create-payment`;
-      const response = await fetch(paymentUrl, {
+      const response = await apiFetch("/orders/create-payment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -419,8 +401,7 @@ export default function Checkout() {
         order_id: orderId,
         handler: async function (pxResponse) {
           try {
-            const verifyUrl = `${BACKEND_URL}/orders/verify-payment`;
-            const verifyRes = await fetch(verifyUrl, {
+            const verifyRes = await apiFetch("/orders/verify-payment", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -430,7 +411,6 @@ export default function Checkout() {
                 razorpay_order_id: pxResponse.razorpay_order_id,
                 razorpay_payment_id: pxResponse.razorpay_payment_id,
                 razorpay_signature: pxResponse.razorpay_signature,
-                orderData: orderData,
               }),
             });
 
@@ -449,15 +429,6 @@ export default function Checkout() {
               localStorage.removeItem("cc_cart_customizations_v1");
               setCompletedOrderId(result.orderId);
 
-              // Send Order Confirmation Email (Non-blocking)
-              sendOrderConfirmation(user.email, {
-                orderId: result.orderId,
-                items: orderData.items,
-                total: orderData.total,
-                customerName: orderData.customerName, // Fix: Include name for personalization
-                paymentMethod: "online",
-                shippingAddress: orderData.shippingAddress
-              });
             } else {
               const errData = await verifyRes.json().catch(() => ({}));
               throw new Error(errData.error || "Payment verification failed on server");

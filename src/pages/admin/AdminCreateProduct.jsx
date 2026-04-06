@@ -2,6 +2,11 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { createProduct } from "../../api/adminProducts";
+import {
+  coerceAdminNumberInput,
+  parseAdminNumber,
+  preventNumberWheelChange,
+} from "../../utils/adminNumberInputs";
 
 // You can override these via Vite env vars:
 // - VITE_CLOUDINARY_CLOUD_NAME
@@ -28,7 +33,6 @@ export default function AdminCreateProduct() {
     customizableFragrance: true,
     customizableColor: true,
     altText: "",
-    inventory: "", // NEW FIELD
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -38,6 +42,14 @@ export default function AdminCreateProduct() {
 
   const updateField = (field, value) => {
     setProduct((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleIntegerFieldChange = (field, value) => {
+    updateField(field, coerceAdminNumberInput(String(product[field] ?? ""), value));
+  };
+
+  const handleDecimalFieldChange = (field, value) => {
+    updateField(field, coerceAdminNumberInput(String(product[field] ?? ""), value, { allowDecimal: true }));
   };
 
   // IMAGE PREVIEW
@@ -149,15 +161,14 @@ export default function AdminCreateProduct() {
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
       const payload = {
         ...productWithoutWaxTypeOther,
-        price: Number(product.price),
-        weightGrams: Number(product.weightGrams),
-        quantityPack: Number(product.quantityPack),
+        price: parseAdminNumber(product.price),
+        weightGrams: parseAdminNumber(product.weightGrams),
+        quantityPack: parseAdminNumber(product.quantityPack),
         burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
-        inventory: product.inventory ? Number(product.inventory) : 100, // DEFAULT VALUE
         imageUrl,
         altText: product.name, // Auto-set from product name
         thumbnailUrl: imageUrl, // you used imageUrl for thumbnail previously
@@ -183,7 +194,6 @@ export default function AdminCreateProduct() {
         customizableFragrance: true,
         customizableColor: true,
         altText: "",
-        inventory: "",
       });
       setImageFile(null);
       setPreview(null);
@@ -270,9 +280,12 @@ export default function AdminCreateProduct() {
             <div className="relative w-full">
               <input
                 id="product-weight"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={product.weightGrams}
-                onChange={(e) => updateField("weightGrams", e.target.value)}
+                onChange={(e) => handleIntegerFieldChange("weightGrams", e.target.value)}
+                onWheel={preventNumberWheelChange}
                 placeholder="Weight"
                 className="border p-2 pr-12 w-full rounded"
               />
@@ -337,9 +350,12 @@ export default function AdminCreateProduct() {
             </label>
             <input
               id="product-price"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.]?[0-9]*"
               value={product.price}
-              onChange={(e) => updateField("price", e.target.value)}
+              onChange={(e) => handleDecimalFieldChange("price", e.target.value)}
+              onWheel={preventNumberWheelChange}
               placeholder="Price"
               className="border p-2 w-full rounded"
             />
@@ -353,9 +369,12 @@ export default function AdminCreateProduct() {
           </label>
           <input
             id="product-quantity-pack"
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={product.quantityPack}
-            onChange={(e) => updateField("quantityPack", e.target.value)}
+            onChange={(e) => handleIntegerFieldChange("quantityPack", e.target.value)}
+            onWheel={preventNumberWheelChange}
             placeholder="Quantity Pack"
             className="border p-2 w-full rounded"
           />
@@ -393,23 +412,6 @@ export default function AdminCreateProduct() {
             </select>
           </div>
         </div>
-
-
-        {/* INVENTORY (NEW FIELD) */}
-        <div className="space-y-1">
-          <label htmlFor="product-inventory" className="text-sm font-medium text-gray-800">
-            Inventory <span className="text-gray-500 text-xs">(optional)</span>
-          </label>
-          <input
-            id="product-inventory"
-            type="number"
-            value={product.inventory}
-            onChange={(e) => updateField("inventory", e.target.value)}
-            placeholder="Inventory (default 100)"
-            className="border p-2 w-full rounded"
-          />
-        </div>
-
         {/* IMAGE UPLOAD */}
         <div>
           <label className="text-sm font-medium text-gray-800 block mb-1">

@@ -8,7 +8,7 @@ import ProductQuickView from "../../components/ProductQuickView";
 import { useAutoScrollFromHero } from "../../hooks/useAutoScrollFromHero";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import { useLocation } from "react-router-dom";
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../../lib/api";
 
 // Cloudinary hero image
 const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307257/image_5_ympux0.webp";
@@ -96,15 +96,9 @@ export default function ProductsPage() {
     delayMs: 5000,
   });
 
-  // Hero fade-in on mount
-  useEffect(() => {
-    setIsVisible((prev) => ({ ...prev, hero: true }));
-    fetchActiveOffer();
-  }, []);
-
-  const fetchActiveOffer = async () => {
+  async function fetchActiveOffer() {
     try {
-      const res = await fetch(`${BACKEND_URL}/offers/active`);
+      const res = await apiFetch("/offers/active");
       const data = await res.json();
       if (data.offer && data.offer.isActive) {
         setActiveOffer(data.offer);
@@ -112,7 +106,13 @@ export default function ProductsPage() {
     } catch (err) {
       console.error("Failed to fetch active offer for sorting:", err);
     }
-  };
+  }
+
+  // Hero fade-in on mount
+  useEffect(() => {
+    setIsVisible((prev) => ({ ...prev, hero: true }));
+    fetchActiveOffer();
+  }, []);
 
   const checkQualifies = (product, offer) => {
     if (!offer || !offer.hasDiscount) return false;

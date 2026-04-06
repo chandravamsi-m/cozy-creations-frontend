@@ -1,7 +1,7 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../lib/api";
 
 export async function createProduct(product, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/products`, {
+  const res = await apiFetch("/admin/products", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -15,7 +15,7 @@ export async function createProduct(product, idToken) {
 }
 
 export async function updateProduct(id, product, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/products/${id}`, {
+  const res = await apiFetch(`/admin/products/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -29,7 +29,7 @@ export async function updateProduct(id, product, idToken) {
 }
 
 export async function deleteProduct(id, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/products/${id}`, {
+  const res = await apiFetch(`/admin/products/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${idToken}`,
@@ -41,7 +41,7 @@ export async function deleteProduct(id, idToken) {
 }
 
 export async function permanentlyDeleteProduct(id, idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/products/${id}/permanent`, {
+  const res = await apiFetch(`/admin/products/${id}/permanent`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${idToken}`,
@@ -53,7 +53,7 @@ export async function permanentlyDeleteProduct(id, idToken) {
 }
 
 export async function generateCatalogue(idToken, onProgress) {
-  const res = await fetch(`${BACKEND_URL}/admin/generate-catalogue`, {
+  const res = await apiFetch("/admin/generate-catalogue", {
     headers: {
       Authorization: `Bearer ${idToken}`,
     },
@@ -62,10 +62,10 @@ export async function generateCatalogue(idToken, onProgress) {
   if (!res.ok) throw new Error("Failed to generate catalogue");
 
   const reader = res.body.getReader();
-  const contentLength = Number(res.headers.get('Content-Length'));
+  const contentLength = Number(res.headers.get("Content-Length"));
 
   let receivedLength = 0;
-  let chunks = [];
+  const chunks = [];
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -76,11 +76,11 @@ export async function generateCatalogue(idToken, onProgress) {
     }
   }
 
-  return new Blob(chunks, { type: 'application/pdf' });
+  return new Blob(chunks, { type: "application/pdf" });
 }
 
 export async function generateBulkCatalogue(idToken, onProgress) {
-  const res = await fetch(`${BACKEND_URL}/admin/generate-bulk-catalogue`, {
+  const res = await apiFetch("/admin/generate-bulk-catalogue", {
     headers: {
       Authorization: `Bearer ${idToken}`,
     },
@@ -89,10 +89,10 @@ export async function generateBulkCatalogue(idToken, onProgress) {
   if (!res.ok) throw new Error("Failed to generate bulk catalogue");
 
   const reader = res.body.getReader();
-  const contentLength = Number(res.headers.get('Content-Length'));
+  const contentLength = Number(res.headers.get("Content-Length"));
 
   let receivedLength = 0;
-  let chunks = [];
+  const chunks = [];
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -103,11 +103,11 @@ export async function generateBulkCatalogue(idToken, onProgress) {
     }
   }
 
-  return new Blob(chunks, { type: 'application/pdf' });
+  return new Blob(chunks, { type: "application/pdf" });
 }
 
 export async function getCatalogueStatus(idToken) {
-  const res = await fetch(`${BACKEND_URL}/admin/catalogue-status`, {
+  const res = await apiFetch("/admin/catalogue-status", {
     headers: {
       Authorization: `Bearer ${idToken}`,
     },

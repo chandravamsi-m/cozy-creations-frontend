@@ -1,5 +1,5 @@
 // src/utils/offerUtils.js
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../lib/api";
 
 
 /**
@@ -71,7 +71,7 @@ export function getEffectiveDiscount(product, offer) {
  */
 export async function calculateProductDiscount(product) {
   try {
-    const res = await fetch(`${BACKEND_URL}/offers/calculate-discount`, {
+    const res = await apiFetch("/offers/calculate-discount", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

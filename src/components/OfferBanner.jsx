@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Gift, X } from 'lucide-react';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../lib/api";
 
 export default function OfferBanner() {
   const [offer, setOffer] = useState(null);
@@ -36,7 +35,7 @@ export default function OfferBanner() {
 
   const fetchActiveOffer = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/offers/active`);
+      const res = await apiFetch("/offers/active");
       const data = await res.json();
 
       if (data.offer && data.offer.isActive) {

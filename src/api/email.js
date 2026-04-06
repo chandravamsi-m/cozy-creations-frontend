@@ -1,100 +1,55 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { apiFetch } from "../lib/api";
 
-/**
- * Sends a welcome email to a new user.
- * @param {string} email - Recipient email
- * @param {string} name - Recipient name (optional)
- */
 export async function sendWelcomeEmail(email, name) {
-  if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  
-  const url = `${BACKEND_URL}/send-welcome-email`;
-  
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, name }),
-    });
+  const res = await apiFetch("/send-welcome-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, name }),
+  });
 
-    const contentType = res.headers.get("content-type");
-    let data;
-    if (contentType && contentType.includes("application/json")) {
-      data = await res.json();
-    } else {
-      data = { message: await res.text() };
-    }
+  const contentType = res.headers.get("content-type");
+  const data = contentType && contentType.includes("application/json")
+    ? await res.json()
+    : { message: await res.text() };
 
-    if (!res.ok) {
-      return { success: false, error: data.message, status: res.status };
-    }
-
-    return { success: true, ...data };
-  } catch (err) {
-    return { success: false, error: err.message };
+  if (!res.ok) {
+    return { success: false, error: data.message || data.error, status: res.status };
   }
-}
-/**
- * Sends an order confirmation email to the user.
- * @param {string} email - Recipient email
- * @param {object} orderData - The order details
- */
-export async function sendOrderConfirmation(email, orderData) {
-  if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  const url = `${BACKEND_URL}/send-order-confirmation`;
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, orderData }),
-    });
-    return await res.json();
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+  return { success: true, ...data };
 }
 
-/**
- * Sends an order status update email to the user.
- * @param {string} email - Recipient email
- * @param {string} orderId - The ID of the order
- * @param {string} status - New status (e.g., 'shipped')
- * @param {string} name - Recipient name
- */
-export async function sendOrderStatusUpdate(email, orderId, status, name, expectedDeliveryDate) {
-  if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  const url = `${BACKEND_URL}/send-status-update`;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, orderId, status, name, expectedDeliveryDate }),
-    });
-    return await res.json();
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+export async function sendOrderConfirmation(email, orderData, idToken) {
+  const res = await apiFetch("/send-order-confirmation", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ email, orderData }),
+  });
+  return res.json();
 }
 
-/**
- * Trigger professional Password Reset email via backend
- */
+export async function sendOrderStatusUpdate(email, orderId, status, name, expectedDeliveryDate, idToken) {
+  const res = await apiFetch("/send-status-update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ email, orderId, status, name, expectedDeliveryDate }),
+  });
+  return res.json();
+}
+
 export async function sendPasswordResetEmail(email) {
-  if (!BACKEND_URL) return { success: false, error: "Backend URL missing" };
-  const url = `${BACKEND_URL}/send-password-reset`;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    return await res.json();
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+  const res = await apiFetch("/send-password-reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
 }

@@ -8,7 +8,6 @@ import { useSettings } from "../../contexts/SettingsContext";
 import ProductQuickView from "../../components/ProductQuickView";
 import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import { ShoppingBag } from "lucide-react";
