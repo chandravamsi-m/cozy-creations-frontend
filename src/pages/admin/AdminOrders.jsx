@@ -5,6 +5,7 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
+import ConfirmModal from "../../components/ConfirmModal";
 import { 
   CheckCircle, 
   RefreshCw, 
@@ -49,6 +50,14 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirm",
+    type: "default",
+    onConfirm: () => {},
+  });
 
   // Shiprocket action states
   const [creatingShipment, setCreatingShipment] = useState(null);
@@ -60,6 +69,10 @@ export default function AdminOrders() {
     }).catch(err => {
       console.error("Failed to copy:", err);
     });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
   const getLastShiprocketSyncTime = (order) => {
@@ -276,7 +289,7 @@ export default function AdminOrders() {
     }
   };
 
-  const handleCancelOrder = async (order) => {
+  const performCancelOrder = async (order) => {
     if (!idToken) { showToast("Not authenticated.", "error"); return; }
 
     const currentStatus = String(order.status || "").toLowerCase();
@@ -284,13 +297,6 @@ export default function AdminOrders() {
       showToast(`Order is already ${currentStatus}.`, "error");
       return;
     }
-
-    const confirmed = window.confirm(
-      order.shiprocket?.shipmentId
-        ? "This will mark the order as cancelled in our application. If the shipment was cancelled in Shiprocket too, this keeps the order state aligned locally. Continue?"
-        : "Mark this order as cancelled in our application?"
-    );
-    if (!confirmed) return;
 
     try {
       const result = await cancelAdminOrder(order.id, idToken);
@@ -321,6 +327,25 @@ export default function AdminOrders() {
       console.error("Cancel order error:", err);
       showToast(err.message || "Failed to cancel order", "error");
     }
+  };
+
+  const handleCancelOrder = (order) => {
+    const currentStatus = String(order.status || "").toLowerCase();
+    if (["cancelled", "delivered"].includes(currentStatus)) {
+      showToast(`Order is already ${currentStatus}.`, "error");
+      return;
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Cancel Order",
+      message: order.shiprocket?.shipmentId
+        ? "This will cancel the order in your application and also try to align the status with Shiprocket when available. Do you want to continue?"
+        : "This will cancel the order in your application. Do you want to continue?",
+      confirmText: "Cancel Order",
+      type: "danger",
+      onConfirm: () => performCancelOrder(order),
+    });
   };
 
   // ── Shiprocket: Generate Label ─────────────────────────────────────────────
@@ -614,6 +639,15 @@ export default function AdminOrders() {
           </div>
         )})}
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        type={confirmModal.type}
+      />
     </div>
   );
 }
