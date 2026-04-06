@@ -53,3 +53,15 @@ export async function cancelAdminOrder(orderId, idToken) {
   if (!res.ok) throw new Error(data.error || "Failed to cancel order");
   return data;
 }
+export async function deleteAdminOrder(orderId, idToken) {
+  const res = await fetch(apiUrl(`/admin/orders/${orderId}`), {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Failed to delete order");
+  return data;
+}

@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
 const ConfirmModal = ({
@@ -37,7 +38,7 @@ const ConfirmModal = ({
     )
   };
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
@@ -47,27 +48,27 @@ const ConfirmModal = ({
       aria-describedby="confirm-modal-description"
     >
       <div
-        className="bg-white rounded-2xl shadow-xl max-w-md w-full p-4 animate-in zoom-in slide-in-from-bottom-2 duration-300"
+        className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in zoom-in slide-in-from-bottom-2 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1">
+        <div className="flex flex-col items-center text-center">
           <div className="shrink-0">
             {iconConfig[type] || iconConfig.default}
           </div>
 
-          <div className="flex-1 text-center sm:text-left">
-            <h3 id="confirm-modal-title" className="text-lg font-bold text-gray-900 mb-1">
+          <div className="flex-1 w-full mt-2">
+            <h3 id="confirm-modal-title" className="text-xl font-bold text-gray-900 mb-2">
               {title}
             </h3>
 
-            <p id="confirm-modal-description" className="text-sm text-gray-600 mb-5 leading-relaxed">
+            <p id="confirm-modal-description" className="text-sm text-gray-600 mb-6 leading-relaxed">
               {message}
             </p>
 
-            <div className="flex flex-row gap-3 w-full sm:w-auto sm:justify-end">
+            <div className="flex flex-row gap-3 w-full">
               <button
                 onClick={onClose}
-                className="flex-1 sm:flex-none px-5 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
+                className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-bold uppercase tracking-wider hover:bg-gray-50 transition-colors"
               >
                 {cancelText}
               </button>
@@ -76,7 +77,7 @@ const ConfirmModal = ({
                   onConfirm();
                   onClose();
                 }}
-                className={`flex-1 sm:flex-none px-5 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all active:scale-95 ${typeConfig[type] || typeConfig.default}`}
+                className={`flex-1 px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 ${typeConfig[type] || typeConfig.default}`}
               >
                 {confirmText}
               </button>
@@ -86,6 +87,8 @@ const ConfirmModal = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ConfirmModal;

@@ -1,26 +1,49 @@
 // src/pages/admin/AdminOrders.jsx
 import React, { useCallback, useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { createPortal } from "react-dom";
+import { 
+  collection, 
+  getDocs, 
+  getDoc,
+  doc,
+  orderBy, 
+  query, 
+  limit, 
+  startAfter, 
+  where 
+} from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import OrderRowSkeleton from "../../components/skeletons/OrderRowSkeleton";
 import ConfirmModal from "../../components/ConfirmModal";
 import { 
-  CheckCircle, 
-  RefreshCw, 
-  Truck, 
-  Loader2, 
-  Tag, 
-  ExternalLink, 
-  Phone, 
-  ArrowRight 
+  RefreshCw as RefreshIcon,
+  Truck as TruckIcon,
+  Loader2 as LoaderIcon,
+  Tag as TagIcon,
+  Search as SearchIcon,
+  ChevronRight as RightIcon,
+  Calendar as CalendarIcon,
+  CreditCard as CardIcon,
+  Package as PackageIcon,
+  X as CloseIcon,
+  Copy as CopyIcon,
+  Flame as FlameIcon,
+  User as UserIcon,
+  ShoppingBag as BagIcon,
+  MapPin as MapIcon,
+  ArrowUpRight as ActionIcon,
+  Trash2 as TrashIcon,
+  ShieldCheck as ShieldIcon,
+  Banknote as CashIcon
 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
-import { cancelAdminOrder } from "../../api/adminOrders";
-import { formatShiprocketStatus, getOrderStatusConfig, shouldShowShiprocketStatus } from "../../utils/orderStatus";
+import { cancelAdminOrder, deleteAdminOrder } from "../../api/adminOrders";
+import { getOrderStatusConfig } from "../../utils/orderStatus";
 import { getOrderAmountBreakdown } from "../../utils/orderAmounts";
 
+// --- HELPERS ---
 function parseOrderTimestamp(ts) {
   if (!ts) return null;
   if (typeof ts?.toDate === "function") return ts.toDate();
@@ -33,23 +56,36 @@ function parseOrderTimestamp(ts) {
   return null;
 }
 
-function getOrderTimeValue(value) {
-  if (!value) return 0;
-  if (typeof value?.getTime === "function") return value.getTime();
-  const parsed = parseOrderTimestamp(value);
-  return parsed?.getTime() || 0;
-}
+const ORDER_LIMIT = 15;
 
-const AUTO_SYNC_THRESHOLD_MS = 60 * 60 * 1000;
-const AUTO_SYNC_LIMIT = 5;
-
+const STATUS_TABS = [
+  { id: "all", label: "All Orders", status: null },
+  { id: "pending", label: "Pending", status: "pending" },
+  { id: "confirmed", label: "Confirmed", status: "confirmed" },
+  { id: "packed", label: "Packed", status: "packed" },
+  { id: "shipped", label: "Shipped", status: "shipped" },
+  { id: "delivered", label: "Delivered", status: "delivered" },
+  { id: "cancelled", label: "Cancelled", status: "cancelled" },
+];
 
 export default function AdminOrders() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
+  
+  // -- State --
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchId, setSearchId] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const [creatingShipment, setCreatingShipment] = useState(null);
+  const [generatingLabel, setGeneratingLabel] = useState(null);
+  const [syncingOrderId, setSyncingOrderId] = useState(null);
+  
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -59,148 +95,101 @@ export default function AdminOrders() {
     onConfirm: () => {},
   });
 
-  // Shiprocket action states
-  const [creatingShipment, setCreatingShipment] = useState(null);
-  const [generatingLabel, setGeneratingLabel] = useState(null);
-
   const copyToClipboard = (text) => {
+    if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
       showToast("Copied to clipboard!");
-    }).catch(err => {
-      console.error("Failed to copy:", err);
+    }).catch(() => {
+      showToast("Copy failed", "error");
     });
   };
 
-  const closeConfirm = () => {
-    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-  };
+  const closeConfirm = () => setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
-  const getLastShiprocketSyncTime = (order) => {
-    const value = order?.shiprocket?.lastUpdate || order?.shiprocket?.lastSyncAttempt || null;
-    if (!value) return 0;
-    const parsed = new Date(value).getTime();
-    return Number.isNaN(parsed) ? 0 : parsed;
-  };
+  // -- Data Fetching --
+  const fetchOrders = useCallback(async (isLoadMore = false, statusId = "all", search = "") => {
+    const term = search?.trim() || "";
+    if (term) {
+      setLoading(true);
+      try {
+        const docRef = doc(db, "orders", term);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setOrders([{
+            id: docSnap.id,
+            ...data,
+            createdAt: parseOrderTimestamp(data.createdAt || data.updatedAt),
+          }]);
+          setHasMore(false);
+        } else {
+          setOrders([]);
+          showToast("Order not found.", "error");
+        }
+      } catch (err) {
+        showToast("Error searching for order", "error");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
-  const formatShiprocketDateTime = (value) => {
-    if (!value) return "—";
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return "—";
-    return parsed.toLocaleString();
-  };
-
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
 
     try {
-      const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+      const ordersRef = collection(db, "orders");
+      let q;
+      const statusFilter = STATUS_TABS.find(t => t.id === statusId)?.status;
+      if (statusFilter) {
+        q = query(ordersRef, where("status", "==", statusFilter), orderBy("createdAt", "desc"), limit(ORDER_LIMIT));
+      } else {
+        q = query(ordersRef, orderBy("createdAt", "desc"), limit(ORDER_LIMIT));
+      }
+      if (isLoadMore && lastDoc) {
+        q = query(q, startAfter(lastDoc));
+      }
       const snap = await getDocs(q);
-      const list = snap.docs.map((d) => {
+      const list = snap.docs.map(d => {
         const data = d.data();
         return {
-          id: d.id,
-          ...data,
-          createdAt: parseOrderTimestamp(data.createdAt),
-          updatedAt: parseOrderTimestamp(data.updatedAt),
+          id: d.id, ...data,
+          createdAt: parseOrderTimestamp(data.createdAt || data.updatedAt),
         };
       });
-      setOrders(list);
-      return list;
+      if (isLoadMore) setOrders(prev => [...prev, ...list]);
+      else setOrders(list);
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMore(snap.docs.length === ORDER_LIMIT);
     } catch (err) {
-      console.error("Error loading orders:", err);
-      showToast("Failed to load orders", "error");
+      if (err.code === "failed-precondition") {
+        showToast("Index required. Check console.", "error");
+        console.error("Firestore Index Required: " + err.message);
+      } else {
+        showToast("Failed to load orders", "error");
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [showToast]);
+  }, [showToast, lastDoc]);
 
-  const silentAdminSync = useCallback(async (ordersList) => {
-    if (!idToken) return;
-    const now = Date.now();
+  useEffect(() => { if (!searchId) fetchOrders(false, activeTab); }, [activeTab]);
 
-    const staleOrders = ordersList
-      .filter((o) => {
-        if (!o.shiprocket?.shipmentId && !o.shiprocket?.orderId) return false;
-        if (["delivered", "cancelled"].includes(o.status?.toLowerCase())) return false;
-        return now - getLastShiprocketSyncTime(o) > AUTO_SYNC_THRESHOLD_MS;
-      })
-      .sort((a, b) => getOrderTimeValue(b.createdAt) - getOrderTimeValue(a.createdAt))
-      .slice(0, AUTO_SYNC_LIMIT);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setLastDoc(null);
+    fetchOrders(false, activeTab, searchId);
+  };
 
-    if (staleOrders.length === 0) return;
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchId("");
+    setLastDoc(null);
+  };
 
-    const chunks = [];
-    for (let i = 0; i < staleOrders.length; i += 5) {
-      chunks.push(staleOrders.slice(i, i + 5));
-    }
-
-    for (const chunk of chunks) {
-      await Promise.all(
-        chunk.map(async (order) => {
-          try {
-            const res = await apiFetch(`/admin/orders/${order.id}/sync`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${idToken}` },
-            });
-            const data = await res.json();
-            if (data?.success) {
-              setOrders((prev) =>
-                prev.map((o) => {
-                  if (o.id !== order.id) return o;
-                  return {
-                    ...o,
-                    ...(data.localStatus ? { status: data.localStatus } : {}),
-                    shiprocket: {
-                      ...o.shiprocket,
-                      ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
-                      ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
-                      ...(data.courierName ? { courierName: data.courierName } : {}),
-                      ...(data.awbCode ? { awbCode: data.awbCode } : {}),
-                      ...(data.srStatus ? { status: data.srStatus } : {}),
-                      ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
-                      ...(data.srStatus ? { lastUpdate: data.lastSyncAttempt || new Date().toISOString() } : {}),
-                    },
-                  };
-                })
-              );
-            } else if (data?.cleaned || data?.lastSyncAttempt) {
-              setOrders((prev) =>
-                prev.map((o) => {
-                  if (o.id !== order.id) return o;
-                  return {
-                    ...o,
-                    status: data.localStatus || o.status,
-                    shiprocket: {
-                      ...o.shiprocket,
-                      ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
-                      ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
-                      ...(data.courierName ? { courierName: data.courierName } : {}),
-                      awbCode: null,
-                      status: null,
-                      ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
-                    },
-                  };
-                })
-              );
-            }
-          } catch {
-            // Silent — never disrupt the admin view
-          }
-        })
-      );
-    }
-  }, [idToken]);
-
-  useEffect(() => {
-    loadOrders().then((list) => {
-      if (list) silentAdminSync(list);
-    });
-  }, [loadOrders, silentAdminSync]);
-
-
-  // ── Shiprocket: Create Shipment ────────────────────────────────────────────
   const handleCreateShipment = async (order) => {
-    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+    if (!idToken) return;
     setCreatingShipment(order.id);
     try {
       const res = await apiFetch("/orders/create-shipment", {
@@ -209,445 +198,391 @@ export default function AdminOrders() {
         body: JSON.stringify({ orderId: order.id }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create shipment");
-
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === order.id
-            ? { ...o, status: "packed", shiprocket: data.shiprocket }
-            : o
-        )
-      );
-      showToast(`Shipment created! AWB: ${data.shiprocket?.awbCode || "Pending"}`);
-    } catch (err) {
-      console.error("Create shipment error:", err);
-      showToast(err.message || "Failed to create shipment", "error");
-    } finally {
-      setCreatingShipment(null);
-    }
+      if (!res.ok) throw new Error(data.error || "Shipment failed");
+      const updatedOrder = { ...order, status: "packed", shiprocket: data.shiprocket };
+      setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+      if (selectedOrder?.id === order.id) setSelectedOrder(updatedOrder);
+      showToast("Shipment created successfully");
+    } catch (err) { showToast(err.message, "error"); } finally { setCreatingShipment(null); }
   };
 
-  const handleSyncStatus = async (orderId) => {
-    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+  const handleSyncStatus = async (order) => {
+    if (!idToken) return;
+    setSyncingOrderId(order.id);
     try {
-      const res = await apiFetch(`/admin/orders/${orderId}/sync`, {
+      const res = await apiFetch(`/admin/orders/${order.id}/sync`, {
         method: "POST",
         headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await res.json();
-      if (!res.ok) {
-        if (data?.cleaned || data?.lastSyncAttempt) {
-          setOrders((prev) =>
-            prev.map((o) =>
-              o.id === orderId
-                ? {
-                    ...o,
-                    status: data.localStatus || o.status,
-                    shiprocket: {
-                      ...o.shiprocket,
-                      ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
-                      ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
-                      ...(data.courierName ? { courierName: data.courierName } : {}),
-                      awbCode: null,
-                      status: null,
-                      ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
-                    },
-                  }
-                : o
-            )
-          );
-        }
-        throw new Error(data.error || "Sync failed");
-      }
-
       if (data.success) {
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId
-              ? {
-                  ...o,
-                  status: data.localStatus,
-                  shiprocket: {
-                    ...o.shiprocket,
-                    ...(data.shipmentId ? { shipmentId: data.shipmentId } : {}),
-                    ...(data.shiprocketOrderId ? { orderId: data.shiprocketOrderId } : {}),
-                    ...(data.courierName ? { courierName: data.courierName } : {}),
-                    ...(data.awbCode ? { awbCode: data.awbCode } : {}),
-                    ...(data.srStatus ? { status: data.srStatus } : {}),
-                    ...(data.lastSyncAttempt ? { lastSyncAttempt: data.lastSyncAttempt } : {}),
-                    ...(data.srStatus ? { lastUpdate: data.lastSyncAttempt || new Date().toISOString() } : {}),
-                  }
-                }
-              : o
-          )
-        );
-        showToast(`Status synced: ${data.srStatus}`);
+        const updatedOrder = {
+          ...order, status: data.localStatus,
+          shiprocket: { ...order.shiprocket, ...data }
+        };
+        setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+        if (selectedOrder?.id === order.id) setSelectedOrder(updatedOrder);
+        showToast("Status synced");
       }
-    } catch (err) {
-      console.error("Sync error:", err);
-      showToast(err.message || "Failed to sync status", "error");
-    }
+    } catch (err) { showToast("Sync failed", "error"); } finally { setSyncingOrderId(null); }
   };
 
   const performCancelOrder = async (order) => {
-    if (!idToken) { showToast("Not authenticated.", "error"); return; }
-
-    const currentStatus = String(order.status || "").toLowerCase();
-    if (["cancelled", "delivered"].includes(currentStatus)) {
-      showToast(`Order is already ${currentStatus}.`, "error");
-      return;
-    }
-
+    if (!idToken) return;
     try {
-      const result = await cancelAdminOrder(order.id, idToken);
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === order.id
-            ? {
-                ...o,
-                status: "cancelled",
-                shiprocket: {
-                  ...o.shiprocket,
-                  ...(result.cancelledInShiprocket ? { status: "CANCELLED" } : {}),
-                  lastUpdate: new Date().toISOString(),
-                  lastSyncAttempt: new Date().toISOString(),
-                },
-              }
-            : o
-        )
-      );
-      if (result.cancelledInShiprocket) {
-        showToast("Order cancelled in Shiprocket and our application");
-      } else if (result.shiprocketAttempted) {
-        showToast("Order cancelled locally. Shiprocket cancellation did not complete.", "error");
-      } else {
-        showToast("Order cancelled in our application");
-      }
+      await cancelAdminOrder(order.id, idToken);
+      const updatedOrder = { ...order, status: "cancelled" };
+      setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+      if (selectedOrder?.id === order.id) setSelectedOrder(updatedOrder);
+      showToast("Order cancelled");
+    } catch (err) { showToast("Cancel failed", "error"); }
+  };
+
+  const performDeleteOrder = async (order) => {
+    if (!idToken) return;
+    try {
+      await deleteAdminOrder(order.id, idToken);
+      setOrders(prev => prev.filter(o => o.id !== order.id));
+      setSelectedOrder(null);
+      showToast("Order deleted permanently");
     } catch (err) {
-      console.error("Cancel order error:", err);
-      showToast(err.message || "Failed to cancel order", "error");
+      showToast(err.message || "Failed to delete order", "error");
     }
   };
 
   const handleCancelOrder = (order) => {
-    const currentStatus = String(order.status || "").toLowerCase();
-    if (["cancelled", "delivered"].includes(currentStatus)) {
-      showToast(`Order is already ${currentStatus}.`, "error");
-      return;
-    }
-
     setConfirmModal({
       isOpen: true,
       title: "Cancel Order",
-      message: order.shiprocket?.shipmentId
-        ? "This will cancel the order in your application and also try to align the status with Shiprocket when available. Do you want to continue?"
-        : "This will cancel the order in your application. Do you want to continue?",
+      message: "Are you sure you want to cancel this order? This action will block fulfillment.",
       confirmText: "Cancel Order",
       type: "danger",
       onConfirm: () => performCancelOrder(order),
     });
   };
 
-  // ── Shiprocket: Generate Label ─────────────────────────────────────────────
+  const handleDeleteOrder = (order) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Order Permanently",
+      message: "WARNING: This will permanently remove the order from the database. This action cannot be undone. Proceed?",
+      confirmText: "Delete Permanently",
+      type: "danger",
+      onConfirm: () => performDeleteOrder(order),
+    });
+  };
+
   const handleGenerateLabel = async (order) => {
-    if (!idToken) { showToast("Not authenticated.", "error"); return; }
+    if (!idToken) return;
     setGeneratingLabel(order.id);
     try {
-      const res = await apiFetch(`/orders/generate-label/${order.id}`, {
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
+      const res = await apiFetch(`/orders/generate-label/${order.id}`, { headers: { Authorization: `Bearer ${idToken}` } });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Label generation failed");
-
-      if (data.labelUrl) {
-        window.open(data.labelUrl, "_blank");
-        showToast("Label opened in new tab");
-      } else {
-        showToast("Label URL not available yet. Try again shortly.", "error");
-      }
-    } catch (err) {
-      console.error("Label error:", err);
-      showToast(err.message || "Failed to generate label", "error");
-    } finally {
-      setGeneratingLabel(null);
-    }
+      if (data.labelUrl) window.open(data.labelUrl, "_blank");
+    } catch (err) { showToast("Label error", "error"); } finally { setGeneratingLabel(null); }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">All Orders</h2>
-
-      {loading && (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <OrderRowSkeleton key={i} />
-          ))}
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-end gap-2">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Orders</h2>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">Control Panel</p>
         </div>
-      )}
-      {!loading && orders.length === 0 && <p>No orders found.</p>}
-
-      <div className="space-y-4">
-        {orders.map((order) => {
-          const statusLower = String(order.status || "").toLowerCase();
-          const isTerminalOrder = ["cancelled", "delivered"].includes(statusLower);
-          const hasShiprocketIdentity = !!(order.shiprocket?.shipmentId || order.shiprocket?.orderId);
-          const { subtotal, discountTotal, shippingFee, platformFee } = getOrderAmountBreakdown(order);
-
-          return (
-          <div key={order.id} className="border rounded-lg p-4 shadow-sm bg-white">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-              <p className="font-semibold text-gray-800">Order #{order.id}</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getOrderStatusConfig(order.status).color}`}>
-                  {getOrderStatusConfig(order.status).label.toLowerCase()}
-                </span>
-                {shouldShowShiprocketStatus(order.status, order.shiprocket?.status) && (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-violet-50 text-violet-700 border border-violet-100">
-                    {formatShiprocketStatus(order.shiprocket.status)}
-                  </span>
-                )}
-                {/* Shiprocket AWB badge */}
-                {order.shiprocket?.awbCode && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); copyToClipboard(order.shiprocket.awbCode); }}
-                      className="px-2 py-1 rounded text-xs font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 border border-violet-200 flex items-center gap-1 transition-colors"
-                      title="Click to copy AWB"
-                    >
-                      <Truck className="w-3 h-3" /> AWB: {order.shiprocket.awbCode}
-                    </button>
-                )}
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-600">
-              Created:{" "}{order.createdAt ? order.createdAt.toLocaleString() : "N/A"}
-            </p>
-
-            <div className="text-sm text-gray-600 flex items-center gap-2 mt-1 flex-wrap">
-              <span>Total Amount: <span className="font-bold text-gray-900">₹{order.total}</span></span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${order.paymentMethod === 'cod'
-                ? 'bg-orange-100 text-orange-700 border-orange-200'
-                : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-                }`}>
-                {order.paymentMethod || "online"}
-              </span>
-              {(order.shiprocket?.courierName || order.courierName) && (
-                <span className="text-[10px] font-bold text-violet-600 px-2 py-0.5 rounded-full bg-violet-50">
-                  via {order.shiprocket?.courierName || order.courierName}
-                </span>
-              )}
-            </div>
-
-
-            <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
-              <button
-                onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
-                className="px-3 py-2 bg-black text-white rounded w-full sm:w-auto text-sm hover:bg-gray-800 transition-colors"
-              >
-                {expandedId === order.id ? "Hide Details" : "View Details"}
-              </button>
-
-              {/* Shiprocket: Create Shipment – show if no shipment yet and order is confirmed/packed */}
-              {!["cancelled", "delivered"].includes(String(order.status || "").toLowerCase()) && (
-                <button
-                  onClick={() => handleCancelOrder(order)}
-                  className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded w-full sm:w-auto text-sm font-bold border border-red-100 transition-colors"
-                >
-                  Cancel Order
-                </button>
-              )}
-
-              {!order.shiprocket?.shipmentId && !order.shiprocket?.orderId && ["confirmed", "packed", "pending"].includes(order.status) && (
-                  <button
-                    onClick={() => handleCreateShipment(order)}
-                    disabled={creatingShipment === order.id}
-                    className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded w-full sm:w-auto text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                  >
-                    {creatingShipment === order.id ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
-                    ) : (
-                      <><Truck className="w-4 h-4" /> Create Shipment</>
-                    )}
-                  </button>
-              )}
-
-              {/* Shiprocket: Print Label – show once shipment exists */}
-              {!isTerminalOrder && hasShiprocketIdentity && (
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => handleSyncStatus(order.id)}
-                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded flex-1 sm:flex-none text-[10px] font-black uppercase tracking-wider transition-all border border-blue-100 flex items-center justify-center gap-1"
-                    title="Sync with Shiprocket"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Sync
-                  </button>
-                  {order.shiprocket.awbCode && (
-                    <button
-                      onClick={() => handleGenerateLabel(order)}
-                      disabled={generatingLabel === order.id}
-                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded flex-1 sm:flex-none text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-                    >
-                      {generatingLabel === order.id ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                      ) : (
-                        <><Tag className="w-4 h-4" /> Print Label</>
-                      )}
-                    </button>
-                  )}
-                  {order.shiprocket.awbCode && (
-                    <a
-                      href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 rounded flex-1 sm:flex-none text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      <ExternalLink className="w-4 h-4" /> Live Track
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {expandedId === order.id && (
-              <div className="mt-3 border-t border-gray-100 pt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 bg-gray-50/60 rounded-xl p-3">
-
-                {/* ── LEFT: Address + Shiprocket ── */}
-                <div className="space-y-3">
-
-                  {/* Ship-to */}
-                  {order.shippingAddress && (
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Ship To</p>
-                      <div className="bg-white rounded-lg border border-gray-100 px-3 py-2 text-[12px] text-gray-700 space-y-0.5">
-                        <p className="font-bold text-gray-900">{order.shippingAddress.fullName}</p>
-                        <p>{order.shippingAddress.street}</p>
-                        <p>{order.shippingAddress.city}, {order.shippingAddress.state} — {order.shippingAddress.pincode}</p>
-                        <p className="text-gray-400 pt-0.5 flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> {order.shippingAddress.phone}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Shiprocket */}
-                  {order.shiprocket && (
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                        <Truck className="w-3 h-3" /> Shiprocket
-                      </p>
-                      <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2 text-[12px] space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-gray-400 font-medium">Status</span>
-                          <span className="font-bold text-violet-700 capitalize">{order.shiprocket.status || "—"}</span>
-                        </div>
-                        {(order.shiprocket?.courierName || order.courierName) && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-400 font-medium">Courier</span>
-                            <span className="font-bold text-gray-800">{order.shiprocket?.courierName || order.courierName}</span>
-                          </div>
-                        )}
-                        {order.shiprocket?.orderId && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-400 font-medium">Shiprocket Order ID</span>
-                            <span className="font-bold text-gray-800">{order.shiprocket.orderId}</span>
-                          </div>
-                        )}
-                        {order.shiprocket?.shipmentId && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-400 font-medium">Shipment ID</span>
-                            <span className="font-bold text-gray-800">{order.shiprocket.shipmentId}</span>
-                          </div>
-                        )}
-                        {order.shiprocket.awbCode && (
-                          <div className="flex justify-between items-center pt-0.5">
-                            <span className="text-gray-400 font-medium">AWB</span>
-                            <a
-                              href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
-                              target="_blank" rel="noopener noreferrer"
-                              className="font-bold text-violet-600 hover:underline text-[11px]"
-                            >
-                              {order.shiprocket.awbCode} <ArrowRight className="w-3 h-3" />
-                            </a>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-gray-400 font-medium">Last Sync</span>
-                          <span className="font-bold text-gray-800">
-                            {formatShiprocketDateTime(order.shiprocket?.lastUpdate || order.shiprocket?.lastSyncAttempt)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── RIGHT: Items + Price Breakdown ── */}
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Order Items</p>
-                  <div className="bg-white rounded-lg border border-gray-100 overflow-hidden text-[12px]">
-                    {/* Table header */}
-                    <div className="grid grid-cols-[1fr_auto_auto_auto] text-[9px] font-black text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100 px-3 py-1.5 gap-4">
-                      <span>Product</span>
-                      <span className="text-center">Qty</span>
-                      <span className="text-right">Unit</span>
-                      <span className="text-right">Total</span>
-                    </div>
-                    {/* Rows */}
-                    {(order.items || []).map((item, idx) => (
-                      <div key={item.productId || idx}
-                        className="grid grid-cols-[1fr_auto_auto_auto] items-center px-3 py-2 gap-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                        <span className="font-semibold text-gray-900 truncate">{item.name}</span>
-                        <span className="text-center text-gray-500 font-medium">×{item.quantity}</span>
-                        <span className="text-right text-gray-500">₹{item.price}</span>
-                        <span className="text-right font-bold text-gray-900">₹{item.price * item.quantity}</span>
-                      </div>
-                    ))}
-                    {/* Summary strip */}
-                    <div className="bg-gray-50 border-t border-gray-100 px-3 py-2 space-y-1">
-                      <div className="flex justify-between text-gray-400">
-                        <span>Subtotal</span>
-                        <span className="font-medium text-gray-600">Rs {subtotal}</span>
-                      </div>
-                      {discountTotal > 0 && (
-                        <div className="flex justify-between text-gray-400">
-                          <span className="text-green-600">Discount</span>
-                          <span className="font-medium text-green-600">-Rs {discountTotal}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-gray-400">
-                        <span>Shipping Fee</span>
-                        <span className={`font-medium ${shippingFee > 0 ? "text-gray-600" : "text-green-600"}`}>
-                          {shippingFee > 0 ? `Rs ${shippingFee}` : "Free"}
-                        </span>
-                      </div>
-                      {platformFee > 0 && (
-                        <div className="flex justify-between text-gray-400">
-                          <span>Platform Fee</span>
-                          <span className="font-medium text-gray-600">Rs {platformFee}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-gray-900 font-black border-t border-gray-200 pt-1 text-[13px]">
-                        <span>Total</span>
-                        <span>₹{order.total}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            )}
-          </div>
-        )})}
+        <form onSubmit={handleSearch} className="flex-1 max-w-sm relative">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" placeholder="Search Full Order ID..." value={searchId} onChange={(e) => setSearchId(e.target.value)} className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
+        </form>
       </div>
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={closeConfirm}
-        onConfirm={confirmModal.onConfirm}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        confirmText={confirmModal.confirmText}
-        type={confirmModal.type}
-      />
+
+      <div className="flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
+        {STATUS_TABS.map((tab) => (
+          <button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${activeTab === tab.id ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-100 hover:text-gray-900 hover:border-gray-300"}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white border rounded-xl shadow-sm overflow-hidden min-h-[400px]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50/50 border-b">
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Order ID</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Placed At</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Amount</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Carrier</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {loading ? Array.from({ length: 6 }).map((_, i) => <OrderRowSkeleton key={i} />) : orders.length === 0 ? <tr><td colSpan={6} className="py-20 text-center text-gray-400 text-xs font-bold uppercase tracking-widest">No matching records</td></tr> : orders.map((order) => {
+                const statusCfg = getOrderStatusConfig(order.status);
+                return (
+                  <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-gray-50/80 transition-colors cursor-pointer group">
+                    <td className="px-6 py-5 font-mono text-[11px] text-gray-900 font-bold tracking-tighter uppercase">{order.id.slice(0, 10)}...</td>
+                    <td className="px-6 py-5 text-xs text-gray-500">{order.createdAt ? order.createdAt.toLocaleDateString() : "—"}</td>
+                    <td className="px-6 py-5 text-xs font-black text-gray-900">₹{order.total}</td>
+                    <td className="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-tight">{order.shiprocket?.courierName || order.courierName || "—"}</td>
+                    <td className="px-6 py-5"><span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase border shadow-sm ${statusCfg.color}`}>{statusCfg.label}</span></td>
+                    <td className="px-6 py-5 text-right"><RightIcon className="w-4 h-4 text-gray-200 group-hover:text-gray-900 transition-colors" /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {hasMore && !loading && (
+          <div className="p-4 flex justify-center border-t bg-gray-50/10">
+            <button onClick={() => fetchOrders(true, activeTab)} disabled={loadingMore} className="px-8 py-2.5 bg-black text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg hover:shadow-black/20 active:scale-95 disabled:opacity-50 transition-all">{loadingMore ? <LoaderIcon className="w-3 h-3 animate-spin"/> : "Fetch more results"}</button>
+          </div>
+        )}
+      </div>
+
+      <OrderSidePanel order={selectedOrder} onClose={() => setSelectedOrder(null)} actions={{ handleCreateShipment, handleSyncStatus, handleCancelOrder, handleDeleteOrder, handleGenerateLabel, copyToClipboard }} loadingStates={{ creatingShipment, generatingLabel, syncingOrderId }} />
+      <ConfirmModal isOpen={confirmModal.isOpen} onClose={closeConfirm} onConfirm={confirmModal.onConfirm} title={confirmModal.title} message={confirmModal.message} confirmText={confirmModal.confirmText} type={confirmModal.type} />
     </div>
   );
+}
+
+// --- POLISHED UX SUB-COMPONENTS ---
+function OrderSidePanel({ order, onClose, actions, loadingStates }) {
+  if (!order) return null;
+  const { subtotal, discountTotal, shippingFee: calculatedShipping, platformFee } = getOrderAmountBreakdown(order);
+  const shippingFee = calculatedShipping || Number(order.deliveryFee || 0);
+  const statusCfg = getOrderStatusConfig(order.status);
+  const hasShiprocket = !!(order.shiprocket?.shipmentId || order.shiprocket?.orderId);
+  const isTerminal = ["cancelled", "delivered"].includes(String(order.status || "").toLowerCase());
+  const itemCount = (order.items || []).reduce((acc, item) => acc + (item.quantity || 0), 0);
+
+  const panelContent = (
+    <div className="fixed inset-0 z-[100] flex justify-end font-sans">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[4px]" onClick={onClose} />
+      
+      <div className="relative h-screen w-full max-w-[420px] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 border-l border-gray-100 h-full top-0">
+        
+        {/* REFINED HEADER: Integrated ID, Status & Actions */}
+        <div className="p-6 border-b border-gray-100">
+           <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-4">
+                 <h3 className="font-bold text-gray-900 text-xl tracking-tight">Order Details</h3>
+                 <span className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase border shadow-sm ${statusCfg.color}`}>
+                    {statusCfg.label}
+                 </span>
+              </div>
+              <button onClick={onClose} className="p-2 -mr-2 hover:bg-gray-100 rounded-full text-gray-400 transition-all active:scale-95">
+                 <CloseIcon className="w-5 h-5" />
+              </button>
+           </div>
+           
+           <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                 <p className="text-[13px] font-mono font-bold text-gray-500 tracking-tighter truncate max-w-[200px]">{order.id}</p>
+                 <button onClick={() => actions.copyToClipboard(order.id)} className="p-1 hover:bg-gray-50 rounded text-gray-500 hover:text-gray-900 transition-colors">
+                    <CopyIcon className="w-3 h-3" />
+                 </button>
+              </div>
+              <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    {order.createdAt ? order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + order.createdAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : "—"}
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+          {/* REFINED SUMMARY STRIP: High-Impact Metric Cards */}
+          <div className="grid grid-cols-3 gap-2.5">
+             <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-blue-500 rounded-xl p-3 text-left">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                <div className="flex items-center gap-1 text-slate-900 font-bold">
+                   <span className="text-[10px]">₹</span>
+                   <span className="text-sm tracking-tighter">{order.total}</span>
+                </div>
+             </div>
+             <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-emerald-500 rounded-xl p-3 text-left">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p>
+                <div className="flex items-center gap-1 text-slate-900 font-bold">
+                   <PackageIcon className="w-3 h-3 text-emerald-500" />
+                   <span className="text-sm tracking-tighter">{itemCount}</span>
+                </div>
+             </div>
+             <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-violet-500 rounded-xl p-3 text-left">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Method</p>
+                <div className="flex items-center gap-1 text-slate-900 font-bold">
+                   <CashIcon className="w-3 h-3 text-violet-500" />
+                   <span className="text-[9px] uppercase tracking-tighter truncate">{order.paymentMethod || "Online"}</span>
+                </div>
+             </div>
+          </div>
+
+          {/* FULFILLMENT HIGHLIGHT - REFINED COLORS */}
+          {!hasShiprocket && !isTerminal && (
+             <div className="bg-blue-50 text-blue-600 p-5 rounded-xl shadow-lg border border-blue-100 animate-in fade-in slide-in-from-top-2 duration-500">
+                <div className="flex items-center justify-between mb-4">
+                   <div className="space-y-0.5">
+                      <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">Next Step</h5>
+                      <p className="font-bold text-sm">Initialize Shipment</p>
+                   </div>
+                   <TruckIcon className="w-6 h-6 text-blue-400" />
+                </div>
+                <button 
+                   onClick={() => actions.handleCreateShipment(order)}
+                   disabled={loadingStates.creatingShipment === order.id}
+                   className="w-full py-3 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                >
+                   {loadingStates.creatingShipment === order.id ? <LoaderIcon className="w-3.5 h-3.5 animate-spin"/> : <ActionIcon className="w-3.5 h-3.5"/>}
+                   Create Shipment
+                </button>
+             </div>
+          )}
+
+          {/* LOGISTICS NODE */}
+          {hasShiprocket && !isTerminal && (
+             <div className="space-y-3">
+                <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                   <TruckIcon className="w-3.5 h-3.5 text-blue-600" /> Dispatch Control
+                </h5>
+                <div className="bg-white border rounded-xl p-4 shadow-sm space-y-4">
+                   <div className="grid grid-cols-2 gap-4">
+                      <div>
+                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Carrier Service</p>
+                         <div className="bg-violet-600 px-3 py-1 rounded-md shadow-[0_4px_12px_rgba(124,58,237,0.3)] inline-block">
+                            <p className="text-[10px] font-black text-white uppercase tracking-wider">{order.shiprocket?.courierName || "Processing..."}</p>
+                         </div>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">AWB Code</p>
+                         <p className="text-xs font-mono font-bold text-blue-600">{order.shiprocket?.awbCode || "Pending"}</p>
+                      </div>
+                   </div>
+                   <div className="flex gap-2 pt-1">
+                       <button onClick={() => actions.handleSyncStatus(order)} disabled={loadingStates.syncingOrderId === order.id} className="flex-1 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
+                          {loadingStates.syncingOrderId === order.id ? <LoaderIcon className="w-3 h-3 animate-spin"/> : <RefreshIcon className="w-3 h-3"/>}
+                          Sync Status
+                       </button>
+                       {order.shiprocket?.awbCode && (
+                          <button onClick={() => actions.handleGenerateLabel(order)} disabled={loadingStates.generatingLabel === order.id} className="flex-1 py-2.5 bg-green-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-800 transition-colors flex items-center justify-center gap-2">
+                             {loadingStates.generatingLabel === order.id ? <LoaderIcon className="w-3 h-3 animate-spin"/> : <TagIcon className="w-3 h-3"/>}
+                             Print Label
+                          </button>
+                       )}
+                   </div>
+                </div>
+             </div>
+          )}
+
+          {/* SHIPPING DESTINATION */}
+          <div className="space-y-3">
+             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                <MapIcon className="w-3.5 h-3.5 text-rose-500" /> Customer Details
+             </h5>
+             <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4">
+                   <div>
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">Customer Name</p>
+                      <p className="text-sm font-bold text-gray-900 uppercase tracking-tight">{order.shippingAddress?.fullName || order.customerName}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">Phone Number</p>
+                      <div className="flex items-center gap-2 justify-end">
+                         <a href={`tel:${order.shippingAddress?.phone}`} className="text-blue-600 font-bold text-sm hover:underline">{order.shippingAddress?.phone}</a>
+                         <button onClick={() => actions.copyToClipboard(order.shippingAddress?.phone)} className="p-1 hover:bg-gray-50 rounded text-gray-200 hover:text-gray-600 transition-colors"><CopyIcon className="w-3.5 h-3.5" /></button>
+                      </div>
+                   </div>
+                </div>
+                <div className="pt-4 border-t border-gray-50">
+                   <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Shipping Address</span>
+                      <button onClick={() => actions.copyToClipboard(`${order.shippingAddress?.street}, ${order.shippingAddress?.city}, ${order.shippingAddress?.state} - ${order.shippingAddress?.pincode}`)} className="text-[8px] font-black text-gray-400 hover:text-black uppercase flex items-center gap-1 transition-colors bg-gray-50 px-2 py-0.5 rounded">
+                         <CopyIcon className="w-2.5 h-2.5"/> Copy
+                      </button>
+                   </div>
+                   <div className="text-[12px] text-gray-600 font-bold leading-relaxed">
+                      <p>{order.shippingAddress?.street}</p>
+                      <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} — {order.shippingAddress?.pincode}</p>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          {/* CART SUMMARY */}
+          <div className="space-y-3">
+             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                <BagIcon className="w-3.5 h-3.5 text-orange-500" /> Cart Breakdown
+             </h5>
+             <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                <div className="divide-y divide-gray-50">
+                   {(order.items || []).map((item, i) => (
+                     <div key={i} className="flex gap-4 items-center p-4 hover:bg-gray-50/50 transition-colors">
+                        <div className="w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
+                           {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-gray-50"><FlameIcon className="w-6 h-6 text-gray-200" /></div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                           <p className="text-[11px] font-bold text-gray-900 truncate uppercase tracking-tight">{item.name}</p>
+                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">{item.quantity} × ₹{item.price}</p>
+                        </div>
+                        <div className="text-right text-[11px] font-black text-gray-900">₹{item.price * item.quantity}</div>
+                     </div>
+                   ))}
+                </div>
+                
+                {/* BILLING SUMMARY with updated labels */}
+                <div className="bg-gray-50 p-5 space-y-3 border-t border-gray-100">
+                   <div className="flex justify-between text-[11px] font-bold text-gray-500">
+                      <span className="uppercase tracking-widest">Subtotal</span>
+                      <span className="text-gray-900 tracking-tighter font-black">₹{subtotal}</span>
+                   </div>
+                   {discountTotal > 0 && (
+                      <div className="flex justify-between text-[11px] font-bold text-emerald-600">
+                         <span className="uppercase tracking-widest flex items-center gap-1"><TagIcon className="w-3 h-3" /> Discount</span>
+                         <span className="font-black tracking-tighter">-₹{discountTotal}</span>
+                      </div>
+                   )}
+                   <div className="flex justify-between text-[11px] font-bold text-gray-500">
+                      <span className="uppercase tracking-widest">Shipping Fee</span>
+                      <span className="text-gray-900 tracking-tighter font-black">{shippingFee > 0 ? `₹${shippingFee}` : "FREE"}</span>
+                   </div>
+                   {platformFee > 0 && (
+                      <div className="flex justify-between text-[11px] font-bold text-gray-500">
+                         <span className="uppercase tracking-widest">Platform Fee</span>
+                         <span className="text-gray-900 tracking-tighter font-black">₹{platformFee}</span>
+                      </div>
+                   )}
+                   <div className="flex justify-between font-black text-[13px] pt-4 border-t border-gray-200 mt-2 text-gray-900 uppercase tracking-[0.1em]">
+                      <span>Total</span>
+                      <span className="text-lg tracking-tighter">₹{order.total}</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          {/* DYNAMIC ACTIONS: Cancel (if active) | Delete (if cancelled) */}
+          <div className="pt-4 space-y-3">
+             {order.status === "cancelled" ? (
+                <button 
+                  onClick={() => actions.handleDeleteOrder(order)}
+                  className="w-full py-3.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
+                >
+                   <TrashIcon className="w-4 h-4" /> Delete Order Permanently
+                </button>
+             ) : (
+                !isTerminal && (
+                   <button 
+                     onClick={() => actions.handleCancelOrder(order)}
+                     className="w-full py-3.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                   >
+                     <CloseIcon className="w-4 h-4" /> Cancel Order
+                   </button>
+                )
+             )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(panelContent, document.body);
 }
