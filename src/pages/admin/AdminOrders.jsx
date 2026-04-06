@@ -11,7 +11,10 @@ import {
   query, 
   limit, 
   startAfter, 
-  where 
+  where,
+  documentId,
+  or,
+  and
 } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
@@ -24,7 +27,7 @@ import {
   Tag as TagIcon,
   Search as SearchIcon,
   ChevronRight as RightIcon,
-  Calendar as CalendarIcon,
+  CalendarIcon,
   CreditCard as CardIcon,
   Package as PackageIcon,
   X as CloseIcon,
@@ -36,7 +39,9 @@ import {
   ArrowUpRight as ActionIcon,
   Trash2 as TrashIcon,
   ShieldCheck as ShieldIcon,
-  Banknote as CashIcon
+  Banknote as CashIcon,
+  Filter as FilterIcon,
+  ChevronDown as DownIcon
 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { cancelAdminOrder, deleteAdminOrder } from "../../api/adminOrders";
@@ -81,6 +86,8 @@ export default function AdminOrders() {
   const [activeTab, setActiveTab] = useState("all");
   const [searchId, setSearchId] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
   const [creatingShipment, setCreatingShipment] = useState(null);
   const [generatingLabel, setGeneratingLabel] = useState(null);
@@ -107,32 +114,41 @@ export default function AdminOrders() {
   const closeConfirm = () => setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
   // -- Data Fetching --
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
   const fetchOrders = useCallback(async (isLoadMore = false, statusId = "all", search = "") => {
     const term = search?.trim() || "";
     if (term) {
       setLoading(true);
+      setIsSearchActive(true);
       try {
-        const docRef = doc(db, "orders", term);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setOrders([{
-            id: docSnap.id,
-            ...data,
-            createdAt: parseOrderTimestamp(data.createdAt || data.updatedAt),
-          }]);
-          setHasMore(false);
-        } else {
-          setOrders([]);
-          showToast("Order not found.", "error");
-        }
+        const ordersRef = collection(db, "orders");
+        // PREFIX SEARCH ON ID: Matches all IDs starting with the term
+        const q = query(
+          ordersRef, 
+          where(documentId(), ">=", term), 
+          where(documentId(), "<=", term + '\uf8ff'),
+          limit(ORDER_LIMIT)
+        );
+        const snap = await getDocs(q);
+        const list = snap.docs.map(d => {
+           const data = d.data();
+           return {
+              id: d.id, ...data,
+              createdAt: parseOrderTimestamp(data.createdAt || data.updatedAt),
+           };
+        });
+        setOrders(list);
+        setHasMore(false); // Disable pagination for filtered results for now
+        if (list.length === 0) showToast("No orders identified for this prefix.", "error");
       } catch (err) {
-        showToast("Error searching for order", "error");
+        showToast("Error executing search", "error");
       } finally {
         setLoading(false);
       }
       return;
     }
+    setIsSearchActive(false);
 
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
@@ -182,10 +198,17 @@ export default function AdminOrders() {
     fetchOrders(false, activeTab, searchId);
   };
 
+  const handleClearSearch = () => {
+    setSearchId("");
+    setLastDoc(null);
+    fetchOrders(false, activeTab, "");
+  };
+
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setSearchId("");
     setLastDoc(null);
+    setStatusDropdownOpen(false);
   };
 
   const handleCreateShipment = async (order) => {
@@ -284,69 +307,301 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-6 font-sans">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* HEADER SECTION - Responsive Flex */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
         <div className="flex items-end gap-2">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Orders</h2>
           <p className="text-[10px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">Control Panel</p>
         </div>
-        <form onSubmit={handleSearch} className="flex-1 max-w-sm relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Search Full Order ID..." value={searchId} onChange={(e) => setSearchId(e.target.value)} className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans" />
+        
+        {/* Mobile-Friendly Search/Actions Overlay (Future placeholder if needed) */}
+      </div>
+
+      {/* FILTER & SEARCH TOOLBAR - Adaptive Row */}
+      <div className="flex flex-row items-center justify-between gap-2 lg:gap-6 py-4 lg:py-6 px-1 border-y border-gray-100 bg-gray-50/10">
+        
+        {/* Search Input - Condensed for Mobile, Full for Desktop */}
+        <form onSubmit={handleSearch} className="flex-1 flex items-center bg-white border border-gray-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all overflow-hidden h-10 lg:h-12 lg:max-w-xl">
+          <div className="pl-3 lg:pl-4 text-gray-400 shrink-0">
+            <SearchIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+          </div>
+          <input 
+            type="text" 
+            placeholder="Search Order ID..." 
+            value={searchId} 
+            onChange={(e) => setSearchId(e.target.value)} 
+            className="flex-1 bg-transparent border-none px-2 lg:px-3 py-2 text-xs lg:text-sm focus:outline-none min-w-0" 
+          />
+          {isSearchActive ? (
+            <button 
+              type="button" 
+              onClick={handleClearSearch} 
+              className="mr-1.5 lg:mr-2 px-3 lg:px-6 py-1.5 lg:py-2 bg-red-50 text-red-600 text-[9px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-red-600 hover:text-white transition-all"
+            >
+              <span className="hidden lg:inline">Clear</span>
+              <span className="lg:hidden text-[8px]">Clear</span>
+            </button>
+          ) : (
+            <button 
+              type="submit" 
+              className="mr-1.5 lg:mr-2 p-1.5 lg:px-6 lg:py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shrink-0 text-[10px] font-black uppercase tracking-widest"
+            >
+              <SearchIcon className="lg:hidden w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Search</span>
+            </button>
+          )}
         </form>
-      </div>
 
-      <div className="flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
-        {STATUS_TABS.map((tab) => (
-          <button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${activeTab === tab.id ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-100 hover:text-gray-900 hover:border-gray-300"}`}>
-            {tab.label}
+        {/* Status Filter - Adaptive for Desktop/Mobile */}
+        <div className="relative shrink-0">
+          <button 
+            onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+            className="px-3 lg:px-4 py-2 bg-white border border-gray-200 rounded-xl shadow-sm flex items-center gap-2 lg:gap-3 hover:border-gray-400 transition-all text-[11px] lg:text-sm font-bold text-gray-700 h-10 lg:h-12"
+          >
+            <span className="text-[9px] lg:text-[10px] uppercase text-gray-400 tracking-widest font-bold">Status:</span>
+            <span className="truncate max-w-[60px] sm:max-w-[120px]">{STATUS_TABS.find(t => t.id === activeTab)?.label}</span>
+            <DownIcon className={`w-3 h-3 lg:w-4 lg:h-4 text-gray-400 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
-        ))}
+          
+          {statusDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setStatusDropdownOpen(false)} />
+              <div className="absolute right-0 top-full mt-2 w-[180px] sm:w-[220px] bg-white border border-gray-100 rounded-xl shadow-2xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                {STATUS_TABS.map((tab) => (
+                  <button 
+                    key={tab.id} 
+                    onClick={() => handleTabChange(tab.id)} 
+                    className={`w-full text-left px-4 py-3 lg:py-4 text-[10px] lg:text-[11px] font-bold uppercase tracking-wider hover:bg-gray-50 flex items-center justify-between group transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600'}`}
+                  >
+                    {tab.label}
+                    <RightIcon className={`w-3 h-3 lg:w-4 lg:h-4 opacity-0 group-hover:opacity-100 transition-opacity ${activeTab === tab.id ? 'opacity-100' : ''}`} />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden min-h-[400px]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50/50 border-b">
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Order ID</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Placed At</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Amount</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Carrier</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {loading ? Array.from({ length: 6 }).map((_, i) => <OrderRowSkeleton key={i} />) : orders.length === 0 ? <tr><td colSpan={6} className="py-20 text-center text-gray-400 text-xs font-bold uppercase tracking-widest">No matching records</td></tr> : orders.map((order) => {
-                const statusCfg = getOrderStatusConfig(order.status);
-                return (
-                  <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-gray-50/80 transition-colors cursor-pointer group">
-                    <td className="px-6 py-5 font-mono text-[11px] text-gray-900 font-bold tracking-tighter uppercase">{order.id.slice(0, 10)}...</td>
-                    <td className="px-6 py-5 text-xs text-gray-500">{order.createdAt ? order.createdAt.toLocaleDateString() : "—"}</td>
-                    <td className="px-6 py-5 text-xs font-black text-gray-900">₹{order.total}</td>
-                    <td className="px-6 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-tight">{order.shiprocket?.courierName || order.courierName || "—"}</td>
-                    <td className="px-6 py-5"><span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase border shadow-sm ${statusCfg.color}`}>{statusCfg.label}</span></td>
-                    <td className="px-6 py-5 text-right"><RightIcon className="w-4 h-4 text-gray-200 group-hover:text-gray-900 transition-colors" /></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {hasMore && !loading && (
-          <div className="p-4 flex justify-center border-t bg-gray-50/10">
-            <button onClick={() => fetchOrders(true, activeTab)} disabled={loadingMore} className="px-8 py-2.5 bg-black text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg hover:shadow-black/20 active:scale-95 disabled:opacity-50 transition-all">{loadingMore ? <LoaderIcon className="w-3 h-3 animate-spin"/> : "Fetch more results"}</button>
+      {/* ORDERS LIST CONTAINER - Responsive Switch */}
+      <div className="min-h-[500px]">
+        {loading ? (
+           <div className="space-y-4 lg:space-y-0">
+              {/* Responsive Skeletons */}
+              <div className="lg:hidden space-y-4">
+                 {[...Array(5)].map((_, i) => (
+                    <div key={i} className="bg-white border rounded-2xl p-5 space-y-4 animate-pulse">
+                       <div className="flex justify-between items-start">
+                          <div className="w-24 h-4 bg-gray-100 rounded" />
+                          <div className="w-16 h-6 bg-gray-100 rounded-lg" />
+                       </div>
+                       <div className="w-40 h-3 bg-gray-50 rounded" />
+                       <div className="flex justify-between items-center pt-2">
+                          <div className="w-20 h-5 bg-gray-100 rounded" />
+                          <div className="w-10 h-10 bg-gray-100 rounded-full" />
+                       </div>
+                    </div>
+                 ))}
+              </div>
+              <div className="hidden lg:block bg-white border rounded-2xl shadow-sm overflow-hidden">
+                 <table className="w-full text-left border-collapse">
+                    <tbody className="divide-y divide-gray-50">
+                       {[...Array(8)].map((_, i) => <OrderRowSkeleton key={i} />)}
+                    </tbody>
+                 </table>
+              </div>
+           </div>
+        ) : orders.length === 0 ? (
+           <div className="bg-white border rounded-2xl p-24 text-center">
+              <PackageIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+              <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">No order records identified</p>
+           </div>
+        ) : (
+          <div className="space-y-4">
+            {/* MOBILE CARD VIEW (< lg) */}
+            <div className="lg:hidden space-y-4">
+               {orders.map((order) => {
+                  const statusCfg = getOrderStatusConfig(order.status);
+                  return (
+                     <div 
+                        key={order.id} 
+                        onClick={() => setSelectedOrder(order)}
+                        className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-all"
+                     >
+                        <div className="flex justify-between items-start mb-4">
+                           <div className="space-y-1">
+                              <span className="font-mono text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</span>
+                              <p className="text-sm font-bold text-gray-900">{order.id}</p>
+                           </div>
+                           <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm ${statusCfg.color}`}>
+                              {statusCfg.label}
+                           </span>
+                        </div>
+
+                        <div className="flex items-center gap-4 py-3 border-y border-gray-50 mb-4">
+                           <div className="flex -space-x-4 overflow-hidden shrink-0">
+                              {(order.items || []).slice(0, 3).map((item, idx) => (
+                                 <div key={idx} className="w-12 h-12 rounded-xl bg-white border-2 border-white shadow-sm overflow-hidden shrink-0">
+                                    {item.image ? (
+                                       <img src={item.image} className="w-full h-full object-cover" />
+                                    ) : (
+                                       <div className="w-full h-full flex items-center justify-center text-gray-200 bg-gray-50">
+                                          <PackageIcon className="w-6 h-6" />
+                                       </div>
+                                    )}
+                                 </div>
+                              ))}
+                              {order.items?.length > 3 && (
+                                 <div className="w-12 h-12 rounded-xl bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-gray-500 shadow-sm shrink-0">
+                                    +{order.items.length - 3}
+                                 </div>
+                              )}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-black text-gray-900 truncate uppercase tracking-tight">
+                                 {order.items?.[0]?.name || "Item"}
+                                 {order.items?.length > 1 && <span className="ml-1 text-blue-600">+{order.items.length - 1} more</span>}
+                              </p>
+                              <p className="text-[9px] font-medium text-gray-400 uppercase tracking-widest mt-1">
+                                 {order.items?.length || 0} Item(s) Total
+                              </p>
+                           </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                           <div className="flex-1">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Date & Payment</p>
+                              <div className="flex items-center gap-2">
+                                 <span className="text-[11px] font-black text-gray-700">{order.createdAt ? order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : "—"}</span>
+                                 <span className="w-1 h-1 rounded-full bg-gray-200" />
+                                 <span className="text-[10px] font-bold text-gray-400 uppercase">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total</p>
+                                 <p className="text-lg font-black text-blue-600 tracking-tighter leading-none">₹{order.total}</p>
+                              </div>
+                              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                 <RightIcon className="w-4 h-4" />
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  );
+               })}
+            </div>
+
+            {/* DESKTOP TABLE VIEW (>= lg) */}
+            <div className="hidden lg:block bg-white border rounded-2xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50/50 border-b border-gray-100">
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Order ID</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Products</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Date / Time</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Payment</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">Status</th>
+                      <th className="px-6 py-5"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {orders.map((order) => {
+                      const statusCfg = getOrderStatusConfig(order.status);
+                      return (
+                        <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-blue-50/30 transition-all cursor-pointer group hover:scale-[1.002] duration-200 origin-center">
+                          <td className="px-6 py-3.5">
+                             <span title={order.id} className="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg font-mono text-[11px] text-gray-700 font-bold tracking-tight group-hover:bg-white group-hover:border-blue-100 transition-colors">
+                                {order.id}
+                             </span>
+                          </td>
+                          <td className="px-6 py-3.5 border-l border-gray-50/10">
+                             <div className="flex items-center gap-3">
+                                <div className="flex -space-x-5 overflow-hidden group/images shrink-0">
+                                   {(order.items || []).slice(0, 3).map((item, idx) => (
+                                      <div key={idx} className="w-10 h-10 rounded-lg bg-white border-2 border-white shadow-sm overflow-hidden shrink-0 transition-transform group-hover/images:translate-x-1">
+                                         {item.image ? (
+                                            <img src={item.image} className="w-full h-full object-cover" />
+                                         ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-200 bg-gray-50">
+                                               <PackageIcon className="w-5 h-5" />
+                                            </div>
+                                         )}
+                                      </div>
+                                   ))}
+                                   {order.items?.length > 3 && (
+                                      <div className="w-10 h-10 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-gray-500 shadow-sm">
+                                         +{order.items.length - 3}
+                                      </div>
+                                   )}
+                                </div>
+                                <div className="min-w-0">
+                                   <p className="text-[11px] font-black text-gray-900 group-hover:text-blue-700 transition-colors uppercase tracking-tight truncate max-w-[150px]">
+                                      {order.items?.[0]?.name || "Item"}
+                                      {order.items?.length > 1 && <span className="ml-1 text-blue-600">+{order.items.length - 1}</span>}
+                                   </p>
+                                   <p className="text-[9px] font-medium text-gray-400 uppercase tracking-widest mt-0.5">
+                                      {order.items?.length || 0} Item(s) Total
+                                   </p>
+                                </div>
+                             </div>
+                          </td>
+                          <td className="px-6 py-3.5 border-l border-gray-50/10">
+                             <div className="space-y-0.5">
+                                <p className="text-xs font-bold text-gray-600">{order.createdAt ? order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}</p>
+                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tight">{order.createdAt ? order.createdAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : ""}</p>
+                             </div>
+                          </td>
+                          <td className="px-6 py-3.5 border-l border-gray-50/10">
+                             <div className="flex flex-col">
+                                <span className="text-sm font-black text-gray-900 tracking-tighter">₹{order.total}</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-3.5 border-l border-gray-50/10">
+                             <span className={`w-fit px-3 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm ${statusCfg.color}`}>
+                                {statusCfg.label}
+                             </span>
+                          </td>
+                          <td className="px-6 py-3.5 text-right w-[80px]">
+                             <div className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center transition-all group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:scale-110 shadow-sm active:scale-95">
+                                <RightIcon className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                             </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>
+      
+        {/* PAGINATION FOOTER */}
+        {hasMore && !loading && (
+          <div className="p-8 flex justify-center border-t bg-gray-50/20">
+            <button 
+              onClick={() => fetchOrders(true, activeTab)} 
+              disabled={loadingMore} 
+              className="group px-10 py-3.5 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-100 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-blue-600/20 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-3"
+            >
+              {loadingMore ? <LoaderIcon className="w-4 h-4 animate-spin"/> : <ActionIcon className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />}
+              Load More Results
+            </button>
+          </div>
+        )}
 
+      {/* MODALS & PORTALS (REMAINS UNTOUCHED FOR SIDEBAR CONSISTENCY) */}
       <OrderSidePanel order={selectedOrder} onClose={() => setSelectedOrder(null)} actions={{ handleCreateShipment, handleSyncStatus, handleCancelOrder, handleDeleteOrder, handleGenerateLabel, copyToClipboard }} loadingStates={{ creatingShipment, generatingLabel, syncingOrderId }} />
       <ConfirmModal isOpen={confirmModal.isOpen} onClose={closeConfirm} onConfirm={confirmModal.onConfirm} title={confirmModal.title} message={confirmModal.message} confirmText={confirmModal.confirmText} type={confirmModal.type} />
     </div>
   );
 }
 
-// --- POLISHED UX SUB-COMPONENTS ---
+// --- POLISHED UX SUB-COMPONENTS (NO CHANGES PER USER REQUEST) ---
 function OrderSidePanel({ order, onClose, actions, loadingStates }) {
   if (!order) return null;
   const { subtotal, discountTotal, shippingFee: calculatedShipping, platformFee } = getOrderAmountBreakdown(order);
@@ -360,7 +615,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
     <div className="fixed inset-0 z-[100] flex justify-end font-sans">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[4px]" onClick={onClose} />
       
-      <div className="relative h-screen w-full max-w-[420px] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 border-l border-gray-100 h-full top-0">
+      <div className="relative h-screen w-full sm:max-w-[420px] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 border-l border-gray-100 top-0">
         
         {/* REFINED HEADER: Integrated ID, Status & Actions */}
         <div className="p-6 border-b border-gray-100">
@@ -394,7 +649,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
           {/* REFINED SUMMARY STRIP: High-Impact Metric Cards */}
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
              <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-blue-500 rounded-xl p-3 text-left">
                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
                 <div className="flex items-center gap-1 text-slate-900 font-bold">
@@ -413,7 +668,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Method</p>
                 <div className="flex items-center gap-1 text-slate-900 font-bold">
                    <CashIcon className="w-3 h-3 text-violet-500" />
-                   <span className="text-[9px] uppercase tracking-tighter truncate">{order.paymentMethod || "Online"}</span>
+                   <span className="text-[9px] uppercase tracking-tighter truncate">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
                 </div>
              </div>
           </div>
