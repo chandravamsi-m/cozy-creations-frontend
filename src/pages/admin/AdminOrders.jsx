@@ -318,7 +318,7 @@ export default function AdminOrders() {
       </div>
 
       {/* FILTER & SEARCH TOOLBAR - Adaptive Row */}
-      <div className="flex flex-row items-center justify-between gap-2 lg:gap-6 py-4 lg:py-6 px-1 border-y border-gray-100 bg-gray-50/10">
+      <div className="flex flex-row items-center justify-between gap-2 lg:gap-6 py-4 px-1 border-y border-gray-100 bg-gray-50/10">
         
         {/* Search Input - Condensed for Mobile, Full for Desktop */}
         <form onSubmit={handleSearch} className="flex-1 flex items-center bg-white border border-gray-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all overflow-hidden h-10 lg:h-12 lg:max-w-xl">

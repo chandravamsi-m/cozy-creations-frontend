@@ -20,6 +20,7 @@ export default function LoginModal({ closeModal }) {
   const [mode, setMode] = useState("login");
 
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +72,12 @@ export default function LoginModal({ closeModal }) {
       if (mode === "login") {
         await loginWithEmail(email.trim(), password);
       } else {
-        await signupWithEmail(email.trim(), password);
+        if (!fullName.trim()) {
+           setErrMsg("Please enter your full name.");
+           setLoading(false);
+           return;
+        }
+        await signupWithEmail(email.trim(), password, fullName.trim());
       }
 
       handlePostLogin();
@@ -135,6 +141,7 @@ export default function LoginModal({ closeModal }) {
     setErrMsg("");
     setMsg("");
     setPassword("");
+    setFullName("");
     setConfirmPassword("");
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -164,11 +171,11 @@ export default function LoginModal({ closeModal }) {
         </div>
         {/* TABS */}
         {mode !== "forgot" && (
-          <div className="flex">
+          <div className="flex border-b">
             <button
               className={`flex-1 py-3 text-center font-medium ${mode === "login"
                 ? "text-gray-900 border-b-2 border-yellow-accent"
-                : "text-gray-500"
+                : "text-gray-500 hover:text-gray-900"
                 }`}
               onClick={() => setMode("login")}
             >
@@ -178,7 +185,7 @@ export default function LoginModal({ closeModal }) {
             <button
               className={`flex-1 py-3 text-center font-medium ${mode === "signup"
                 ? "text-gray-900 border-b-2 border-yellow-accent"
-                : "text-gray-500"
+                : "text-gray-500 hover:text-gray-900"
                 }`}
               onClick={() => setMode("signup")}
             >
@@ -188,25 +195,39 @@ export default function LoginModal({ closeModal }) {
         )}
 
         {/* BODY */}
-        <div className="px-6 py-6">
+        <div className="px-6 py-4">
           {errMsg && (
-            <div className="mb-3 text-sm text-red-600 bg-red-50 p-2 rounded">
+            <div className="mb-2.5 text-[11px] font-bold text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
               {errMsg}
             </div>
           )}
 
           {msg && (
-            <div className="mb-3 text-sm text-emerald-600 bg-emerald-50 p-2 rounded">
+            <div className="mb-2.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
               {msg}
             </div>
           )}
 
-          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2.5">
+            {mode === "signup" && (
+               <div>
+                  <label className="block text-sm text-gray-700 mb-0.5 px-1">Full name</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
+                    placeholder="Your Display Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+               </div>
+            )}
+
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Email</label>
+              <label className="block text-sm text-gray-700 mb-0.5 px-1">Email address</label>
               <input
                 type="email"
-                className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent"
+                className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-accent bg-white"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -223,7 +244,7 @@ export default function LoginModal({ closeModal }) {
             {/* PASSWORD */}
             {mode !== "forgot" && (
               <div>
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center mb-0.5">
                   <label className="block text-sm text-gray-700">Password</label>
                   {mode === "login" && (
                     <button
@@ -237,7 +258,7 @@ export default function LoginModal({ closeModal }) {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent pr-10"
+                    className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-accent bg-white pr-10"
                     placeholder="********"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -274,11 +295,11 @@ export default function LoginModal({ closeModal }) {
             {/* CONFIRM PASSWORD - Only show in signup mode */}
             {mode === "signup" && (
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Confirm Password</label>
+                <label className="block text-sm text-gray-700 mb-0.5">Confirm Password</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-yellow-accent pr-10"
+                    className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-accent bg-white pr-10"
                     placeholder="********"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -308,7 +329,7 @@ export default function LoginModal({ closeModal }) {
             <button
               onClick={mode === "forgot" ? handleResetPassword : submitEmailForm}
               disabled={loading}
-              className="w-full py-2 bg-yellow-accent text-black rounded-lg font-semibold hover:bg-yellow-500 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 bg-yellow-accent text-black rounded-xl font-semibold hover:bg-yellow-500 transition-colors disabled:opacity-50"
             >
               {loading
                 ? "Please wait…"
@@ -320,17 +341,17 @@ export default function LoginModal({ closeModal }) {
             </button>
 
             {/* DIVIDER */}
-            <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 h-[1px] bg-gray-300"></div>
-              <span className="text-gray-500 text-xs">OR</span>
-              <div className="flex-1 h-[1px] bg-gray-300"></div>
+            <div className="flex items-center gap-3 my-1">
+              <div className="flex-1 h-[1px] bg-gray-200"></div>
+              <span className="text-gray-400 text-xs">OR</span>
+              <div className="flex-1 h-[1px] bg-gray-200"></div>
             </div>
 
             {/* GOOGLE LOGIN */}
             <button
               onClick={googleLogin}
               disabled={loading}
-              className="w-full py-2 border rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <img
                 src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -345,7 +366,7 @@ export default function LoginModal({ closeModal }) {
         </div>
 
         {/* FOOTER */}
-        <div className="px-6 py-4 bg-gray-50 text-center text-sm text-gray-700">
+        <div className="px-6 pt-0 pb-4 bg-gray-50 text-center text-sm text-gray-700">
           {mode === "login" ? (
             <>
               Don’t have an account?{" "}
