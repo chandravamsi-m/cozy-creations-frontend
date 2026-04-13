@@ -198,13 +198,14 @@ export default function MyOrders() {
   const getStatusConfig = (status) => {
     const base = getOrderStatusConfig(status);
     const s = status?.toLowerCase() || "";
+    if (s === "new") return { ...base, icon: <Clock className="w-3.5 h-3.5" /> };
     if (s === "delivered") return { ...base, icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
     if (s === "shipped") return { ...base, icon: <Truck className="w-3.5 h-3.5" /> };
     if (s === "cancelled") return { ...base, icon: <XCircle className="w-3.5 h-3.5" /> };
-    if (s === "pending") return { ...base, icon: <Clock className="w-3.5 h-3.5" /> };
-    if (s === "confirmed") return { ...base, icon: <Building2 className="w-3.5 h-3.5" /> };
+
+
     if (s === "packed") return { ...base, icon: <Package className="w-3.5 h-3.5" /> };
-    if (s === "completed") return { ...base, icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
+
     return { ...base, icon: <AlertCircle className="w-3.5 h-3.5" /> };
   };
 
@@ -279,8 +280,8 @@ export default function MyOrders() {
                     className="w-full appearance-none bg-white border border-gray-100 rounded-xl pl-3 pr-8 sm:pl-4 sm:pr-10 py-3 text-xs font-bold text-gray-700 outline-none shadow-sm cursor-pointer hover:bg-gray-50"
                   >
                     <option value="all">Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
+                    <option value="new">New</option>
+
                     <option value="packed">Packed</option>
                     <option value="shipped">Shipped</option>
                     <option value="delivered">Delivered</option>
@@ -392,16 +393,16 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
               {othersCount > 0 && <span className="text-gray-400"> & {othersCount} other{othersCount > 1 ? "s" : ""}</span>}
             </h4>
             {(() => {
-              const s = order.status?.toLowerCase() || "pending";
+              const s = order.status?.toLowerCase() || "new";
               const history = order.statusHistory || {};
               const timestamp = history[s] || order.createdAt;
               const labels = {
-                pending: "Placed on",
-                confirmed: "Confirmed on",
+                new: "Placed on",
+
                 shipped: "Shipped on",
                 delivered: "Delivered on",
                 cancelled: "Cancelled on",
-                completed: "Completed on",
+
                 "in transit": "Shipped on"
               };
               return <p className="text-[10px] sm:text-xs text-gray-400 font-medium">{labels[s] || "Updated on"} {formatDate(timestamp)}</p>;

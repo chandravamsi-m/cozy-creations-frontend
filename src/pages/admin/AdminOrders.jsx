@@ -41,7 +41,8 @@ import {
   ShieldCheck as ShieldIcon,
   Banknote as CashIcon,
   Filter as FilterIcon,
-  ChevronDown as DownIcon
+  ChevronDown as DownIcon,
+  Eye as EyeIcon
 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { cancelAdminOrder, deleteAdminOrder } from "../../api/adminOrders";
@@ -65,8 +66,7 @@ const ORDER_LIMIT = 15;
 
 const STATUS_TABS = [
   { id: "all", label: "All Orders", status: null },
-  { id: "pending", label: "Pending", status: "pending" },
-  { id: "confirmed", label: "Confirmed", status: "confirmed" },
+  { id: "new", label: "New", status: "new" },
   { id: "packed", label: "Packed", status: "packed" },
   { id: "shipped", label: "Shipped", status: "shipped" },
   { id: "delivered", label: "Delivered", status: "delivered" },
@@ -92,6 +92,7 @@ export default function AdminOrders() {
   const [creatingShipment, setCreatingShipment] = useState(null);
   const [generatingLabel, setGeneratingLabel] = useState(null);
   const [syncingOrderId, setSyncingOrderId] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -306,22 +307,22 @@ export default function AdminOrders() {
   };
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-4 font-sans">
       {/* HEADER SECTION - Responsive Flex */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
         <div className="flex items-end gap-2">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Orders</h2>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">Control Panel</p>
+          <p className="text-[10px] font-medium text-gray-400 mb-0.5">Control Panel</p>
         </div>
         
         {/* Mobile-Friendly Search/Actions Overlay (Future placeholder if needed) */}
       </div>
 
       {/* FILTER & SEARCH TOOLBAR - Adaptive Row */}
-      <div className="flex flex-row items-center justify-between gap-2 lg:gap-6 py-4 px-1 border-y border-gray-100 bg-gray-50/10">
+      <div className="flex flex-row items-center justify-between gap-2 lg:gap-6 py-2 px-1 border-y border-gray-100 bg-gray-50/10">
         
         {/* Search Input - Condensed for Mobile, Full for Desktop */}
-        <form onSubmit={handleSearch} className="flex-1 flex items-center bg-white border border-gray-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all overflow-hidden h-10 lg:h-12 lg:max-w-xl">
+        <form onSubmit={handleSearch} className="flex-1 flex items-center bg-white border border-gray-200 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-500 transition-all overflow-hidden h-10 lg:max-w-xl">
           <div className="pl-3 lg:pl-4 text-gray-400 shrink-0">
             <SearchIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
           </div>
@@ -336,7 +337,7 @@ export default function AdminOrders() {
             <button 
               type="button" 
               onClick={handleClearSearch} 
-              className="mr-1.5 lg:mr-2 px-3 lg:px-6 py-1.5 lg:py-2 bg-red-50 text-red-600 text-[9px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-red-600 hover:text-white transition-all"
+              className="mr-1.5 lg:mr-2 px-3 lg:px-6 py-1.5 lg:py-2 bg-red-50 text-red-600 text-[9px] lg:text-[10px] font-black rounded-lg hover:bg-red-600 hover:text-white transition-all"
             >
               <span className="hidden lg:inline">Clear</span>
               <span className="lg:hidden text-[8px]">Clear</span>
@@ -344,7 +345,7 @@ export default function AdminOrders() {
           ) : (
             <button 
               type="submit" 
-              className="mr-1.5 lg:mr-2 p-1.5 lg:px-6 lg:py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shrink-0 text-[10px] font-black uppercase tracking-widest"
+              className="mr-1.5 lg:mr-2 p-1.5 lg:px-6 lg:py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shrink-0 text-[10px] font-black"
             >
               <SearchIcon className="lg:hidden w-3.5 h-3.5" />
               <span className="hidden lg:inline">Search</span>
@@ -356,9 +357,9 @@ export default function AdminOrders() {
         <div className="relative shrink-0">
           <button 
             onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-            className="px-3 lg:px-4 py-2 bg-white border border-gray-200 rounded-xl shadow-sm flex items-center gap-2 lg:gap-3 hover:border-gray-400 transition-all text-[11px] lg:text-sm font-bold text-gray-700 h-10 lg:h-12"
+            className="px-3 lg:px-4 py-2 bg-white border border-gray-200 rounded-xl shadow-sm flex items-center gap-2 lg:gap-3 hover:border-gray-400 transition-all text-[11px] lg:text-sm font-bold text-gray-700 h-10"
           >
-            <span className="text-[9px] lg:text-[10px] uppercase text-gray-400 tracking-widest font-bold">Status:</span>
+            <span className="text-[9px] lg:text-[10px] text-gray-400 font-bold">Status:</span>
             <span className="truncate max-w-[60px] sm:max-w-[120px]">{STATUS_TABS.find(t => t.id === activeTab)?.label}</span>
             <DownIcon className={`w-3 h-3 lg:w-4 lg:h-4 text-gray-400 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -371,7 +372,7 @@ export default function AdminOrders() {
                   <button 
                     key={tab.id} 
                     onClick={() => handleTabChange(tab.id)} 
-                    className={`w-full text-left px-4 py-3 lg:py-4 text-[10px] lg:text-[11px] font-bold uppercase tracking-wider hover:bg-gray-50 flex items-center justify-between group transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600'}`}
+                    className={`w-full text-left px-4 py-3 lg:py-4 text-[10px] lg:text-[11px] font-bold hover:bg-gray-50 flex items-center justify-between group transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600'}`}
                   >
                     {tab.label}
                     <RightIcon className={`w-3 h-3 lg:w-4 lg:h-4 opacity-0 group-hover:opacity-100 transition-opacity ${activeTab === tab.id ? 'opacity-100' : ''}`} />
@@ -414,7 +415,7 @@ export default function AdminOrders() {
         ) : orders.length === 0 ? (
            <div className="bg-white border rounded-2xl p-24 text-center">
               <PackageIcon className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-              <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">No order records identified</p>
+              <p className="text-[11px] font-black text-gray-300">No order records identified</p>
            </div>
         ) : (
           <div className="space-y-4">
@@ -430,10 +431,10 @@ export default function AdminOrders() {
                      >
                         <div className="flex justify-between items-start mb-4">
                            <div className="space-y-1">
-                              <span className="font-mono text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</span>
+                              <span className="font-mono text-[10px] font-black text-gray-400">Order ID</span>
                               <p className="text-sm font-bold text-gray-900">{order.id}</p>
                            </div>
-                           <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm ${statusCfg.color}`}>
+                           <span className={`px-3 py-1 rounded-lg text-[9px] font-black border shadow-sm ${statusCfg.color}`}>
                               {statusCfg.label}
                            </span>
                         </div>
@@ -458,11 +459,11 @@ export default function AdminOrders() {
                               )}
                            </div>
                            <div className="flex-1 min-w-0">
-                              <p className="text-[11px] font-black text-gray-900 truncate uppercase tracking-tight">
+                              <p className="text-[11px] font-black text-gray-900 truncate">
                                  {order.items?.[0]?.name || "Item"}
                                  {order.items?.length > 1 && <span className="ml-1 text-blue-600">+{order.items.length - 1} more</span>}
                               </p>
-                              <p className="text-[9px] font-medium text-gray-400 uppercase tracking-widest mt-1">
+                              <p className="text-[9px] font-medium text-gray-400 mt-1">
                                  {order.items?.length || 0} Item(s) Total
                               </p>
                            </div>
@@ -470,16 +471,16 @@ export default function AdminOrders() {
 
                         <div className="flex items-center justify-between">
                            <div className="flex-1">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Date & Payment</p>
+                              <p className="text-[10px] font-bold text-gray-400 mb-1">Date & Payment</p>
                               <div className="flex items-center gap-2">
                                  <span className="text-[11px] font-black text-gray-700">{order.createdAt ? order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : "—"}</span>
                                  <span className="w-1 h-1 rounded-full bg-gray-200" />
-                                 <span className="text-[10px] font-bold text-gray-400 uppercase">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
+                                 <span className="text-[10px] font-bold text-gray-400">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
                               </div>
                            </div>
                            <div className="flex items-center gap-4">
                               <div className="text-right">
-                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total</p>
+                                 <p className="text-[10px] font-bold text-gray-400 mb-1">Total</p>
                                  <p className="text-lg font-black text-blue-600 tracking-tighter leading-none">₹{order.total}</p>
                               </div>
                               <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
@@ -498,11 +499,11 @@ export default function AdminOrders() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Order ID</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Products</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Date / Time</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] border-r border-gray-100/50">Payment</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">Status</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Order ID</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Products</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Date / Time</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Payment</th>
+                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400">Status</th>
                       <th className="px-6 py-5"></th>
                     </tr>
                   </thead>
@@ -537,11 +538,11 @@ export default function AdminOrders() {
                                    )}
                                 </div>
                                 <div className="min-w-0">
-                                   <p className="text-[11px] font-black text-gray-900 group-hover:text-blue-700 transition-colors uppercase tracking-tight truncate max-w-[150px]">
+                                   <p className="text-[11px] font-black text-gray-900 group-hover:text-blue-700 transition-colors truncate max-w-[150px]">
                                       {order.items?.[0]?.name || "Item"}
                                       {order.items?.length > 1 && <span className="ml-1 text-blue-600">+{order.items.length - 1}</span>}
                                    </p>
-                                   <p className="text-[9px] font-medium text-gray-400 uppercase tracking-widest mt-0.5">
+                                   <p className="text-[9px] font-medium text-gray-400 mt-0.5">
                                       {order.items?.length || 0} Item(s) Total
                                    </p>
                                 </div>
@@ -550,17 +551,17 @@ export default function AdminOrders() {
                           <td className="px-6 py-3.5 border-l border-gray-50/10">
                              <div className="space-y-0.5">
                                 <p className="text-xs font-bold text-gray-600">{order.createdAt ? order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}</p>
-                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tight">{order.createdAt ? order.createdAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : ""}</p>
+                                <p className="text-[10px] text-gray-400 font-medium">{order.createdAt ? order.createdAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : ""}</p>
                              </div>
                           </td>
                           <td className="px-6 py-3.5 border-l border-gray-50/10">
                              <div className="flex flex-col">
                                 <span className="text-sm font-black text-gray-900 tracking-tighter">₹{order.total}</span>
-                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
+                                <span className="text-[9px] font-bold text-gray-400">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
                              </div>
                           </td>
                           <td className="px-6 py-3.5 border-l border-gray-50/10">
-                             <span className={`w-fit px-3 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm ${statusCfg.color}`}>
+                             <span className={`w-fit px-3 py-1 rounded-lg text-[9px] font-black border shadow-sm ${statusCfg.color}`}>
                                 {statusCfg.label}
                              </span>
                           </td>
@@ -595,14 +596,21 @@ export default function AdminOrders() {
         )}
 
       {/* MODALS & PORTALS (REMAINS UNTOUCHED FOR SIDEBAR CONSISTENCY) */}
-      <OrderSidePanel order={selectedOrder} onClose={() => setSelectedOrder(null)} actions={{ handleCreateShipment, handleSyncStatus, handleCancelOrder, handleDeleteOrder, handleGenerateLabel, copyToClipboard }} loadingStates={{ creatingShipment, generatingLabel, syncingOrderId }} />
+      <OrderSidePanel 
+        order={selectedOrder} 
+        onClose={() => setSelectedOrder(null)} 
+        actions={{ handleCreateShipment, handleSyncStatus, handleCancelOrder, handleDeleteOrder, handleGenerateLabel, copyToClipboard }} 
+        loadingStates={{ creatingShipment, generatingLabel, syncingOrderId }} 
+        onImageClick={setPreviewImage}
+      />
       <ConfirmModal isOpen={confirmModal.isOpen} onClose={closeConfirm} onConfirm={confirmModal.onConfirm} title={confirmModal.title} message={confirmModal.message} confirmText={confirmModal.confirmText} type={confirmModal.type} />
+      <ImagePreviewModal imageUrl={previewImage} onClose={() => setPreviewImage(null)} />
     </div>
   );
 }
 
 // --- POLISHED UX SUB-COMPONENTS (NO CHANGES PER USER REQUEST) ---
-function OrderSidePanel({ order, onClose, actions, loadingStates }) {
+function OrderSidePanel({ order, onClose, actions, loadingStates, onImageClick }) {
   if (!order) return null;
   const { subtotal, discountTotal, shippingFee: calculatedShipping, platformFee } = getOrderAmountBreakdown(order);
   const shippingFee = calculatedShipping || Number(order.deliveryFee || 0);
@@ -622,7 +630,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
            <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-4">
                  <h3 className="font-bold text-gray-900 text-xl tracking-tight">Order Details</h3>
-                 <span className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase border shadow-sm ${statusCfg.color}`}>
+                 <span className={`px-2.5 py-1 rounded-md text-[9px] font-bold border shadow-sm ${statusCfg.color}`}>
                     {statusCfg.label}
                  </span>
               </div>
@@ -639,7 +647,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
                  </button>
               </div>
               <div className="flex items-center gap-3">
-                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                     <CalendarIcon className="w-3.5 h-3.5" />
                     {order.createdAt ? order.createdAt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + order.createdAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : "—"}
                  </div>
@@ -651,24 +659,24 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
           {/* REFINED SUMMARY STRIP: High-Impact Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
              <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-blue-500 rounded-xl p-3 text-left">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                <p className="text-[8px] font-black text-slate-400 mb-1">Total</p>
                 <div className="flex items-center gap-1 text-slate-900 font-bold">
                    <span className="text-[10px]">₹</span>
                    <span className="text-sm tracking-tighter">{order.total}</span>
                 </div>
              </div>
              <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-emerald-500 rounded-xl p-3 text-left">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p>
+                <p className="text-[8px] font-black text-slate-400 mb-1">Items</p>
                 <div className="flex items-center gap-1 text-slate-900 font-bold">
                    <PackageIcon className="w-3 h-3 text-emerald-500" />
                    <span className="text-sm tracking-tighter">{itemCount}</span>
                 </div>
              </div>
              <div className="bg-slate-50/50 border border-slate-100 border-l-4 border-l-violet-500 rounded-xl p-3 text-left">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Method</p>
+                <p className="text-[8px] font-black text-slate-400 mb-1">Method</p>
                 <div className="flex items-center gap-1 text-slate-900 font-bold">
                    <CashIcon className="w-3 h-3 text-violet-500" />
-                   <span className="text-[9px] uppercase tracking-tighter truncate">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
+                   <span className="text-[9px] tracking-tighter truncate">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
                 </div>
              </div>
           </div>
@@ -678,7 +686,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
              <div className="bg-blue-50 text-blue-600 p-5 rounded-xl shadow-lg border border-blue-100 animate-in fade-in slide-in-from-top-2 duration-500">
                 <div className="flex items-center justify-between mb-4">
                    <div className="space-y-0.5">
-                      <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">Next Step</h5>
+                      <h5 className="text-[10px] font-black text-blue-500">Next Step</h5>
                       <p className="font-bold text-sm">Initialize Shipment</p>
                    </div>
                    <TruckIcon className="w-6 h-6 text-blue-400" />
@@ -686,7 +694,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
                 <button 
                    onClick={() => actions.handleCreateShipment(order)}
                    disabled={loadingStates.creatingShipment === order.id}
-                   className="w-full py-3 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                   className="w-full py-3 bg-blue-600 text-white rounded-lg text-[10px] font-black hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
                 >
                    {loadingStates.creatingShipment === order.id ? <LoaderIcon className="w-3.5 h-3.5 animate-spin"/> : <ActionIcon className="w-3.5 h-3.5"/>}
                    Create Shipment
@@ -697,29 +705,29 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
           {/* LOGISTICS NODE */}
           {hasShiprocket && !isTerminal && (
              <div className="space-y-3">
-                <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                <h5 className="text-[10px] font-black text-gray-400 flex items-center gap-2 px-1">
                    <TruckIcon className="w-3.5 h-3.5 text-blue-600" /> Dispatch Control
                 </h5>
                 <div className="bg-white border rounded-xl p-4 shadow-sm space-y-4">
                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Carrier Service</p>
+                         <p className="text-[9px] font-bold text-gray-400 mb-1.5">Carrier Service</p>
                          <div className="bg-violet-600 px-3 py-1 rounded-md shadow-[0_4px_12px_rgba(124,58,237,0.3)] inline-block">
                             <p className="text-[10px] font-black text-white uppercase tracking-wider">{order.shiprocket?.courierName || "Processing..."}</p>
                          </div>
                       </div>
                       <div>
-                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">AWB Code</p>
+                         <p className="text-[9px] font-bold text-gray-400 mb-1">AWB Code</p>
                          <p className="text-xs font-mono font-bold text-blue-600">{order.shiprocket?.awbCode || "Pending"}</p>
                       </div>
                    </div>
                    <div className="flex gap-2 pt-1">
-                       <button onClick={() => actions.handleSyncStatus(order)} disabled={loadingStates.syncingOrderId === order.id} className="flex-1 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
+                       <button onClick={() => actions.handleSyncStatus(order)} disabled={loadingStates.syncingOrderId === order.id} className="flex-1 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[10px] font-black hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
                           {loadingStates.syncingOrderId === order.id ? <LoaderIcon className="w-3 h-3 animate-spin"/> : <RefreshIcon className="w-3 h-3"/>}
                           Sync Status
                        </button>
                        {order.shiprocket?.awbCode && (
-                          <button onClick={() => actions.handleGenerateLabel(order)} disabled={loadingStates.generatingLabel === order.id} className="flex-1 py-2.5 bg-green-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-800 transition-colors flex items-center justify-center gap-2">
+                          <button onClick={() => actions.handleGenerateLabel(order)} disabled={loadingStates.generatingLabel === order.id} className="flex-1 py-2.5 bg-green-700 text-white rounded-lg text-[10px] font-black hover:bg-green-800 transition-colors flex items-center justify-center gap-2">
                              {loadingStates.generatingLabel === order.id ? <LoaderIcon className="w-3 h-3 animate-spin"/> : <TagIcon className="w-3 h-3"/>}
                              Print Label
                           </button>
@@ -731,17 +739,17 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
 
           {/* SHIPPING DESTINATION */}
           <div className="space-y-3">
-             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
+             <h5 className="text-[10px] font-black text-gray-400 flex items-center gap-2 px-1">
                 <MapIcon className="w-3.5 h-3.5 text-rose-500" /> Customer Details
              </h5>
              <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm relative overflow-hidden">
                 <div className="flex justify-between items-start mb-4">
                    <div>
-                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">Customer Name</p>
-                      <p className="text-sm font-bold text-gray-900 uppercase tracking-tight">{order.shippingAddress?.fullName || order.customerName}</p>
+                      <p className="text-[9px] font-bold text-gray-500 mb-1">Customer Name</p>
+                      <p className="text-sm font-bold text-gray-900 tracking-tight">{order.shippingAddress?.fullName || order.customerName}</p>
                    </div>
                    <div className="text-right">
-                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">Phone Number</p>
+                      <p className="text-[9px] font-bold text-gray-500 mb-1">Phone Number</p>
                       <div className="flex items-center gap-2 justify-end">
                          <a href={`tel:${order.shippingAddress?.phone}`} className="text-blue-600 font-bold text-sm hover:underline">{order.shippingAddress?.phone}</a>
                          <button onClick={() => actions.copyToClipboard(order.shippingAddress?.phone)} className="p-1 hover:bg-gray-50 rounded text-gray-200 hover:text-gray-600 transition-colors"><CopyIcon className="w-3.5 h-3.5" /></button>
@@ -750,8 +758,8 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
                 </div>
                 <div className="pt-4 border-t border-gray-50">
                    <div className="flex items-center justify-between mb-2.5">
-                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Shipping Address</span>
-                      <button onClick={() => actions.copyToClipboard(`${order.shippingAddress?.street}, ${order.shippingAddress?.city}, ${order.shippingAddress?.state} - ${order.shippingAddress?.pincode}`)} className="text-[8px] font-black text-gray-400 hover:text-black uppercase flex items-center gap-1 transition-colors bg-gray-50 px-2 py-0.5 rounded">
+                      <span className="text-[9px] font-bold text-gray-500">Shipping Address</span>
+                      <button onClick={() => actions.copyToClipboard(`${order.shippingAddress?.street}, ${order.shippingAddress?.city}, ${order.shippingAddress?.state} - ${order.shippingAddress?.pincode}`)} className="text-[8px] font-black text-gray-400 hover:text-black flex items-center gap-1 transition-colors bg-gray-50 px-2 py-0.5 rounded">
                          <CopyIcon className="w-2.5 h-2.5"/> Copy
                       </button>
                    </div>
@@ -765,21 +773,31 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
 
           {/* CART SUMMARY */}
           <div className="space-y-3">
-             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
+             <h5 className="text-[10px] font-black text-gray-400 flex items-center gap-2 px-1">
                 <BagIcon className="w-3.5 h-3.5 text-orange-500" /> Cart Breakdown
              </h5>
              <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
                 <div className="divide-y divide-gray-50">
                    {(order.items || []).map((item, i) => (
                      <div key={i} className="flex gap-4 items-center p-4 hover:bg-gray-50/50 transition-colors">
-                        <div className="w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
-                           {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-gray-50"><FlameIcon className="w-6 h-6 text-gray-200" /></div>}
+                        <div 
+                           className="w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0 cursor-pointer active:scale-95 relative"
+                           onClick={() => item.image && onImageClick(item.image)}
+                           title="Preview image"
+                        >
+                           {item.image ? (
+                                 <img src={item.image} className="w-full h-full object-cover" />
+                           ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                 <FlameIcon className="w-6 h-6 text-gray-200" />
+                              </div>
+                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                           <p className="text-[11px] font-bold text-gray-900 truncate uppercase tracking-tight">{item.name}</p>
-                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">{item.quantity} × ₹{item.price}</p>
+                           <p className="text-[12px] font-bold text-gray-900 truncate tracking-tight">{item.name}</p>
+                           <p className="text-[11px] font-semibold text-gray-500 tracking-[0.1em]">{item.quantity} × ₹{item.price}</p>
                         </div>
-                        <div className="text-right text-[11px] font-black text-gray-900">₹{item.price * item.quantity}</div>
+                        <div className="text-right text-[12px] font-bold text-gray-900">₹{item.price * item.quantity}</div>
                      </div>
                    ))}
                 </div>
@@ -787,28 +805,28 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
                 {/* BILLING SUMMARY with updated labels */}
                 <div className="bg-gray-50 p-5 space-y-3 border-t border-gray-100">
                    <div className="flex justify-between text-[11px] font-bold text-gray-500">
-                      <span className="uppercase tracking-widest">Subtotal</span>
-                      <span className="text-gray-900 tracking-tighter font-black">₹{subtotal}</span>
+                      <span>Subtotal</span>
+                      <span className="text-gray-900 tracking-tighter font-semibold">₹{subtotal}</span>
                    </div>
                    {discountTotal > 0 && (
                       <div className="flex justify-between text-[11px] font-bold text-emerald-600">
-                         <span className="uppercase tracking-widest flex items-center gap-1"><TagIcon className="w-3 h-3" /> Discount</span>
-                         <span className="font-black tracking-tighter">-₹{discountTotal}</span>
+                         <span className="flex items-center gap-1"><TagIcon className="w-3 h-3" /> Discount</span>
+                         <span className="font-semibold tracking-tighter">-₹{discountTotal}</span>
                       </div>
                    )}
                    <div className="flex justify-between text-[11px] font-bold text-gray-500">
-                      <span className="uppercase tracking-widest">Shipping Fee</span>
-                      <span className="text-gray-900 tracking-tighter font-black">{shippingFee > 0 ? `₹${shippingFee}` : "FREE"}</span>
+                      <span>Shipping Fee</span>
+                      <span className="text-gray-900 tracking-tighter font-semibold">{shippingFee > 0 ? `₹${shippingFee}` : "FREE"}</span>
                    </div>
                    {platformFee > 0 && (
                       <div className="flex justify-between text-[11px] font-bold text-gray-500">
-                         <span className="uppercase tracking-widest">Platform Fee</span>
-                         <span className="text-gray-900 tracking-tighter font-black">₹{platformFee}</span>
+                         <span>Platform Fee</span>
+                         <span className="text-gray-900 tracking-tighter font-semibold">₹{platformFee}</span>
                       </div>
                    )}
-                   <div className="flex justify-between font-black text-[13px] pt-4 border-t border-gray-200 mt-2 text-gray-900 uppercase tracking-[0.1em]">
+                   <div className="flex justify-between font-bold text-[14px] pt-4 border-t border-gray-200 mt-2 text-gray-900 tracking-[0.1em]">
                       <span>Total</span>
-                      <span className="text-lg tracking-tighter">₹{order.total}</span>
+                      <span className="text-lg tracking-tighter font-bold">₹{order.total}</span>
                    </div>
                 </div>
              </div>
@@ -819,7 +837,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
              {order.status === "cancelled" ? (
                 <button 
                   onClick={() => actions.handleDeleteOrder(order)}
-                  className="w-full py-3.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-red-600 text-white rounded-lg text-[10px] font-black hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
                 >
                    <TrashIcon className="w-4 h-4" /> Delete Order Permanently
                 </button>
@@ -827,7 +845,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
                 !isTerminal && (
                    <button 
                      onClick={() => actions.handleCancelOrder(order)}
-                     className="w-full py-3.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                     className="w-full py-3.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
                    >
                      <CloseIcon className="w-4 h-4" /> Cancel Order
                    </button>
@@ -840,4 +858,34 @@ function OrderSidePanel({ order, onClose, actions, loadingStates }) {
   );
 
   return createPortal(panelContent, document.body);
+}
+
+function ImagePreviewModal({ imageUrl, onClose }) {
+  if (!imageUrl) return null;
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[2200] flex items-center justify-center p-8 bg-black/90 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <button 
+        onClick={onClose}
+        className="absolute top-6 right-6 p-2 text-white/50 hover:text-white transition-all z-[2210]"
+      >
+        <CloseIcon className="w-8 h-8" />
+      </button>
+      
+      <div 
+        className="relative max-w-full max-h-full flex items-center justify-center pointer-events-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img 
+          src={imageUrl} 
+          alt="Product Preview" 
+          className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-scale-down pointer-events-auto shadow-none" 
+        />
+      </div>
+    </div>,
+    document.body
+  );
 }

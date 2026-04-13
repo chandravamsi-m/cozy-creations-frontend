@@ -1,5 +1,8 @@
 export function getOrderStatusConfig(status) {
   const s = status?.toLowerCase() || "";
+  if (s === "new") {
+    return { color: "text-indigo-700 bg-indigo-100", label: "NEW" };
+  }
   if (s === "delivered") {
     return { color: "text-[#2D8A39] bg-[#E8F5E9]", label: "DELIVERED" };
   }
@@ -9,17 +12,8 @@ export function getOrderStatusConfig(status) {
   if (s === "cancelled") {
     return { color: "text-red-500 bg-red-50", label: "CANCELLED" };
   }
-  if (s === "pending") {
-    return { color: "text-yellow-600 bg-yellow-50", label: "PENDING" };
-  }
-  if (s === "confirmed") {
-    return { color: "text-teal-600 bg-teal-50", label: "CONFIRMED" };
-  }
   if (s === "packed") {
     return { color: "text-indigo-600 bg-indigo-50", label: "PACKED" };
-  }
-  if (s === "completed") {
-    return { color: "text-[#795548] bg-[#EFEBE9]", label: "COMPLETED" };
   }
   return { color: "text-gray-500 bg-gray-50", label: (s || "unknown").toUpperCase() };
 }
@@ -54,7 +48,7 @@ function normalizeShiprocketStatusForComparison(status) {
     normalized === "PICKUP SCHEDULED" ||
     normalized === "PICKUP GENERATED"
   ) {
-    return "confirmed";
+    return "packed";
   }
 
   if (
