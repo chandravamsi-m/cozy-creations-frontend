@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
           {
             email: email.toLowerCase(),
             displayName: user.displayName || userSnap.data().displayName || derivedName,
-            photoURL: user.photoURL || userSnap.data().photoURL,
+            photoURL: user.photoURL || userSnap.data().photoURL || null,
             updatedAt: serverTimestamp(),
           },
           { merge: true }

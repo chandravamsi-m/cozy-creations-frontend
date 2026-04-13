@@ -1,6 +1,7 @@
 // src/pages/admin/AdminProducts.jsx
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
+import { createPortal } from "react-dom";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
@@ -655,7 +656,7 @@ export default function AdminProducts() {
       )}
 
       {/* ADD/EDIT MODAL CONTAINER */}
-      {(showAddModal || showEditModal) && (
+      {(showAddModal || showEditModal) && createPortal(
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={showAddModal ? handleCloseAddModal : handleCloseEditModal}
@@ -697,7 +698,8 @@ export default function AdminProducts() {
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* CONFIRMATION MODAL */}

@@ -348,43 +348,51 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="p-4 sm:p-6 flex-1 flex flex-col items-center justify-center min-h-[340px]">
-            {!stats.ordersByStatus || stats.ordersByStatus.length === 0 ?
-              <p className="text-center text-gray-500 text-sm py-4">No order data available.</p>
-            : (
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie
-                    data={stats.ordersByStatus}
-                    cx="50%"
-                    cy="45%"
-                    innerRadius={65}
-                    outerRadius={95}
-                    paddingAngle={2}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {stats.ordersByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value, name) => [`${value}`, name]}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={70}
-                    wrapperStyle={{ paddingTop: "0px" }}
-                    iconType="circle"
-                    formatter={(value, entry) => (
-                      <span className="text-xs font-bold text-gray-700 ml-1">{value}</span>
-                    )}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[340px] outline-none focus:outline-none focus:ring-0 select-none overflow-hidden [&_*]:outline-none [&_*]:ring-0" style={{ WebkitTapHighlightColor: 'transparent', outline: 'none' }}>
+              {!stats.ordersByStatus || stats.ordersByStatus.length === 0 ?
+                <p className="text-center text-gray-500 text-sm py-4">No order data available.</p>
+              : (
+                <ResponsiveContainer width="100%" height={320} className="outline-none">
+                  <PieChart className="outline-none">
+                    <Pie
+                      data={stats.ordersByStatus}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={65}
+                      outerRadius={95}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="none"
+                      activeShape={false}
+                      isAnimationActive={true}
+                      className="focus:outline-none outline-none"
+                    >
+                      {stats.ordersByStatus.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={PIE_COLORS[index % PIE_COLORS.length]} 
+                          style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+                          className="cursor-default outline-none"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name) => [`${value}`, name]}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={70}
+                      wrapperStyle={{ paddingTop: "0px" }}
+                      iconType="circle"
+                      formatter={(value, entry) => (
+                        <span className="text-xs font-bold text-gray-700 ml-1">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
         </div>
 
       </div>
