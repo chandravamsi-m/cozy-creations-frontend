@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import MainLayout from "./layouts/MainLayout";
+import AdminLayout from "./pages/admin/AdminLayout";
 import { ProductsProvider } from "./contexts/ProductsContext";
 import { LoginModalProvider, useLoginModal } from "./contexts/LoginModalContext";
 import LoginModal from "./components/LoginModal";
@@ -16,6 +17,16 @@ import OfferBanner from "./components/OfferBanner";
 import { ToastProvider } from "./contexts/ToastContext";
 import { rootUrl } from "./lib/api";
 
+// Admin Sync Imports
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminBulkProducts from "./pages/admin/AdminBulkProducts";
+import AdminEditProduct from "./pages/admin/AdminEditProduct";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminOffers from "./pages/admin/AdminOffers";
+import AdminDelivery from "./pages/admin/AdminDelivery";
+
 // Lazy pages
 const Home = lazy(() => import("./pages/Home/Home"));
 const About = lazy(() => import("./pages/About/About"));
@@ -23,19 +34,7 @@ const Products = lazy(() => import("./pages/Products/Products"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const CartPage = lazy(() => import("./pages/Cart/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
-// Removed OrderSuccess lazy import
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
-const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminBulkProducts = lazy(() =>
-  import("./pages/admin/AdminBulkProducts")
-);
-const AdminEditProduct = lazy(() => import("./pages/admin/AdminEditProduct"));
-const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
-const AdminDelivery = lazy(() => import("./pages/admin/AdminDelivery"));
 const Profile = lazy(() => import("./pages/Profile/Profile"));
 const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
 const SavedAddresses = lazy(() => import("./pages/SavedAddresses/SavedAddresses"));
@@ -150,9 +149,7 @@ function AppContent({
 
       <Suspense
         fallback={
-          <div className="min-h-screen flex items-center justify-center">
-            Loading...
-          </div>
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center"></div>
         }
       >
         {location.pathname === "/" && <OfferBanner />}
@@ -192,8 +189,6 @@ function AppContent({
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/shipping-policy" element={<ShippingPolicy />} />
-
-// Redundant Route Removed
             <Route path="*" element={<NotFound />} />
           </Route>
 

@@ -85,20 +85,17 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6 sm:space-y-8 p-0 sm:p-2">
+      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col gap-2 mb-8 mt-2">
           <Skeleton width="220px" height="32px" />
           <Skeleton width="140px" height="20px" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} height="120px" borderRadius="16px" className="w-full" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
-          <div className="lg:col-span-2">
-            <Skeleton height="400px" borderRadius="16px" className="w-full" />
-          </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-8">
           <Skeleton height="400px" borderRadius="16px" className="w-full" />
         </div>
       </div>
@@ -145,7 +142,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="-mx-4 sm:mx-0 p-0 sm:p-6 lg:p-8 w-[calc(100%+2rem)] sm:w-full space-y-4 sm:space-y-8 animate-in fade-in duration-500 overflow-x-hidden">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-1 sm:gap-4 mb-2 p-4 sm:p-0">

@@ -46,30 +46,6 @@ export default function AdminLayout() {
 
   const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
-  if (loading) {
-    return (
-      <div className="h-screen flex bg-gray-50 overflow-hidden">
-        {/* Sidebar Skeleton (hidden on mobile) */}
-        <div className="hidden md:flex flex-col w-64 bg-gray-900 p-5 space-y-4 shrink-0">
-          <Skeleton width="150px" height="28px" className="mb-6 opacity-20" />
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} width="100%" height="40px" borderRadius="8px" className="opacity-20" />
-          ))}
-        </div>
-        {/* Main content Skeleton */}
-        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-          <Skeleton width="250px" height="36px" className="mb-8" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-             {[...Array(4)].map((_, i) => (
-               <Skeleton key={i} height="120px" borderRadius="16px" />
-             ))}
-          </div>
-          <Skeleton height="350px" borderRadius="16px" />
-        </div>
-      </div>
-    );
-  }
-
   const handleLogout = () => {
     setConfirmModal({
       isOpen: true,
@@ -90,20 +66,15 @@ export default function AdminLayout() {
 
         {/* MOBILE HEADER & HAMBURGER */}
         <div className="md:hidden fixed top-0 w-full bg-gray-900 text-white z-40 p-4 flex items-center justify-between shadow-md h-16">
-          {/* Hamburger on LEFT */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded focus:outline-none hover:bg-gray-800 z-50 transition-colors"
           >
             {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-
-          {/* Title CENTERED */}
           <h1 className="text-lg font-bold absolute left-1/2 transform -translate-x-1/2">
             Admin Panel
           </h1>
-
-          {/* Empty placeholder to balance flex if needed, or just rely on absolute centering */}
           <div className="w-8"></div>
         </div>
 
@@ -125,7 +96,6 @@ export default function AdminLayout() {
         >
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-xl font-bold">Admin Panel</h1>
-            {/* Close button inside sidebar for mobile */}
             <button
               onClick={closeSidebar}
               className="md:hidden text-gray-400 hover:text-white transition-colors"
@@ -180,8 +150,44 @@ export default function AdminLayout() {
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <main ref={mainRef} className="flex-1 p-4 sm:p-6 h-full overflow-y-auto pt-20 md:pt-6">
-          <Outlet />
+        <main ref={mainRef} className="flex-1 h-full overflow-y-auto pt-16 md:pt-0 bg-gray-50">
+          <React.Suspense fallback={
+             <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+               <div className="flex flex-col gap-2 mb-8 mt-2">
+                 <Skeleton width="220px" height="32px" />
+                 <Skeleton width="140px" height="20px" />
+               </div>
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                 {[...Array(4)].map((_, i) => (
+                   <Skeleton key={i} height="120px" borderRadius="16px" className="w-full" />
+                 ))}
+               </div>
+               <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-8">
+                 <Skeleton height="400px" borderRadius="16px" className="w-full" />
+               </div>
+             </div>
+          }>
+            <div className="p-4 sm:p-6 lg:p-8">
+              {loading ? (
+                 <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+                   <div className="flex flex-col gap-2 mb-8 mt-2">
+                     <Skeleton width="220px" height="32px" />
+                     <Skeleton width="140px" height="20px" />
+                   </div>
+                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                     {[...Array(4)].map((_, i) => (
+                       <Skeleton key={i} height="120px" borderRadius="16px" className="w-full" />
+                     ))}
+                   </div>
+                   <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-8">
+                     <Skeleton height="400px" borderRadius="16px" className="w-full" />
+                   </div>
+                 </div>
+              ) : (
+                <Outlet />
+              )}
+            </div>
+          </React.Suspense>
         </main>
       </div>
 

@@ -44,6 +44,7 @@ import {
   ChevronDown as DownIcon,
   Eye as EyeIcon
 } from "lucide-react";
+import Skeleton from "../../components/common/Skeleton";
 import { apiFetch } from "../../lib/api";
 import { cancelAdminOrder, deleteAdminOrder } from "../../api/adminOrders";
 import { getOrderStatusConfig } from "../../utils/orderStatus";

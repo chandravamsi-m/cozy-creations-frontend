@@ -15,6 +15,7 @@ import {
   Eye, EyeOff,
   RefreshCw as RefreshIcon
 } from "lucide-react";
+import Skeleton from "../../components/common/Skeleton";
 
 /**
  * ADMIN USERS MANAGEMENT DASHBOARD
@@ -262,9 +263,22 @@ export default function AdminUsers() {
       {/* TABLE */}
       <div className="min-h-[500px]">
         {loading ? (
-           <div className="bg-white border border-gray-100 rounded-2xl p-24 text-center">
-              <RefreshIcon className="w-12 h-12 text-gray-200 mx-auto mb-4 animate-spin" />
-              <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Syncing user directory...</p>
+           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-500">
+             {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton width="40px" height="40px" borderRadius="10px" />
+                    <div className="space-y-2">
+                       <Skeleton width="120px" height="14px" />
+                       <Skeleton width="180px" height="10px" />
+                    </div>
+                  </div>
+                  <div className="pt-4 flex justify-between">
+                     <Skeleton width="60px" height="20px" borderRadius="8px" />
+                     <Skeleton width="40px" height="40px" borderRadius="full" />
+                  </div>
+                </div>
+             ))}
            </div>
         ) : filteredUsers.length === 0 ? (
            <div className="bg-white border border-gray-100 rounded-2xl p-24 text-center">

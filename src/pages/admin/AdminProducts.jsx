@@ -9,7 +9,8 @@ import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, 
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/ConfirmModal";
-import { Loader2, FileText, Plus, X } from "lucide-react";
+import Skeleton from "../../components/common/Skeleton";
+import { Loader2, FileText, Plus, X, Search } from "lucide-react";
 import {
   parseAdminNumber,
 } from "../../utils/adminNumberInputs";
@@ -582,7 +583,7 @@ export default function AdminProducts() {
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Products</h2>
           <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
-            {loading ? "..." : `${products.length} Items`}
+            {loading ? <Skeleton width="40px" height="12px" /> : `${products.length} Items`}
           </p>
         </div>
 
@@ -621,6 +622,14 @@ export default function AdminProducts() {
           </div>
         </div>
       </div>
+
+      {loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4 animate-in fade-in duration-500">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} height="280px" borderRadius="16px" className="w-full" />
+          ))}
+        </div>
+      )}
 
       {!loading && products.length === 0 && (
         <div className="border rounded bg-white p-6 text-center">
