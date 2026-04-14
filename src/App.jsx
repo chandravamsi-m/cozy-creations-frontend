@@ -5,7 +5,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import MainLayout from "./layouts/MainLayout";
-import AdminLayout from "./pages/admin/AdminLayout";
 import { ProductsProvider } from "./contexts/ProductsContext";
 import { LoginModalProvider, useLoginModal } from "./contexts/LoginModalContext";
 import LoginModal from "./components/LoginModal";
@@ -16,16 +15,6 @@ import OfferBanner from "./components/OfferBanner";
 
 import { ToastProvider } from "./contexts/ToastContext";
 import { rootUrl } from "./lib/api";
-
-// Admin Sync Imports
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminBulkProducts from "./pages/admin/AdminBulkProducts";
-import AdminEditProduct from "./pages/admin/AdminEditProduct";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminOffers from "./pages/admin/AdminOffers";
-import AdminDelivery from "./pages/admin/AdminDelivery";
 
 // Lazy pages
 const Home = lazy(() => import("./pages/Home/Home"));
@@ -42,6 +31,9 @@ const PrivacyPolicy = lazy(() => import("./pages/Policies/PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./pages/Policies/TermsAndConditions"));
 const RefundPolicy = lazy(() => import("./pages/Policies/RefundPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/Policies/ShippingPolicy"));
+
+// The Admin Shield: One lazy entry point for everything Admin
+const AdminRoutes = lazy(() => import("./pages/admin/AdminRoutes"));
 
 // Component with routing
 function AppContent({
@@ -192,17 +184,8 @@ function AppContent({
             <Route path="*" element={<NotFound />} />
           </Route>
 
-          {/* ADMIN ROUTES */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="bulk-products" element={<AdminBulkProducts />} />
-            <Route path="products/:id/edit" element={<AdminEditProduct />} />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="offers" element={<AdminOffers />} />
-            <Route path="delivery" element={<AdminDelivery />} />
-          </Route>
+          {/* ADMIN SHIELD ROUTE */}
+          <Route path="/admin/*" element={<AdminRoutes />} />
         </Routes>
       </Suspense>
     </>

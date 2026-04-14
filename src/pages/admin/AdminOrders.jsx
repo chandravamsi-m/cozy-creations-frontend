@@ -500,11 +500,11 @@ export default function AdminOrders() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Order ID</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Products</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Date / Time</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400 border-r border-gray-100/50">Payment</th>
-                      <th className="px-6 py-5 text-[10px] font-bold text-gray-400">Status</th>
+                      <th className="px-6 py-5 text-xs font-semibold text-gray-500 border-r border-gray-100/50">Order ID</th>
+                      <th className="px-6 py-5 text-xs font-semibold text-gray-500 border-r border-gray-100/50">Products</th>
+                      <th className="px-6 py-5 text-xs font-semibold text-gray-500 border-r border-gray-100/50">Date / Time</th>
+                      <th className="px-6 py-5 text-xs font-semibold text-gray-500 border-r border-gray-100/50">Payment</th>
+                      <th className="px-6 py-5 text-xs font-semibold text-gray-500">Status</th>
                       <th className="px-6 py-5"></th>
                     </tr>
                   </thead>
@@ -514,7 +514,7 @@ export default function AdminOrders() {
                       return (
                         <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-blue-50/30 transition-all cursor-pointer group hover:scale-[1.002] duration-200 origin-center">
                           <td className="px-6 py-3.5">
-                             <span title={order.id} className="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg font-mono text-[11px] text-gray-700 font-bold tracking-tight group-hover:bg-white group-hover:border-blue-100 transition-colors">
+                             <span title={order.id} className="px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg font-mono text-xs text-gray-700 font-semibold tracking-tight group-hover:bg-white group-hover:border-blue-100 transition-colors">
                                 {order.id}
                              </span>
                           </td>
@@ -533,17 +533,17 @@ export default function AdminOrders() {
                                       </div>
                                    ))}
                                    {order.items?.length > 3 && (
-                                      <div className="w-10 h-10 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-gray-500 shadow-sm">
+                                      <div className="w-10 h-10 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-500 shadow-sm">
                                          +{order.items.length - 3}
                                       </div>
                                    )}
                                 </div>
                                 <div className="min-w-0">
-                                   <p className="text-[11px] font-black text-gray-900 group-hover:text-blue-700 transition-colors truncate max-w-[150px]">
+                                   <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors truncate max-w-[150px]">
                                       {order.items?.[0]?.name || "Item"}
                                       {order.items?.length > 1 && <span className="ml-1 text-blue-600">+{order.items.length - 1}</span>}
                                    </p>
-                                   <p className="text-[9px] font-medium text-gray-400 mt-0.5">
+                                   <p className="text-[11px] font-medium text-gray-400 mt-0.5">
                                       {order.items?.length || 0} Item(s) Total
                                    </p>
                                 </div>
@@ -557,12 +557,12 @@ export default function AdminOrders() {
                           </td>
                           <td className="px-6 py-3.5 border-l border-gray-50/10">
                              <div className="flex flex-col">
-                                <span className="text-sm font-black text-gray-900 tracking-tighter">₹{order.total}</span>
-                                <span className="text-[9px] font-bold text-gray-400">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
+                                <span className="text-base font-bold text-gray-900 tracking-tighter">₹{order.total}</span>
+                                <span className="text-[10px] font-bold text-gray-400">{order.paymentMethod ? (order.paymentMethod.toLowerCase() === 'cod' ? 'COD' : 'Online') : "Online"}</span>
                              </div>
                           </td>
                           <td className="px-6 py-3.5 border-l border-gray-50/10">
-                             <span className={`w-fit px-3 py-1 rounded-lg text-[9px] font-black border shadow-sm ${statusCfg.color}`}>
+                             <span className={`w-fit px-3 py-1 rounded-lg text-[10px] font-bold border shadow-sm ${statusCfg.color}`}>
                                 {statusCfg.label}
                              </span>
                           </td>

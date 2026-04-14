@@ -582,9 +582,9 @@ export default function AdminProducts() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <div className="flex items-end gap-2">
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Products</h2>
-          <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
+          <div className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
             {loading ? <Skeleton width="40px" height="12px" /> : `${products.length} Items`}
-          </p>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">

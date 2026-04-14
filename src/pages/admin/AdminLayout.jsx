@@ -151,43 +151,26 @@ export default function AdminLayout() {
 
         {/* MAIN CONTENT AREA */}
         <main ref={mainRef} className="flex-1 h-full overflow-y-auto pt-16 md:pt-0 bg-gray-50">
-          <React.Suspense fallback={
-             <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-500">
-               <div className="flex flex-col gap-2 mb-8 mt-2">
-                 <Skeleton width="220px" height="32px" />
-                 <Skeleton width="140px" height="20px" />
-               </div>
-               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-                 {[...Array(4)].map((_, i) => (
-                   <Skeleton key={i} height="120px" borderRadius="16px" className="w-full" />
-                 ))}
-               </div>
-               <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-8">
-                 <Skeleton height="400px" borderRadius="16px" className="w-full" />
-               </div>
-             </div>
-          }>
-            <div className="p-4 sm:p-6 lg:p-8">
-              {loading ? (
-                 <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
-                   <div className="flex flex-col gap-2 mb-8 mt-2">
-                     <Skeleton width="220px" height="32px" />
-                     <Skeleton width="140px" height="20px" />
-                   </div>
-                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-                     {[...Array(4)].map((_, i) => (
-                       <Skeleton key={i} height="120px" borderRadius="16px" className="w-full" />
-                     ))}
-                   </div>
-                   <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-8">
-                     <Skeleton height="400px" borderRadius="16px" className="w-full" />
-                   </div>
-                 </div>
-              ) : (
-                <Outlet />
-              )}
-            </div>
-          </React.Suspense>
+          <div className="p-4 sm:p-6 lg:p-8">
+            {loading ? (
+              <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+                <div className="flex flex-col gap-2 mb-8 mt-2">
+                  <Skeleton width="220px" height="32px" />
+                  <Skeleton width="140px" height="20px" />
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} height="120px" borderRadius="16px" className="w-full" />
+                  ))}
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-8">
+                  <Skeleton height="400px" borderRadius="16px" className="w-full" />
+                </div>
+              </div>
+            ) : (
+              <Outlet />
+            )}
+          </div>
         </main>
       </div>
 
