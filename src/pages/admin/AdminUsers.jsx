@@ -196,7 +196,7 @@ export default function AdminUsers() {
   return (
     <div className="space-y-4 font-sans">
       {/* HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
+      <div className="flex flex-row items-center justify-between gap-2 px-1 mb-2">
         <div className="flex items-end gap-2">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Users</h2>
           <p className="text-xs font-medium text-gray-400 mb-0.5">Control Panel</p>
@@ -204,7 +204,7 @@ export default function AdminUsers() {
         
         <button 
            onClick={() => setShowCreateModal(true)} 
-           className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+           className="px-5 py-2.5 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-gray-200 flex items-center justify-center gap-2"
         >
           <Plus className="w-4 h-4" /> Add New User
         </button>
@@ -416,7 +416,7 @@ export default function AdminUsers() {
                 </div>
               </div>
               <div className="pt-2">
-                <button type="submit" disabled={creatingUser} className="w-full py-3.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98] disabled:opacity-50">{creatingUser ? "Processing..." : "Register User"}</button>
+                <button type="submit" disabled={creatingUser} className="w-full py-3.5 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 shadow-lg shadow-gray-200 transition-all active:scale-[0.98] disabled:opacity-50">{creatingUser ? "Processing..." : "Register User"}</button>
               </div>
             </form>
           </div>
@@ -462,7 +462,7 @@ export default function AdminUsers() {
                 </div>
               </div>
               <div className="pt-2">
-                <button type="submit" disabled={savingUser} className="w-full py-3.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98] disabled:opacity-50">{savingUser ? "Saving..." : "Apply Changes"}</button>
+                <button type="submit" disabled={savingUser} className="w-full py-3.5 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 shadow-lg shadow-gray-200 transition-all active:scale-[0.98] disabled:opacity-50">{savingUser ? "Saving..." : "Apply Changes"}</button>
               </div>
             </form>
           </div>

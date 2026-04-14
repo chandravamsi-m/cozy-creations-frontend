@@ -362,7 +362,7 @@ export default function AdminBulkProducts() {
           <button
             onClick={handleGenerateCatalogue}
             disabled={loading || catalogueLoading}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium text-[10px] sm:text-xs uppercase tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10 shadow-sm relative overflow-hidden shrink-0"
+            className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg font-medium text-[10px] sm:text-xs tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-9 shadow-sm relative overflow-hidden shrink-0"
           >
             {catalogueLoading ? (
               <>
@@ -430,11 +430,11 @@ export default function AdminBulkProducts() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-auto pt-1 space-y-1">
+                    <div className="mt-auto pt-1 space-y-1.5">
                       <div className="flex flex-row gap-1">
                         <button
                           onClick={() => handleOpenEditModal(p)}
-                          className="flex-1 bg-blue-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-medium text-[9px] sm:text-[10px] uppercase tracking-wider hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-1"
+                          className="flex-1 bg-blue-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-1"
                         >
                           Edit
                         </button>
@@ -442,14 +442,14 @@ export default function AdminBulkProducts() {
                         {p.isActive !== false ? (
                           <button
                             onClick={() => handleDelete(p.id)}
-                            className="flex-1 bg-orange-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-medium text-[9px] sm:text-[10px] uppercase tracking-wider hover:bg-orange-700 transition-all active:scale-95 flex items-center justify-center gap-1"
+                            className="flex-1 bg-orange-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-orange-700 transition-all active:scale-95 flex items-center justify-center gap-1"
                           >
                             Deactivate
                           </button>
                         ) : (
                           <button
                             onClick={() => handleActivate(p.id)}
-                            className="flex-1 bg-green-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-medium text-[9px] sm:text-[10px] uppercase tracking-wider hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-1"
+                            className="flex-1 bg-green-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-1"
                           >
                             Activate
                           </button>
@@ -458,7 +458,7 @@ export default function AdminBulkProducts() {
 
                       <button
                         onClick={() => handlePermanentDelete(p.id)}
-                        className="w-full border border-red-200 text-red-600 py-1 rounded-lg font-bold text-[9px] uppercase tracking-tight hover:bg-red-50 transition-all"
+                        className="w-full bg-red-50 border border-red-100 text-red-600 py-1.5 rounded-lg font-bold text-[10px] tracking-tight hover:bg-red-100 transition-all active:scale-[0.98]"
                       >
                         Delete Permanently
                       </button>

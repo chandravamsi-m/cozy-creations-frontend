@@ -565,7 +565,7 @@ export default function AdminOffers() {
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-8 py-3 rounded-xl transition-all font-bold uppercase tracking-widest text-xs disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-100 active:scale-95"
+              className="bg-black hover:bg-gray-800 text-white flex items-center gap-2 px-8 py-3 rounded-xl transition-all font-bold tracking-widest text-xs disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-gray-200 active:scale-95"
             >
               {saving ? (
                 <>

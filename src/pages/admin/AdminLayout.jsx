@@ -104,41 +104,40 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          <nav className="flex flex-col gap-2">
-            <Link to="/admin" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <LayoutDashboard className="w-5 h-5 text-gray-400" />
-              <span>Dashboard</span>
-            </Link>
+          <nav className="flex flex-col gap-1">
+            {[
+              { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
+              { to: "/admin/products", icon: Package, label: "Products" },
+              { to: "/admin/bulk-products", icon: Layers, label: "Bulk Products" },
+              { to: "/admin/orders", icon: FileText, label: "Orders" },
+              { to: "/admin/users", icon: Users, label: "Users" },
+              { to: "/admin/offers", icon: Gift, label: "Offers" },
+              { to: "/admin/delivery", icon: Truck, label: "Delivery" },
+            ].map((item) => {
+              const isActive = item.exact 
+                ? location.pathname === item.to 
+                : location.pathname.startsWith(item.to) && (item.to !== "/admin" || location.pathname === "/admin");
+              
+              const Icon = item.icon;
 
-            <Link to="/admin/products" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <Package className="w-5 h-5 text-gray-400" />
-              <span>Products</span>
-            </Link>
-
-            <Link to="/admin/bulk-products" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <Layers className="w-5 h-5 text-gray-400" />
-              <span>Bulk Products</span>
-            </Link>
-
-            <Link to="/admin/orders" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <FileText className="w-5 h-5 text-gray-400" />
-              <span>Orders</span>
-            </Link>
-
-            <Link to="/admin/users" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <Users className="w-5 h-5 text-gray-400" />
-              <span>Users</span>
-            </Link>
-
-            <Link to="/admin/offers" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <Gift className="w-5 h-5 text-gray-400" />
-              <span>Offers</span>
-            </Link>
-
-            <Link to="/admin/delivery" onClick={closeSidebar} className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 transition-colors">
-              <Truck className="w-5 h-5 text-gray-400" />
-              <span>Delivery</span>
-            </Link>
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={closeSidebar}
+                  className={`
+                    flex items-center gap-3 px-4 py-2 rounded-lg transition-colors
+                    ${isActive 
+                      ? "bg-gray-800 text-white" 
+                      : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                    }
+                  `}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-500"}`} />
+                  <span className={`text-sm ${isActive ? "font-bold" : "font-medium"}`}>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           <button

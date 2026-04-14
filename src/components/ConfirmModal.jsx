@@ -2,6 +2,10 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
+/**
+ * ConfirmModal: A clean, standardized confirmation dialog used throughout the admin dashboard.
+ * Refined to match the trimmer, natural typography and black-themed aesthetic.
+ */
 const ConfirmModal = ({
   isOpen,
   onClose,
@@ -17,7 +21,7 @@ const ConfirmModal = ({
   const typeConfig = {
     danger: "bg-red-600 hover:bg-red-700 text-white",
     success: "bg-emerald-600 hover:bg-emerald-700 text-white",
-    default: "bg-blue-600 hover:bg-blue-700 text-white"
+    default: "bg-black hover:bg-gray-800 text-white"
   };
 
   const iconConfig = {
@@ -32,7 +36,7 @@ const ConfirmModal = ({
       </div>
     ),
     default: (
-      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 animate-in zoom-in duration-300">
+      <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-4 animate-in zoom-in duration-300">
         <Info className="w-6 h-6" />
       </div>
     )
@@ -68,7 +72,7 @@ const ConfirmModal = ({
             <div className="flex flex-row gap-3 w-full">
               <button
                 onClick={onClose}
-                className="flex-1 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-bold uppercase tracking-wider hover:bg-gray-50 transition-colors"
+                className="flex-1 px-5 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-bold transition-colors hover:bg-gray-50 active:scale-95"
               >
                 {cancelText}
               </button>
@@ -77,7 +81,7 @@ const ConfirmModal = ({
                   onConfirm();
                   onClose();
                 }}
-                className={`flex-1 px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 ${typeConfig[type] || typeConfig.default}`}
+                className={`flex-1 px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition-all active:scale-95 ${typeConfig[type] || typeConfig.default}`}
               >
                 {confirmText}
               </button>
