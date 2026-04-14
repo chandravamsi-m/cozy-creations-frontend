@@ -28,8 +28,7 @@ export default function AdminDelivery() {
   const [deliverySettings, setDeliverySettings] = useState({
     isActive: false,
     amount: 0,
-    freeDeliveryThreshold: 0,
-    isShippingFeeEnabled: true
+    freeDeliveryThreshold: 0
   });
 
   useEffect(() => { fetchSettings(); }, []);
@@ -192,30 +191,7 @@ export default function AdminDelivery() {
               )}
             </div>
           </div>
-          
-          {/* ── Shipping Fee Settings Section ── */}
-          <div className="bg-orange-50 rounded-xl p-6 border border-orange-100 lg:col-span-2">
-            <p className="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em] mb-4">Shipping Config</p>
-            
-            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all hover:border-orange-200">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-xl">
-                  <Truck className="w-5 h-5 text-gray-400" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">Enable Shipping Fee</p>
-                  <p className="text-[10px] text-gray-500 font-medium">Toggle on to dynamically apply shipping charges across the store.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDeliverySettings(p => ({ ...p, isShippingFeeEnabled: !p.isShippingFeeEnabled }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 p-1 ${deliverySettings.isShippingFeeEnabled ? "bg-green-600" : "bg-gray-300"}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${deliverySettings.isShippingFeeEnabled ? "translate-x-5" : "translate-x-0"}`} />
-              </button>
-            </div>
-          </div>
+
         </div>
 
         {/* ── Save Button ── */}
