@@ -838,7 +838,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates, onImageClick }
              {order.status === "cancelled" ? (
                 <button 
                   onClick={() => actions.handleDeleteOrder(order)}
-                  className="w-full py-3.5 bg-red-600 text-white rounded-lg text-[10px] font-black hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-red-600 text-white rounded-lg text-[11px] font-bold hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
                 >
                    <TrashIcon className="w-4 h-4" /> Delete Order Permanently
                 </button>
@@ -846,7 +846,7 @@ function OrderSidePanel({ order, onClose, actions, loadingStates, onImageClick }
                 !isTerminal && (
                    <button 
                      onClick={() => actions.handleCancelOrder(order)}
-                     className="w-full py-3.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                     className="w-full py-3.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[11px] font-bold hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
                    >
                      <CloseIcon className="w-4 h-4" /> Cancel Order
                    </button>

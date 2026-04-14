@@ -8,8 +8,8 @@ export function ProductsProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cache (in-memory)
-  const [cache, setCache] = useState({
+  // Cache (in-memory) using a Ref to avoid unstable function dependencies
+  const cacheRef = React.useRef({
     all: null,
     categories: {}
   });
@@ -22,6 +22,7 @@ export function ProductsProvider({ children }) {
 
         // 1️⃣ Cache handling: Skip if force=true or includeInactive=true (admin mode)
         if (!force && !includeInactive && !silent) {
+          const cache = cacheRef.current;
           if (category && cache.categories[category]) {
             setProducts(cache.categories[category]);
             setLoading(false);
@@ -39,18 +40,17 @@ export function ProductsProvider({ children }) {
         const result = await fetchFirestoreProducts(category, includeInactive);
 
         // Only set global context products if we are fetching the standard active list
-        // (to avoid breaking public-facing pages that rely on 'products' state)
         if (!includeInactive) {
           setProducts(result);
 
           // Only cache standard active views
-          setCache((prev) => ({
-            all: category === "" ? result : prev.all,
+          cacheRef.current = {
+            all: category === "" ? result : cacheRef.current.all,
             categories: {
-              ...prev.categories,
+              ...cacheRef.current.categories,
               ...(category && { [category]: result }),
             },
-          }));
+          };
         }
 
         return result;
@@ -62,7 +62,7 @@ export function ProductsProvider({ children }) {
         if (!silent) setLoading(false);
       }
     },
-    [cache]
+    []
   );
 
   // Load all products at first mount

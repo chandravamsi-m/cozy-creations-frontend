@@ -35,6 +35,10 @@ export default function AdminUsers() {
   const [activeRoleFilter, setActiveRoleFilter] = useState("all");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   
+  // -- Pagination --
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // -- Edit & Create --
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createFormData, setCreateFormData] = useState({
@@ -116,6 +120,14 @@ export default function AdminUsers() {
     const matchesRole = activeRoleFilter === "all" || (u.role || "user") === activeRoleFilter;
     return matchesSearch && matchesRole;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeRoleFilter]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
   const handleEditInit = (user) => {
     setEditingUser(user);
@@ -261,7 +273,7 @@ export default function AdminUsers() {
       </div>
 
       {/* TABLE */}
-      <div className="min-h-[500px]">
+      <div className="">
         {loading ? (
            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-500">
              {[...Array(6)].map((_, i) => (
@@ -289,7 +301,7 @@ export default function AdminUsers() {
           <>
             {/* MOBILE CARD VIEW (< lg) */}
             <div className="lg:hidden space-y-3">
-              {filteredUsers.map(u => (
+              {paginatedUsers.map(u => (
                 <div key={u.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -336,7 +348,7 @@ export default function AdminUsers() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filteredUsers.map(u => (
+                  {paginatedUsers.map(u => (
                     <tr key={u.id} className="hover:bg-blue-50/30 transition-all cursor-pointer group hover:scale-[1.002] duration-200">
                       <td className="px-6 py-2.5">
                         <div className="flex items-center gap-3">
@@ -371,7 +383,43 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* CREATE MODAL */}
+      {/* PAGINATION FOOTER */}
+      {filteredUsers.length > 0 && (
+        <div className="flex flex-row items-center justify-between py-4 px-1 border-t border-gray-50 mt-2">
+          <div className="text-[11px] font-medium text-gray-400">
+            Showing <span className="text-gray-600">{startIndex + 1}</span>-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length}
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setCurrentPage(prev => Math.max(prev - 1, 1));
+                const container = document.querySelector('main.overflow-y-auto') || window;
+                container.scrollTo({ top: 0, behavior: 'auto' });
+              }}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-[11px] font-bold text-gray-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Prev
+            </button>
+            <span className="text-[11px] text-gray-300 mx-1">|</span>
+            <div className="text-[11px] font-bold text-gray-600 px-1">
+              {currentPage} / {totalPages || 1}
+            </div>
+            <span className="text-[11px] text-gray-300 mx-1">|</span>
+            <button
+              onClick={() => {
+                setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                const container = document.querySelector('main.overflow-y-auto') || window;
+                container.scrollTo({ top: 0, behavior: 'auto' });
+              }}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-3 py-1 text-[11px] font-bold text-gray-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
       {showCreateModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200" onClick={() => { setShowCreateModal(false); setShowP1(false); setShowP2(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>

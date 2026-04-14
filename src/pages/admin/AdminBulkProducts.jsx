@@ -7,7 +7,7 @@ import { useProducts } from "../../contexts/ProductsContext";
 import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/ConfirmModal";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -376,7 +376,10 @@ export default function AdminBulkProducts() {
                 </span>
               </>
             ) : (
-              "📄 Catalogue"
+              <>
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Catalogue</span>
+              </>
             )}
           </button>
         </div>
