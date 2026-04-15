@@ -104,7 +104,13 @@ export default function Profile() {
     const { current, next, confirm } = pwForm;
 
     if (!current) { setPwError("Please enter your current password."); return; }
-    if (next.length < 6) { setPwError("New password must be at least 6 characters."); return; }
+    
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+    if (!passwordRegex.test(next)) {
+      setPwError("New password must be at least 8 characters long, and include uppercase, lowercase, a number, and a special character.");
+      return;
+    }
+
     if (next !== confirm) { setPwError("New passwords do not match."); return; }
     if (current === next) { setPwError("New password must be different from the current one."); return; }
 

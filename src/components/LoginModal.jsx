@@ -55,8 +55,10 @@ export default function LoginModal({ closeModal }) {
 
     // For signup, validate password and confirm password
     if (mode === "signup") {
-      if (password.length < 6) {
-        setErrMsg("Password must be at least 6 characters long.");
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+      
+      if (!passwordRegex.test(password)) {
+        setErrMsg("Password must be at least 8 characters long, and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
         return;
       }
 
@@ -124,7 +126,11 @@ export default function LoginModal({ closeModal }) {
       setLoading(true);
       const res = await resetPassword(email.trim());
 
-      if (res && res.success) {
+      if (res?.type === "google_account") {
+        setErrMsg(
+          "This account uses Google Sign-in. Please use the \"Continue with Google\" button to log in — password reset is not available for Google accounts."
+        );
+      } else if (res && res.success) {
         setMsg("Password reset link sent! Please check your email inbox.");
       } else {
         setErrMsg(res?.error || "Could not send reset link. Please try again.");
@@ -154,7 +160,7 @@ export default function LoginModal({ closeModal }) {
       <div className="absolute inset-0" onClick={closeModal}></div>
 
       {/* MODAL */}
-      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-fadeIn">
+      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn">
 
         {/* HEADER */}
         <div className="flex justify-between items-center px-6 py-4 border-b">

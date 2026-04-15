@@ -33,17 +33,7 @@ export async function sendOrderConfirmation(email, orderData, idToken) {
   return res.json();
 }
 
-export async function sendOrderStatusUpdate(email, orderId, status, name, expectedDeliveryDate, idToken) {
-  const res = await apiFetch("/send-status-update", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ email, orderId, status, name, expectedDeliveryDate }),
-  });
-  return res.json();
-}
+
 
 export async function sendPasswordResetEmail(email) {
   const res = await apiFetch("/send-password-reset", {

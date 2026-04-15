@@ -149,6 +149,12 @@ export default function AdminUsers() {
         role: editFormData.role
       };
       if (editFormData.password.trim()) {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+        if (!passwordRegex.test(editFormData.password.trim())) {
+          showToast("Password must be at least 8 characters long, and include uppercase, lowercase, a number, and a special character.", "error");
+          setSavingUser(false);
+          return;
+        }
         updatePayload.password = editFormData.password.trim();
       }
       
@@ -191,6 +197,12 @@ export default function AdminUsers() {
     e.preventDefault();
     if (createFormData.password !== createFormData.confirmPassword) {
       showToast("Passwords do not match", "error");
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+    if (!passwordRegex.test(createFormData.password)) {
+      showToast("Password must be at least 8 characters long, and include uppercase, lowercase, a number, and a special character.", "error");
       return;
     }
     setCreatingUser(true);

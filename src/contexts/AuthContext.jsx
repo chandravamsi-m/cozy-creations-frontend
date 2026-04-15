@@ -61,7 +61,9 @@ export function AuthProvider({ children }) {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
-          sendWelcomeEmail(email, derivedName);
+          sendWelcomeEmail(email, derivedName).catch((err) =>
+            console.error("Welcome email failed:", err)
+          );
         }
       } else {
         await setDoc(

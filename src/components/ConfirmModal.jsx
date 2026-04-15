@@ -21,7 +21,7 @@ const ConfirmModal = ({
   const typeConfig = {
     danger: "bg-red-600 hover:bg-red-700 text-white",
     success: "bg-emerald-600 hover:bg-emerald-700 text-white",
-    default: "bg-black hover:bg-gray-800 text-white"
+    default: "bg-blue-600 hover:bg-blue-700 text-white"
   };
 
   const iconConfig = {
@@ -36,7 +36,7 @@ const ConfirmModal = ({
       </div>
     ),
     default: (
-      <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mb-4 animate-in zoom-in duration-300">
+      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 animate-in zoom-in duration-300">
         <Info className="w-6 h-6" />
       </div>
     )
