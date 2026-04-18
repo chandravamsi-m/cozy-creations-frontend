@@ -327,27 +327,6 @@ export default function AdminBulkProducts() {
             background: currentColor;
             transform: rotate(-12deg);
           }
-          .star-qty-badge {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            width: 48px;
-            height: 48px;
-            background-image: url('https://res.cloudinary.com/dumkblp3v/image/upload/v1770800754/Star-badge_ttci0q.svg');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 900;
-            z-index: 30;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-            padding-bottom: 2px;
-            transition: transform 0.3s ease;
-          }
         `}
       </style>
       <div className="flex flex-row justify-between items-center gap-4 mb-6 shrink-0">
@@ -393,8 +372,6 @@ export default function AdminBulkProducts() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
               {bulkProducts.map((p) => {
-                const firstTier = p.bulkPricingTiers && p.bulkPricingTiers.length > 0 ? p.bulkPricingTiers[0] : null;
-
                 return (
                   <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
                     {/* Product Image */}
@@ -404,7 +381,6 @@ export default function AdminBulkProducts() {
                         alt={p.name}
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-110 rounded-xl"
                       />
-
                     </div>
 
                     {/* Product Info */}

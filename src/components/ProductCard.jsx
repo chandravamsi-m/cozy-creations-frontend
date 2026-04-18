@@ -166,27 +166,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
             background: currentColor;
             transform: rotate(-12deg);
           }
-          .star-qty-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 42px;
-            height: 42px;
-            background-image: url('https://res.cloudinary.com/dumkblp3v/image/upload/v1770800754/Star-badge_ttci0q.svg');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 900;
-            z-index: 30;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-            padding-bottom: 2px;
-            transition: transform 0.3s ease;
-          }
+
         `}
       </style>
 
