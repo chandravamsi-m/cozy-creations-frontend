@@ -309,14 +309,12 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-4 font-sans">
-      {/* HEADER SECTION - Responsive Flex */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
-        <div className="flex items-end gap-2">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Orders</h2>
-          <p className="text-[10px] font-medium text-gray-400 mb-0.5">Control Panel</p>
+      {/* HEADER SECTION */}
+      <div className="flex flex-row items-center justify-between gap-2 px-1 pt-1 mb-6">
+        <div className="flex items-center gap-3">
+          <PackageIcon className="w-6 h-6 text-orange-500" />
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Order Management</h2>
         </div>
-        
-        {/* Mobile-Friendly Search/Actions Overlay (Future placeholder if needed) */}
       </div>
 
       {/* FILTER & SEARCH TOOLBAR - Adaptive Row */}

@@ -215,11 +215,12 @@ export default function CartPage() {
                     key={item.productId}
                     className="bg-white border border-gray-200/60 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200"
                   >
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-row gap-3 sm:gap-4">
                       {/* Product Image — click to open quick view */}
                       <div
                         onClick={() => handleOpenQuickView(item)}
-                        className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden shrink-0 relative group cursor-pointer"
+                        className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden shrink-0 relative group cursor-pointer"
                       >
                         <img
                           src={optimizeCloudinaryImage(item.thumbnailUrl || item.imageUrl, IMAGE_PRESETS.cart)}
@@ -318,25 +319,39 @@ export default function CartPage() {
                           </div>
                         ) : null}
 
-                        {/* Actions Row */}
-                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
+                        {/* Desktop Actions Row */}
+                        <div className="hidden md:flex flex-nowrap items-center gap-1.5 pt-2 border-t border-gray-100 mt-2">
+                          <div className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
+                            <button onClick={() => decreaseQuantity(item.productId)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">−</button>
+                            <span className="min-w-[24px] text-center font-bold text-gray-900 text-sm">{item.quantity}</span>
+                            <button onClick={() => increaseQuantity(item.productId)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">+</button>
+                          </div>
+                          <button onClick={() => openCustomize(item)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 transition-all hover:border-gray-400">{customizations[item.productId] ? "Edit" : "Customize"}</button>
+                          <button onClick={() => removeFromCart(item.productId)} className="px-4 py-2 rounded-lg border border-red-200 bg-white text-xs font-semibold text-red-600 transition-all hover:border-red-300">Remove</button>
+                        </div>
+
+                        </div>
+                      </div>
+
+                      {/* Actions Row */}
+                      <div className="md:hidden flex flex-nowrap items-center gap-1.5 pt-3 border-t border-gray-100 overflow-x-auto scrollbar-hide">
                           {/* Quantity Controls */}
-                          <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
+                          <div className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-0.5 sm:px-2 sm:py-1">
                             <button
                               onClick={() => decreaseQuantity(item.productId)}
-                              className="w-6 h-6 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs transition-all"
+                              className="w-6 h-6 sm:w-7 sm:h-7 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs sm:text-sm transition-all shadow-sm sm:shadow-none"
                               aria-label="Decrease quantity"
                             >
                               −
                             </button>
 
-                            <span className="min-w-[24px] text-center font-bold text-gray-900 text-xs">
+                            <span className="min-w-[18px] sm:min-w-[24px] text-center font-bold text-gray-900 text-xs sm:text-sm">
                               {item.quantity}
                             </span>
 
                             <button
                               onClick={() => increaseQuantity(item.productId)}
-                              className="w-6 h-6 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs transition-all"
+                              className="w-6 h-6 sm:w-7 sm:h-7 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs sm:text-sm transition-all shadow-sm sm:shadow-none"
                               aria-label="Increase quantity"
                             >
                               +
@@ -345,21 +360,21 @@ export default function CartPage() {
 
                           <button
                             onClick={() => openCustomize(item)}
-                            className="px-2 xs:px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] xs:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400 whitespace-nowrap"
+                            className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] sm:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400"
                           >
                             {customizations[item.productId] ? "Edit" : "Customize"}
                           </button>
 
                           <button
                             onClick={() => removeFromCart(item.productId)}
-                            className="px-2 xs:px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 active:bg-red-100 text-[10px] xs:text-xs font-semibold text-red-600 hover:text-red-700 transition-all hover:border-red-300 whitespace-nowrap"
+                            className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-red-200 bg-white hover:bg-red-50 active:bg-red-100 text-[10px] sm:text-xs font-semibold text-red-600 hover:text-red-700 transition-all hover:border-red-300"
                           >
                             Remove
                           </button>
                         </div>
                       </div>
                     </div>
-                  </div>
+
                 ))}
               </div>
 

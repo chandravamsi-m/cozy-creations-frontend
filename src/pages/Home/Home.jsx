@@ -201,19 +201,19 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
       <div
         ref={productSectionRef}
         data-section="product"
-        className="relative w-full h-auto lg:h-screen bg-white flex flex-col md:flex-row overflow-hidden z-20"
+        className="relative w-full h-auto lg:h-[65vh] lg:max-h-[600px] bg-white flex flex-col md:flex-row overflow-hidden z-20"
       >
         <div
-          className={`w-full md:w-1/2 flex flex-col justify-center px-3 sm:px-6 md:px-10 lg:pl-[100px] pt-8 pb-10 sm:pt-12 sm:pb-8 md:py-16 lg:py-16 h-auto lg:h-full transition-all duration-700 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+          className={`w-full md:w-1/2 flex flex-col justify-center px-3 sm:px-6 md:px-4 lg:px-8 xl:px-10 lg:pl-12 xl:pl-[100px] pt-8 pb-10 sm:pt-12 sm:pb-8 md:py-16 lg:py-10 h-auto lg:h-full transition-all duration-700 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
             }`}
         >
-          <h2 className="font-normal text-[28px] xs:text-[32px] sm:text-3xl md:text-4xl lg:text-[54px] xl:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-none md:max-w-xl mb-4 sm:mb-8 md:mb-12 break-words text-left">
+          <h2 className="font-normal text-[28px] xs:text-[32px] sm:text-3xl md:text-2xl lg:text-4xl xl:text-[54px] 2xl:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-none md:max-w-xl mb-4 sm:mb-8 md:mb-12 break-words text-left">
             Elevate Your Space With Handcrafted Glow
           </h2>
           <div className="hidden md:block w-full max-w-[540px] h-[1px] bg-black mb-8"></div>
-          <div className="flex flex-row gap-2 sm:gap-4 w-full">
+          <div className="flex flex-row gap-2 sm:gap-4 md:gap-1.5 lg:gap-4 w-full">
             <button
-              className="flex-1 bg-yellow-accent px-4 py-2.5 sm:px-6 sm:py-3 rounded-md text-black font-medium text-[13px] sm:text-base capitalize whitespace-nowrap hover:scale-105 transition-transform duration-300"
+              className="flex-1 bg-yellow-accent px-4 py-2.5 sm:px-6 sm:py-3 md:px-2 lg:px-4 xl:px-6 md:text-[12px] lg:text-sm xl:text-base rounded-md text-black font-medium text-[13px] sm:text-base capitalize whitespace-nowrap hover:scale-105 transition-transform duration-300"
               type="button"
               onClick={() => {
                 const el = document.getElementById("collections");
@@ -223,7 +223,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
               Explore collections
             </button>
             <button
-              className="flex-1 border border-black px-4 py-2.5 sm:px-6 sm:py-3 rounded-md text-black font-medium text-[13px] sm:text-base capitalize hover:bg-black hover:text-white transition-all duration-300 whitespace-nowrap"
+              className="flex-1 border border-black px-4 py-2.5 sm:px-6 sm:py-3 md:px-2 lg:px-4 xl:px-6 md:text-[12px] lg:text-sm xl:text-base rounded-md text-black font-medium text-[13px] sm:text-base capitalize hover:bg-black hover:text-white transition-all duration-300 whitespace-nowrap"
               type="button"
               onClick={() => navigate("/about")}
             >
@@ -232,7 +232,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
           </div>
         </div>
         <div
-          className={`w-full md:w-1/2 h-[300px] sm:h-[400px] md:h-[500px] lg:h-full overflow-hidden transition-all duration-700 delay-200 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
+          className={`w-full md:w-1/2 h-[300px] sm:h-[400px] md:h-[450px] lg:h-full overflow-hidden transition-all duration-700 delay-200 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
             }`}
         >
           <img

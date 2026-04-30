@@ -495,15 +495,13 @@ export default function Checkout() {
 
             {/* 1. SHIPPING ADDRESS */}
             <section className="space-y-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 tracking-tight">Select Shipping Address</h2>
-                </div>
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 mb-3">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">Select Shipping Address</h2>
                 {savedAddresses.length > 0 && (
                   <button
                     onClick={handleToggleForm}
                     disabled={savedAddresses.length >= MAX_ADDRESSES}
-                    className={`text-[11px] font-bold transition-all hover:underline ${savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600 hover:text-yellow-700"}`}
+                    className={`text-[11px] font-bold transition-all hover:underline text-left xs:text-right ${savedAddresses.length >= MAX_ADDRESSES ? "text-gray-400 cursor-not-allowed" : "text-yellow-600 hover:text-yellow-700"}`}
                   >
                     + Add New Address
                   </button>

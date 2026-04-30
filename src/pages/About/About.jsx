@@ -131,37 +131,39 @@ export default function About() {
             journeySectionRef.current = el;
           }}
           data-section="journey"
-          className="relative w-full bg-white flex flex-col md:flex-row items-center md:max-h-[500px] lg:max-h-[450px] gap-0 md:gap-12 lg:gap-20 overflow-hidden mb-12"
+          className="relative w-full bg-white overflow-hidden"
         >
-          {/* Text Content */}
-          <div
-            className={`w-full md:flex-1 flex flex-col justify-center px-4 md:pl-[100px] md:pr-0 py-6 md:py-8 transition-all duration-700 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
-              }`}
-          >
-            <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
-              Our Journey
-            </h2>
-            <div className="text-base md:text-lg text-black leading-relaxed space-y-4">
-              <p>
-                Cozy Creations began with a passion for artistic candle making and a desire to craft products that create memorable moments. What started as small-batch creations quickly evolved into a brand known for its unique candle designs, floral candles, themed candles, and festive candle collections loved by décor enthusiasts and gift shoppers.
-              </p>
-              <p>
-                Every candle we create reflects creativity, attention to detail, and a deep love for handcrafted artistry.
-              </p>
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+            {/* Text Content */}
+            <div
+              className={`w-full md:flex-1 flex flex-col justify-center transition-all duration-700 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+                }`}
+            >
+              <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
+                Our Journey
+              </h2>
+              <div className="text-base md:text-lg text-black leading-relaxed space-y-4">
+                <p>
+                  Cozy Creations began with a passion for artistic candle making and a desire to craft products that create memorable moments. What started as small-batch creations quickly evolved into a brand known for its unique candle designs, floral candles, themed candles, and festive candle collections loved by décor enthusiasts and gift shoppers.
+                </p>
+                <p>
+                  Every candle we create reflects creativity, attention to detail, and a deep love for handcrafted artistry.
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Image Content - Full Width Edge (Flex) */}
-          <div
-            className={`w-full md:flex-1 h-[250px] sm:h-[300px] md:h-auto md:self-stretch relative transition-all duration-700 delay-200 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
-              }`}
-          >
-            <div className="w-full h-full bg-gray-200 overflow-hidden">
-              <img
-                src={aboutJourney}
-                alt="Our Journey"
-                className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
-              />
+            {/* Image Content */}
+            <div
+              className={`w-full md:flex-1 h-[300px] sm:h-[400px] md:h-[450px] relative transition-all duration-700 delay-200 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
+                }`}
+            >
+              <div className="w-full h-full bg-gray-200 overflow-hidden rounded-sm">
+                <img
+                  src={aboutJourney}
+                  alt="Our Journey"
+                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -170,24 +172,26 @@ export default function About() {
         <section
           ref={handmadeSectionRef}
           data-section="handmade"
-          className="relative w-full bg-white px-0 pb-0 md:pb-8 overflow-hidden"
+          className="relative w-full bg-white py-12 overflow-hidden"
         >
-          <div className="flex flex-col lg:flex-row items-center gap-0 md:gap-12 lg:gap-20">
-            {/* Images Grid - Left Side - Full Width Edge */}
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+            {/* Images Grid - Left Side */}
             <div
-              className={`w-full lg:flex-1 h-[350px] sm:h-[400px] md:h-[clamp(500px,65vh,600px)] lg:h-[clamp(550px,80vh,750px)] relative transition-all duration-700 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+              className={`w-full md:flex-1 h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] relative transition-all duration-700 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
                 }`}
             >
-              <img
-                src={aboutGrid}
-                alt="About Grid"
-                className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
-              />
+              <div className="w-full h-full overflow-hidden rounded-sm">
+                <img
+                  src={aboutGrid}
+                  alt="About Grid"
+                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                />
+              </div>
             </div>
 
             {/* Text Content - Right Side */}
             <div
-              className={`w-full lg:flex-1 flex flex-col justify-center px-4 pr-4 md:pr-[100px] lg:pr-[150px] pl-4 md:pl-12 lg:pl-0 py-8 md:py-16 transition-all duration-700 delay-200 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
+              className={`w-full md:flex-1 flex flex-col justify-center transition-all duration-700 delay-200 ${isVisible.handmade ? "translate-x-0 opacity-100" : "translate-x-[30px] opacity-0"
                 }`}
             >
               <h2 className="text-3xl md:text-4xl font-medium text-black capitalize mb-6">
@@ -212,7 +216,7 @@ export default function About() {
         <section
           ref={collectionsSectionRef}
           data-section="collections"
-          className="relative w-full bg-white px-0 mb-0 md:px-0 pt-4 md:pt-16 pb-0"
+          className="relative w-full bg-white px-0 mb-0 md:px-0 pt-4 pb-12 lg:pb-0"
         >
           {/* Intro Text */}
           <p
@@ -223,19 +227,19 @@ export default function About() {
           </p>
 
           {/* Collections Grid - Responsive Structured Layout */}
-          <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-0">
-            <div className="flex flex-wrap justify-center items-end gap-6 md:gap-8 lg:gap-8">
+          <div className="relative w-full max-w-[1280px] mx-auto px-4 md:px-8 lg:px-0">
+            <div className="flex flex-col lg:flex-row lg:flex-nowrap justify-center items-stretch lg:items-end gap-3 sm:gap-4 md:gap-6 lg:gap-6 xl:gap-8">
               {/* Glass Jar Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-start lg:items-center gap-1 lg:gap-0 w-full lg:w-[170px] xl:w-[181px] transition-all duration-700 ${isVisible.collections ? "translate-x-0 opacity-100" : "translate-x-[-30px] lg:translate-x-0 lg:translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "100ms" }}
               >
-                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                <p className="text-sm sm:text-base lg:text-base font-medium text-black capitalize text-left lg:text-center mb-0 lg:mb-2">
                   glass jar collection
                 </p>
-                <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[436px]">
-                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
+                <div className="relative w-[90%] sm:w-[80%] md:w-[75%] lg:w-full h-[110px] sm:h-[140px] md:h-[170px] lg:h-[436px] -ml-4 md:-ml-8 lg:ml-0">
+                  <div className="absolute inset-0 bg-gray-200 overflow-hidden rounded-r-full lg:rounded-t-full lg:rounded-br-none">
                     <img
                       src={collection1}
                       alt="Glass Jar Collection"
@@ -247,15 +251,15 @@ export default function About() {
 
               {/* Flower Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-end lg:items-center gap-1 lg:gap-0 w-full lg:w-[170px] xl:w-[181px] transition-all duration-700 ${isVisible.collections ? "translate-x-0 opacity-100" : "translate-x-[30px] lg:translate-x-0 lg:translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "200ms" }}
               >
-                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                <p className="text-sm sm:text-base lg:text-base font-medium text-black capitalize text-right lg:text-center mb-0 lg:mb-2">
                   flower collection
                 </p>
-                <div className="relative w-full h-[220px] sm:h-[250px] md:h-[300px] lg:h-[303px]">
-                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
+                <div className="relative w-[90%] sm:w-[80%] md:w-[75%] lg:w-full h-[110px] sm:h-[140px] md:h-[170px] lg:h-[303px] -mr-4 md:-mr-8 lg:mr-0">
+                  <div className="absolute inset-0 bg-gray-200 overflow-hidden rounded-l-full lg:rounded-t-full lg:rounded-bl-none">
                     <img
                       src={collection2}
                       alt="Flower Collection"
@@ -267,15 +271,15 @@ export default function About() {
 
               {/* Animal & Shapes Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-start lg:items-center gap-1 lg:gap-0 w-full lg:w-[170px] xl:w-[181px] transition-all duration-700 ${isVisible.collections ? "translate-x-0 opacity-100" : "translate-x-[-30px] lg:translate-x-0 lg:translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "300ms" }}
               >
-                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                <p className="text-sm sm:text-base lg:text-base font-medium text-black capitalize text-left lg:text-center mb-0 lg:mb-2">
                   animal & shapes
                 </p>
-                <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[436px]">
-                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
+                <div className="relative w-[90%] sm:w-[80%] md:w-[75%] lg:w-full h-[110px] sm:h-[140px] md:h-[170px] lg:h-[436px] -ml-4 md:-ml-8 lg:ml-0">
+                  <div className="absolute inset-0 bg-gray-200 overflow-hidden rounded-r-full lg:rounded-t-full lg:rounded-br-none">
                     <img
                       src={collection3}
                       alt="Animal & Shapes"
@@ -287,15 +291,15 @@ export default function About() {
 
               {/* special Collection */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-end lg:items-center gap-1 lg:gap-0 w-full lg:w-[170px] xl:w-[181px] transition-all duration-700 ${isVisible.collections ? "translate-x-0 opacity-100" : "translate-x-[30px] lg:translate-x-0 lg:translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "400ms" }}
               >
-                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                <p className="text-sm sm:text-base lg:text-base font-medium text-black capitalize text-right lg:text-center mb-0 lg:mb-2">
                   special collection
                 </p>
-                <div className="relative w-full h-[220px] sm:h-[250px] md:h-[300px] lg:h-[303px]">
-                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
+                <div className="relative w-[90%] sm:w-[80%] md:w-[75%] lg:w-full h-[110px] sm:h-[140px] md:h-[170px] lg:h-[303px] -mr-4 md:-mr-8 lg:mr-0">
+                  <div className="absolute inset-0 bg-gray-200 overflow-hidden rounded-l-full lg:rounded-t-full lg:rounded-bl-none">
                     <img
                       src={collection4}
                       alt="special Collection"
@@ -307,15 +311,15 @@ export default function About() {
 
               {/* Festive Special */}
               <div
-                className={`flex flex-col items-center w-[calc(50%-12px)] sm:w-[160px] md:w-[180px] lg:w-[181px] transition-all duration-500 ${isVisible.collections ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                className={`flex flex-col items-start lg:items-center gap-1 lg:gap-0 w-full lg:w-[170px] xl:w-[181px] transition-all duration-700 ${isVisible.collections ? "translate-x-0 opacity-100" : "translate-x-[-30px] lg:translate-x-0 lg:translate-y-8 opacity-0"
                   }`}
                 style={{ transitionDelay: "500ms" }}
               >
-                <p className="text-sm md:text-base font-medium text-black capitalize text-center mb-2">
+                <p className="text-sm sm:text-base lg:text-base font-medium text-black capitalize text-left lg:text-center mb-0 lg:mb-2">
                   festive special
                 </p>
-                <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[436px]">
-                  <div className="absolute inset-0 bg-gray-200 overflow-hidden" style={{ borderRadius: '1000px 1000px 0 0' }}>
+                <div className="relative w-[90%] sm:w-[80%] md:w-[75%] lg:w-full h-[85px] sm:h-[110px] md:h-[140px] lg:h-[436px] -ml-4 md:-ml-8 lg:ml-0">
+                  <div className="absolute inset-0 bg-gray-200 overflow-hidden rounded-r-full lg:rounded-t-full lg:rounded-br-none">
                     <img
                       src={collection5}
                       alt="Festive Special"

@@ -10,7 +10,7 @@ import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
-import { Loader2, FileText, Plus, X, Search } from "lucide-react";
+import { Loader2, FileText, Plus, X, Search, Package } from "lucide-react";
 import {
   parseAdminNumber,
 } from "../../utils/adminNumberInputs";
@@ -560,7 +560,7 @@ export default function AdminProducts() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       <style>
         {`
           .diagonal-strike {
@@ -579,47 +579,45 @@ export default function AdminProducts() {
           }
         `}
       </style>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <div className="flex items-end gap-2">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Products</h2>
-          <div className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
-            {loading ? <Skeleton width="40px" height="12px" /> : `${products.length} Items`}
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1 pt-1 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+            <Package className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 leading-tight">Product Inventory</h2>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+              {loading ? "..." : `${products.length} Items listed`}
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <div className="flex gap-2 w-full sm:w-auto shrink-0">
-            <button
-              onClick={handleGenerateCatalogue}
-              disabled={loading || catalogueLoading}
-              className="flex-1 sm:flex-none px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg font-medium text-[10px] sm:text-xs tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-9 shadow-sm relative overflow-hidden"
-            >
-              {catalogueLoading ? (
-                <>
-                  <div className="absolute inset-0 bg-emerald-500/20" style={{ width: `${catalogueProgress}%`, transition: 'width 0.3s ease-out' }} />
-                  <Loader2 className="animate-spin h-3 w-3 text-white relative z-10" />
-                  <span className="relative z-10 font-bold flex flex-col items-start leading-none gap-0.5">
-                    <span className="text-[8px] animate-pulse opacity-80 uppercase tracking-tighter">Generating...</span>
-                    <span className="flex items-center gap-1">
-                      <span className="text-[10px] font-black">{catalogueProgress}%</span>
-                    </span>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Catalogue</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleOpenAddModal}
-              className="flex-1 sm:flex-none px-3.5 py-1.5 bg-black text-white rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-gray-800 transition-all active:scale-95 h-9 flex items-center justify-center gap-2"
-            >
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>New Product</span>
-            </button>
-          </div>
+        <div className="flex flex-row gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleGenerateCatalogue}
+            disabled={loading || catalogueLoading}
+            className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-11 shadow-sm relative overflow-hidden"
+          >
+            {catalogueLoading ? (
+              <>
+                <Loader2 className="animate-spin h-3.5 w-3.5" />
+                <span>{catalogueProgress}%</span>
+              </>
+            ) : (
+              <>
+                <FileText className="w-4 h-4" />
+                <span>Catalogue</span>
+              </>
+            )}
+          </button>
+          <button
+            onClick={handleOpenAddModal}
+            className="flex-1 sm:flex-none px-5 py-2.5 bg-black text-white rounded-xl font-bold text-xs hover:bg-gray-800 transition-all active:scale-95 h-11 flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Product</span>
+          </button>
         </div>
       </div>
 

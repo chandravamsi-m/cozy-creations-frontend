@@ -260,11 +260,14 @@ export default function AdminOffers() {
   }
 
   return (
-    <div className="p-0 sm:p-5 relative">
-      <div className="p-4 sm:p-6 bg-transparent sm:bg-white sm:rounded-2xl sm:shadow-md sm:border sm:border-gray-100">
-        <h1 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-2">
-          <Gift className="w-6 h-6 text-yellow-500" /> Manage Offers & Discounts
-        </h1>
+    <div className="space-y-4 font-sans">
+      <div className="flex flex-row items-center justify-between gap-2 px-1 pt-1 mb-6">
+        <div className="flex items-center gap-3">
+          <Gift className="w-6 h-6 text-yellow-500" />
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Manage Offers & Discounts</h2>
+        </div>
+      </div>
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-sm">
 
         <form onSubmit={handleSave} className="space-y-6">
           {/* Banner Toggle */}

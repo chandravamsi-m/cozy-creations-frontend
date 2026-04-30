@@ -5,6 +5,7 @@ import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { updateProduct } from "../../api/adminProducts";
+import { Package } from "lucide-react";
 import {
   coerceAdminNumberInput,
   getStableAdminNumberValue,
@@ -213,227 +214,211 @@ export default function AdminEditProduct() {
     setLoading(false);
   };
 
-  if (!product) return <p className="p-4">Loading product...</p>;
+  if (!product) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 space-y-4">
+        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-sm font-bold text-gray-400 animate-pulse">Loading product details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 sm:p-5 max-w-xl">
-      <h2 className="text-xl font-semibold mb-3">Edit Product</h2>
-
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1">
-          <label htmlFor="edit-product-name" className="text-sm font-medium text-gray-800">
-            Product Name <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="edit-product-name"
-            value={product.name}
-            onChange={(e) => updateField("name", e.target.value)}
-            placeholder="Product Name"
-            className="border p-2 w-full rounded"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="edit-product-category" className="text-sm font-medium text-gray-800">
-            Category <span className="text-red-600">*</span>
-          </label>
-          <select
-            id="edit-product-category"
-            value={product.category}
-            onChange={(e) => updateField("category", e.target.value)}
-            className="border p-2 w-full rounded"
-          >
-            <option value="">Select Category</option>
-            {product.category && !KNOWN_CATEGORIES.includes(product.category) && (
-              <option value={product.category}>{product.category} (current)</option>
-            )}
-            <option value="flower">Flower</option>
-            <option value="animal">Animal</option>
-            <option value="festive">Festive</option>
-            <option value="special">Special</option>
-            <option value="glassJar">Glass Jar</option>
-          </select>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-wax-type" className="text-sm font-medium text-gray-800">
-              Wax Type <span className="text-red-600">*</span>
-            </label>
-            <select
-              id="edit-product-wax-type"
-              value={product.waxType}
-              onChange={(e) => updateField("waxType", e.target.value)}
-              className="border p-2 w-full rounded"
-            >
-              <option value="soy">Soy</option>
-              <option value="gel">Gel</option>
-              <option value="other">Other</option>
-            </select>
-            {product.waxType === "other" && (
-              <input
-                value={product.waxTypeOther || ""}
-                onChange={(e) => updateField("waxTypeOther", e.target.value)}
-                placeholder="Enter wax type"
-                className="border p-2 w-full rounded"
-              />
-            )}
+    <div className="space-y-4 font-sans max-w-4xl">
+      <div className="flex flex-row items-center justify-between gap-2 px-1 pt-1 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+            <Package className="w-6 h-6 text-blue-600" />
           </div>
+          <div className="flex flex-col">
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Refine Product</h2>
+            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Update item details & imagery</p>
+          </div>
+        </div>
+      </div>
 
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-weight" className="text-sm font-medium text-gray-800">
-              Weight <span className="text-red-600">*</span>
-            </label>
-            <div className="relative w-full">
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* NAME */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label htmlFor="edit-product-name" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Product Name <span className="text-red-500">*</span>
+              </label>
               <input
-                id="edit-product-weight"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={product.weightGrams}
-                onChange={(e) => handleIntegerFieldChange("weightGrams", e.target.value)}
-                onWheel={preventNumberWheelChange}
-                placeholder="Weight"
-                className="border p-2 pr-12 w-full rounded"
+                id="edit-product-name"
+                value={product.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g., Lavender Scented Candle"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                g
-              </span>
             </div>
-          </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-burn-time" className="text-sm font-medium text-gray-800">
-              Burn Time <span className="text-red-600">*</span>
-            </label>
-            <div className="relative w-full">
-              <input
-                id="edit-product-burn-time"
-                type="text"
-                value={product.burnTimeHours}
-                onChange={(e) => updateField("burnTimeHours", e.target.value)}
-                placeholder="Burn Time"
-                className="border p-2 pr-14 w-full rounded"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                hr
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-dimensions" className="text-sm font-medium text-gray-800">
-              Dimensions (Optional)
-            </label>
-            <div className="relative w-full">
-              <input
-                id="edit-product-dimensions"
-                type="text"
-                value={product.dimensions}
-                onChange={(e) => updateField("dimensions", e.target.value)}
-                placeholder="e.g., 6x10"
-                className="border p-2 pr-16 w-full rounded"
-              />
+            {/* CATEGORY */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-product-category" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Category <span className="text-red-500">*</span>
+              </label>
               <select
-                value={product.dimensionUnit}
-                onChange={(e) => updateField("dimensionUnit", e.target.value)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 text-sm text-gray-600 bg-gray-50 border-l border-gray-200 h-[calc(100%-8px)] px-1 rounded-r focus:outline-none"
+                id="edit-product-category"
+                value={product.category}
+                onChange={(e) => updateField("category", e.target.value)}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium appearance-none"
               >
-                <option value="cm">cm</option>
-                <option value="mm">mm</option>
+                <option value="">Select Category</option>
+                {product.category && !KNOWN_CATEGORIES.includes(product.category) && (
+                  <option value={product.category}>{product.category} (current)</option>
+                )}
+                <option value="flower">Flower</option>
+                <option value="animal">Animal</option>
+                <option value="festive">Festive</option>
+                <option value="special">Special</option>
+                <option value="glassJar">Glass Jar</option>
               </select>
             </div>
+
+            {/* WAX TYPE */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-product-wax-type" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Wax Type <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <select
+                  id="edit-product-wax-type"
+                  value={product.waxType}
+                  onChange={(e) => updateField("waxType", e.target.value)}
+                  className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium appearance-none"
+                >
+                  <option value="soy">Soy</option>
+                  <option value="gel">Gel</option>
+                  <option value="other">Other</option>
+                </select>
+                {product.waxType === "other" && (
+                  <input
+                    value={product.waxTypeOther || ""}
+                    onChange={(e) => updateField("waxTypeOther", e.target.value)}
+                    placeholder="Type..."
+                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* WEIGHT */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-product-weight" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Weight <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="edit-product-weight"
+                  type="text"
+                  inputMode="numeric"
+                  value={product.weightGrams}
+                  onChange={(e) => handleIntegerFieldChange("weightGrams", e.target.value)}
+                  onWheel={preventNumberWheelChange}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium pr-10"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">g</span>
+              </div>
+            </div>
+
+            {/* BURN TIME */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-product-burn-time" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Burn Time <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="edit-product-burn-time"
+                  type="text"
+                  value={product.burnTimeHours}
+                  onChange={(e) => updateField("burnTimeHours", e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium pr-10"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">hr</span>
+              </div>
+            </div>
+
+            {/* PRICE */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-product-price" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Price <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₹</span>
+                <input
+                  id="edit-product-price"
+                  type="text"
+                  inputMode="decimal"
+                  value={product.price}
+                  onChange={(e) => handleDecimalFieldChange("price", e.target.value)}
+                  onWheel={preventNumberWheelChange}
+                  className="w-full pl-8 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium"
+                />
+              </div>
+            </div>
+
+            {/* QUANTITY PACK */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-product-quantity-pack" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                Quantity Per Pack <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="edit-product-quantity-pack"
+                type="text"
+                inputMode="numeric"
+                value={product.quantityPack}
+                onChange={(e) => handleIntegerFieldChange("quantityPack", e.target.value)}
+                onWheel={preventNumberWheelChange}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-price" className="text-sm font-medium text-gray-800">
-              Price <span className="text-red-600">*</span>
-            </label>
-            <input
-              id="edit-product-price"
-              type="text"
-              inputMode="decimal"
-              pattern="[0-9]*[.]?[0-9]*"
-              value={product.price}
-              onChange={(e) => handleDecimalFieldChange("price", e.target.value)}
-              onWheel={preventNumberWheelChange}
-              placeholder="Price"
-              className="border p-2 w-full rounded"
-            />
+          {/* IMAGE UPLOAD */}
+          <div className="space-y-3 pt-4 border-t border-gray-100">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Product Image</label>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                {preview ? (
+                  <img src={preview} className="w-full h-full object-cover" alt="Preview" />
+                ) : (
+                  <span className="text-gray-300 text-xs">No image</span>
+                )}
+              </div>
+              <div className="flex-1 w-full">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFileChange}
+                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
+                />
+                <p className="mt-2 text-[10px] text-gray-400 font-medium italic">Recommended size: 800x800px. Max 10MB.</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-1">
-          <label htmlFor="edit-product-quantity-pack" className="text-sm font-medium text-gray-800">
-            Quantity Per Pack <span className="text-red-600">*</span>
-          </label>
-          <input
-            id="edit-product-quantity-pack"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={product.quantityPack}
-            onChange={(e) => handleIntegerFieldChange("quantityPack", e.target.value)}
-            onWheel={preventNumberWheelChange}
-            placeholder="Quantity Per Pack"
-            className="border p-2 w-full rounded"
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-custom-fragrance" className="text-sm font-medium text-gray-800">
-              Customizable Fragrance
-            </label>
-            <select
-              id="edit-product-custom-fragrance"
-              value={product.customizableFragrance}
-              onChange={(e) => updateField("customizableFragrance", e.target.value)}
-              className="border p-2 w-full rounded"
+          {/* SUBMIT BUTTONS */}
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => navigate("/admin/products")}
+              className="px-6 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-all"
             >
-              <option value="true">Fragrance: Yes</option>
-              <option value="false">Fragrance: No</option>
-            </select>
-          </div>
-
-          <div className="space-y-1 w-full">
-            <label htmlFor="edit-product-custom-color" className="text-sm font-medium text-gray-800">
-              Customizable Color
-            </label>
-            <select
-              id="edit-product-custom-color"
-              value={product.customizableColor}
-              onChange={(e) => updateField("customizableColor", e.target.value)}
-              className="border p-2 w-full rounded"
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-10 py-2.5 bg-black text-white rounded-xl text-xs font-bold hover:bg-gray-800 disabled:opacity-50 transition-all shadow-lg shadow-gray-200 flex items-center gap-2"
             >
-              <option value="true">Color: Yes</option>
-              <option value="false">Color: No</option>
-            </select>
+              {loading && <span className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+              {loading ? "Saving Changes..." : "Save Changes"}
+            </button>
           </div>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-gray-800 block mb-1">
-            Product Image <span className="text-red-600">*</span>
-          </label>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-          {preview && (
-            <img src={preview} className="w-32 mt-2 rounded border" alt="Preview" />
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          {loading ? "Saving..." : "Save Changes"}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

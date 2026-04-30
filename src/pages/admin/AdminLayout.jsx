@@ -89,7 +89,7 @@ export default function AdminLayout() {
         {/* SIDEBAR */}
         <aside
           className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white p-5 space-y-4 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-50 w-64 md:w-56 lg:w-64 bg-gray-900 text-white p-5 space-y-4 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out
           md:static md:translate-x-0 md:inset-auto shrink-0
           ${sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}
         `}

@@ -7,7 +7,7 @@ import { useProducts } from "../../contexts/ProductsContext";
 import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import ProductForm from "../../components/admin/ProductForm";
 import ConfirmModal from "../../components/ConfirmModal";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2, FileText, Truck } from "lucide-react";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -310,7 +310,7 @@ export default function AdminBulkProducts() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       <style>
         {`
           .diagonal-strike {
@@ -329,35 +329,33 @@ export default function AdminBulkProducts() {
           }
         `}
       </style>
-      <div className="flex flex-row justify-between items-center gap-4 mb-6 shrink-0">
-        <div className="flex items-end gap-2">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 leading-none">Bulk Products</h2>
-          <p className="text-[9px] font-medium uppercase tracking-widest text-gray-400 mb-0.5">
-            {loading ? "..." : `${bulkProducts.length} Items`}
-          </p>
+
+      <div className="flex flex-row items-center justify-between gap-4 px-1 pt-1 mb-6">
+        <div className="flex items-center gap-3">
+          <Truck className="w-6 h-6 text-emerald-600" />
+          <div className="flex flex-col">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 leading-none">Bulk Products</h2>
+            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">
+              {loading ? "..." : `${bulkProducts.length} Volume Products`}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-row gap-2 shrink-0">
           <button
             onClick={handleGenerateCatalogue}
             disabled={loading || catalogueLoading}
-            className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg font-medium text-[10px] sm:text-xs tracking-wider hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-9 shadow-sm relative overflow-hidden shrink-0"
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 h-10 shadow-sm relative overflow-hidden"
           >
             {catalogueLoading ? (
               <>
-                <div className="absolute inset-0 bg-emerald-500/20" style={{ width: `${catalogueProgress}%`, transition: 'width 0.3s ease-out' }} />
-                <Loader2 className="animate-spin h-3 w-3 text-white relative z-10" />
-                <span className="relative z-10 font-bold flex flex-col items-start leading-none gap-0.5">
-                  <span className="text-[8px] animate-pulse opacity-80 uppercase tracking-tighter">Generating...</span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-[10px] font-black">{catalogueProgress}%</span>
-                  </span>
-                </span>
+                <Loader2 className="animate-spin h-3 w-3" />
+                <span>{catalogueProgress}%</span>
               </>
             ) : (
               <>
-                <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Catalogue</span>
+                <FileText className="w-4 h-4" />
+                <span>Bulk Catalogue</span>
               </>
             )}
           </button>

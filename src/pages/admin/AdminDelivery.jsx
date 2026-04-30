@@ -116,9 +116,14 @@ export default function AdminDelivery() {
   }
 
   return (
-    <div className="p-0 sm:p-5 relative">
-      <div className="p-4 sm:p-6 bg-transparent sm:bg-white sm:rounded-2xl sm:shadow-md sm:border sm:border-gray-100">
-        <h2 className="text-xl font-black text-gray-900 mb-6">Delivery & Store Settings</h2>
+    <div className="space-y-4 font-sans">
+      <div className="flex flex-row items-center justify-between gap-2 px-1 pt-1 mb-6">
+        <div className="flex items-center gap-3">
+          <Truck className="w-6 h-6 text-blue-600" />
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Delivery & Store Settings</h2>
+        </div>
+      </div>
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-sm">
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ── Payment Section ── */}
