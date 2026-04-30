@@ -17,18 +17,18 @@ export default function Footer() {
 
 
             <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-8 relative z-10">
-                <div className="flex flex-col md:flex-row gap-4 md:gap-12 lg:gap-24 items-start md:items-center">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-12 xl:gap-24 items-start md:items-center">
                     <div className="w-full sm:w-[300px] h-[100px] sm:h-[180px] md:h-[200px] rounded-2xl overflow-hidden relative flex-shrink-0 bg-[#191816]">
                         <img src={whatsapp3} alt="Footer Candle" className="w-full h-full object-contain" />
                     </div>
 
 
-                    <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 lg:gap-24 w-full sm:w-auto items-start md:items-center">
+                    <div className="flex flex-col sm:flex-row gap-8 sm:gap-6 lg:gap-12 xl:gap-24 w-full sm:w-auto items-start md:items-center">
                         <div className="flex flex-col gap-3 text-sm capitalize items-start">
                             <Link to="/" className="hover:text-yellow-accent transition-colors">Home</Link>
                             <Link to="/about" className="hover:text-yellow-accent transition-colors">About Us</Link>
                             <Link to="/products" className="hover:text-yellow-accent transition-colors">Products</Link>
-                            <Link to="/contact" className="hover:text-yellow-accent transition-colors">Contact Us</Link>
+                            <Link to="/contact" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Contact Us</Link>
                         </div>
 
                         <div className="flex flex-col gap-4 text-sm items-start">
@@ -59,14 +59,14 @@ export default function Footer() {
                     </div>
 
                     {/* Invisible Spacer for Lamp Alignment */}
-                    <div className="hidden lg:block w-[280px] h-[1px] flex-shrink-0"></div>
+                    <div className="hidden lg:block lg:w-[120px] xl:w-[280px] h-[1px] flex-shrink-0"></div>
                 </div>
 
                 <div className="w-full h-[1px] bg-white mt-6 mb-4 opacity-20"></div>
                 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] md:text-xs text-white opacity-80">
                     <div>© 2025 Cozy Creations. All rights reserved.</div>
-                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 uppercase tracking-wider">
+                    <div className="flex flex-wrap justify-center gap-x-2 sm:gap-x-4 gap-y-2 uppercase tracking-wider">
                         <Link to="/privacy-policy" className="hover:text-yellow-accent transition-colors">Privacy Policy</Link>
                         <Link to="/terms-and-conditions" className="hover:text-yellow-accent transition-colors">Terms & Conditions</Link>
                         <Link to="/refund-policy" className="hover:text-yellow-accent transition-colors">Refund & Cancellation</Link>

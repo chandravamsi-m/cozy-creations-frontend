@@ -8,22 +8,22 @@ import { db } from "../../firebase";
 import { getAuth } from "firebase/auth";
 import { optimizeCloudinaryImage, IMAGE_PRESETS } from "../../utils/imageOptimization";
 import { getEffectiveShipmentDimensions } from "../../utils/parseDimensions";
-import { 
-  CheckCircle, 
-  Home, 
-  Briefcase, 
-  MapPin, 
-  PencilLine, 
-  Trash2, 
-  CreditCard, 
-  Truck, 
-  AlertTriangle, 
-  Loader2, 
-  Check, 
-  ArrowRight, 
-  ShieldCheck, 
-  Package, 
-  Leaf 
+import {
+  CheckCircle,
+  Home,
+  Briefcase,
+  MapPin,
+  PencilLine,
+  Trash2,
+  CreditCard,
+  Truck,
+  AlertTriangle,
+  Loader2,
+  Check,
+  ArrowRight,
+  ShieldCheck,
+  Package,
+  Leaf
 } from "lucide-react";
 import ConfirmModal from "../../components/ConfirmModal";
 import AddressModal from "../../components/common/AddressModal";
@@ -53,7 +53,7 @@ export default function Checkout() {
   const [serviceabilityInfo, setServiceabilityInfo] = useState(null);
   const [serviceabilityError, setServiceabilityError] = useState(null);
   // Admin-configured shipping markup % to cover Shiprocket surcharges not in API
-  const [shippingMarkupPct, setShippingMarkupPct] = useState(0); 
+  const [shippingMarkupPct, setShippingMarkupPct] = useState(0);
   const packagingBuffer = 3; // Hardcoded 3cm buffer
 
   // Deletion Modal State
@@ -126,8 +126,8 @@ export default function Checkout() {
       const allCouriers = json.data?.data?.available_courier_companies || [];
 
       // Filter to include only Surface couriers
-      const couriers = allCouriers.filter(c => 
-        c.is_surface === true || 
+      const couriers = allCouriers.filter(c =>
+        c.is_surface === true ||
         (c.courier_name || c.name || "").toLowerCase().includes("surface")
       );
 
@@ -457,14 +457,22 @@ export default function Checkout() {
         throw new Error("Payment gateway is still loading. Please wait a moment.");
       }
 
-      const razorpay = new window.Razorpay(options);
+      const razorpay = new window.Razorpay({
+        ...options,
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          }
+        }
+      });
       razorpay.open();
     } catch (err) {
       console.error("Order error:", err);
       showToast(err.message || "An error occurred while placing your order.", "error");
-    } finally {
       setLoading(false);
     }
+
+
   };
 
   return (
@@ -554,24 +562,24 @@ export default function Checkout() {
                       </div>
 
                       <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-3 sm:gap-4">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditAddress(addr);
-                            }}
-                            className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
-                          >
-                            <PencilLine className="w-3 h-3" /> Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveAddress(addr.id);
-                            }}
-                            className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3" /> Del
-                          </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditAddress(addr);
+                          }}
+                          className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-gray-900 hover:text-yellow-600 transition-colors"
+                        >
+                          <PencilLine className="w-3 h-3" /> Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAddress(addr.id);
+                          }}
+                          className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" /> Del
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -642,10 +650,10 @@ export default function Checkout() {
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-2.5">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors ${paymentMethod === "cod" ? "bg-yellow-accent text-black" : "bg-gray-50 text-gray-400"
                           }`}>
-                            <Truck className="w-5 h-5" />
-                          </div>
+                          <Truck className="w-5 h-5" />
+                        </div>
                         <div>
                           <p className="text-sm font-bold text-gray-900">Cash on Delivery (COD)</p>
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Pay at Doorstep</p>
@@ -714,11 +722,11 @@ export default function Checkout() {
                     {!selectedAddressId && (
                       <p className="text-[10px] text-yellow-600 font-bold mt-0.5">Enter address to calculate</p>
                     )}
-                      {selectedAddressId && serviceabilityInfo?.available === false && (
-                        <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Limited delivery options
-                        </p>
-                      )}
+                    {selectedAddressId && serviceabilityInfo?.available === false && (
+                      <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Limited delivery options
+                      </p>
+                    )}
                     {selectedAddressId && serviceabilityError && !checkingServiceability && (
                       <p className="text-[10px] text-gray-400 font-medium mt-0.5">Using standard rate</p>
                     )}
@@ -767,7 +775,12 @@ export default function Checkout() {
               >
                 <div className="absolute inset-0 flex items-center justify-center gap-2 transition-transform">
                   <span className="text-md font-bold text-black uppercase tracking-wider">
-                    {loading ? "Processing..." : checkingServiceability ? "Calculating Shipping..." : "Complete Purchase"}
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Processing...</span>
+                      </div>
+                    ) : checkingServiceability ? "Calculating Shipping..." : "Complete Purchase"}
                   </span>
                   {!loading && !checkingServiceability && <ArrowRight className="w-5 h-5 text-black transition-transform group-hover:translate-x-1" />}
                 </div>
@@ -821,9 +834,9 @@ export default function Checkout() {
             <div className="space-y-3 mt-4">
               <button
                 onClick={() => navigate("/my-orders")}
-                className="w-full h-14 bg-yellow-accent hover:brightness-105 py-3 rounded-2xl text-black font-black transition-all shadow-lg active:scale-95 uppercase tracking-wider text-sm"
+                className="w-full h-14 bg-yellow-accent hover:brightness-105 py-3 rounded-2xl text-black font-black transition-all shadow-lg active:scale-95 uppercase tracking-wider text-sm flex items-center justify-center gap-2"
               >
-                📦 View My Orders
+                <Package className="w-5 h-5" /> View My Orders
               </button>
               <button
                 onClick={() => navigate("/products")}

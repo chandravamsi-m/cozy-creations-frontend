@@ -62,10 +62,10 @@ export default function AdminLayout() {
 
   return (
     <ToastProvider>
-      <div className="h-screen flex overflow-hidden bg-gray-50">
+      <div className="h-screen w-full flex overflow-hidden bg-gray-50">
 
         {/* MOBILE HEADER & HAMBURGER */}
-        <div className="md:hidden fixed top-0 w-full bg-gray-900 text-white z-40 p-4 flex items-center justify-between shadow-md h-16">
+        <div className="md:hidden fixed top-0 left-0 right-0 bg-gray-900 text-white z-40 p-4 flex items-center justify-between shadow-md h-16">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded focus:outline-none hover:bg-gray-800 z-50 transition-colors"

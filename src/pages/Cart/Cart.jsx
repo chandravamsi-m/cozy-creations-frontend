@@ -319,7 +319,7 @@ export default function CartPage() {
                         ) : null}
 
                         {/* Actions Row */}
-                        <div className="flex flex-row items-center gap-2 pt-2 border-t border-gray-100">
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
                           {/* Quantity Controls */}
                           <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
                             <button
@@ -345,14 +345,14 @@ export default function CartPage() {
 
                           <button
                             onClick={() => openCustomize(item)}
-                            className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-xs font-semibold text-gray-800 transition-all hover:border-gray-400 whitespace-nowrap"
+                            className="px-2 xs:px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] xs:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400 whitespace-nowrap"
                           >
                             {customizations[item.productId] ? "Edit" : "Customize"}
                           </button>
 
                           <button
                             onClick={() => removeFromCart(item.productId)}
-                            className="px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 active:bg-red-100 text-xs font-semibold text-red-600 hover:text-red-700 transition-all hover:border-red-300 whitespace-nowrap"
+                            className="px-2 xs:px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 active:bg-red-100 text-[10px] xs:text-xs font-semibold text-red-600 hover:text-red-700 transition-all hover:border-red-300 whitespace-nowrap"
                           >
                             Remove
                           </button>

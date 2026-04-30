@@ -70,7 +70,7 @@ export default function MainLayout({ stickyNavRef, menuOpen, setMenuOpen }) {
   }, [location.pathname, stickyNavRef]);
 
   return (
-    <div className="relative w-full min-h-screen bg-white font-montserrat">
+    <div className="relative w-full min-h-screen bg-white font-montserrat overflow-x-hidden">
       {/* Sticky navbar available on every page */}
       <Navbar stickyNavRef={stickyNavRef} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
 

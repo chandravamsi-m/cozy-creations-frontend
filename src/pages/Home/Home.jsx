@@ -163,7 +163,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
             </p>
             <div className="flex flex-col gap-2">
               <h1
-                className={`font-bold text-4xl md:text-6xl leading-tight transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                className={`font-bold text-3xl sm:text-4xl md:text-6xl leading-tight transition-all duration-700 delay-200 ${isVisible.hero ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                   }`}
               >
                 Handcrafted Candles
@@ -207,7 +207,7 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
           className={`w-full md:w-1/2 flex flex-col justify-center px-3 sm:px-6 md:px-10 lg:pl-[100px] pt-8 pb-10 sm:pt-12 sm:pb-8 md:py-16 lg:py-16 h-auto lg:h-full transition-all duration-700 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
             }`}
         >
-          <h2 className="font-normal text-[32px] sm:text-3xl md:text-4xl lg:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-none md:max-w-xl mb-4 sm:mb-8 md:mb-12 break-words text-left">
+          <h2 className="font-normal text-[28px] xs:text-[32px] sm:text-3xl md:text-4xl lg:text-[54px] xl:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-none md:max-w-xl mb-4 sm:mb-8 md:mb-12 break-words text-left">
             Elevate Your Space With Handcrafted Glow
           </h2>
           <div className="hidden md:block w-full max-w-[540px] h-[1px] bg-black mb-8"></div>

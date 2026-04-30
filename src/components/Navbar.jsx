@@ -69,7 +69,7 @@ export default function Navbar({
   return (
     <nav
       ref={stickyNavRef}
-      className={`fixed top-0 left-0 w-full z-50 ${location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
+      className={`fixed top-0 left-0 right-0 z-50 ${location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
         }`}
     >
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
@@ -77,7 +77,7 @@ export default function Navbar({
           {/* LOGO */}
           <a
             href="/"
-            className="h-10 w-28 relative overflow-hidden cursor-pointer inline-block"
+            className="h-10 w-24 lg:w-28 relative overflow-hidden cursor-pointer inline-block"
             aria-label="Go to Cozy Creations home"
           >
             <img
@@ -88,7 +88,7 @@ export default function Navbar({
           </a>
 
           {/* DESKTOP NAVIGATION */}
-          <div className="hidden md:flex gap-10 text-xs text-white uppercase">
+          <div className="hidden md:flex gap-6 lg:gap-8 xl:gap-10 text-xs text-white uppercase">
             <NavLink
               to="/"
               className={navLinkClass}
@@ -119,11 +119,11 @@ export default function Navbar({
           </div>
 
           {/* RIGHT SIDE BUTTONS */}
-          <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-2 lg:gap-4">
             {/* Nav Shop Now Link (Secondary CTA - Hidden on Home Hero) */}
             <button
               onClick={() => navigate("/products", { state: { scrollTo: "products", skipHero: true } })}
-              className="nav-shop-now hidden sm:inline-flex border border-yellow-accent/30 hover:bg-white hover:text-black text-yellow-accent px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 mr-1"
+              className="nav-shop-now hidden sm:inline-flex border border-yellow-accent/30 hover:bg-white hover:text-black text-yellow-accent px-3 lg:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 mr-1"
             >
               Shop Now
             </button>
@@ -185,7 +185,7 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={openLoginModal}
-                className="hidden md:inline-flex bg-yellow-accent px-4 py-2 rounded-lg text-xs font-semibold text-black hover:bg-yellow-500 transition-colors"
+                className="hidden md:inline-flex bg-yellow-accent px-3 lg:px-4 py-2 rounded-lg text-xs font-semibold text-black hover:bg-yellow-500 transition-colors"
               >
                 Login
               </button>
