@@ -11,6 +11,8 @@ import { Loader2, FileText, Truck } from "lucide-react";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 export default function AdminBulkProducts() {
   const { idToken } = useAuth();
@@ -19,7 +21,8 @@ export default function AdminBulkProducts() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
-  const [preview, setPreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
+  const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [product, setProduct] = useState({
     name: "",
     category: "",
@@ -108,7 +111,7 @@ export default function AdminBulkProducts() {
       waxTypeOther: p.waxTypeOther || "",
       weightGrams: String(p.weightGrams ?? ""),
       burnTimeHours: p.burnTimeHours || "",
-      dimensions: p.dimensions || "",
+      dimensions: p.dimensions ? p.dimensions.replace(/cm|mm/gi, "") : "",
       dimensionUnit: p.dimensionUnit || "cm",
       price: String(p.price ?? ""),
       quantityPack: String(p.quantityPack ?? ""),
@@ -122,30 +125,113 @@ export default function AdminBulkProducts() {
           pricePerPc: String(tier.pricePerPc ?? ""),
         }))
       );
-    setPreview(p.imageUrl || null);
+    const initialPreviews = [null, null, null, null, null];
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      p.images.slice(0, 5).forEach((url, i) => initialPreviews[i] = url);
+    } else if (p.imageUrl) {
+      initialPreviews[0] = p.imageUrl;
+    }
+    setPreviews(initialPreviews);
+    setImageFiles([null, null, null, null, null]);
     setShowEditModal(true);
   };
 
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setEditingProductId(null);
-    setPreview(null);
+    setImageFiles([null, null, null, null, null]);
+    setPreviews([null, null, null, null, null]);
   };
 
   const updateField = (field, value) => {
     setProduct((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (index, e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast("File too large (max 5MB)", "error");
-      return;
+    if (file) {
+      const newFiles = [...imageFiles];
+      newFiles[index] = file;
+      setImageFiles(newFiles);
+
+      const newPreviews = [...previews];
+      newPreviews[index] = URL.createObjectURL(file);
+      setPreviews(newPreviews);
     }
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result);
-    reader.readAsDataURL(file);
+  };
+
+  const removeImage = (index) => {
+    const newFiles = [...imageFiles];
+    newFiles.splice(index, 1);
+    newFiles.push(null);
+    setImageFiles(newFiles);
+
+    const newPreviews = [...previews];
+    if (newPreviews[index] && newPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(newPreviews[index]);
+    }
+    newPreviews.splice(index, 1);
+    newPreviews.push(null);
+    setPreviews(newPreviews);
+  };
+
+  const compressToWebpUnderLimit = async (file, maxBytes = MAX_UPLOAD_BYTES) => {
+    if (!(file instanceof File) || !file.type.startsWith("image/")) return file;
+    const imgUrl = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = imgUrl;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      const quality = 0.95;
+      let scale = 1;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const width = Math.max(1, Math.round(img.naturalWidth * scale));
+        const height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/webp", quality)
+        );
+        if (!blob) throw new Error("Image compression failed");
+        if (blob.size <= maxBytes) {
+          const webpName = (file.name || "upload")
+            .replace(/\.[^.]+$/, "")
+            .concat(".webp");
+          return new File([blob], webpName, { type: "image/webp" });
+        }
+        scale *= 0.85;
+      }
+      throw new Error(`Image is still too large after compression. Please use a smaller image.`);
+    } finally {
+      URL.revokeObjectURL(imgUrl);
+    }
+  };
+
+  const uploadToCloudinary = async (file) => {
+    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
+    const form = new FormData();
+    form.append("file", file);
+    form.append("upload_preset", UPLOAD_PRESET);
+    const res = await fetch(url, { method: "POST", body: form });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      const cloudinaryMsg = data?.error?.message || data?.message || `Upload failed (HTTP ${res.status})`;
+      throw new Error(cloudinaryMsg);
+    }
+    if (!data?.secure_url) throw new Error("Image upload failed: missing secure_url from Cloudinary");
+    return data.secure_url;
   };
 
   const addTier = () => {
@@ -167,11 +253,43 @@ export default function AdminBulkProducts() {
     setFormLoading(true);
 
     try {
-      const payload = { ...product, bulkPricingTiers };
-      // Check if image changed (preview is base64)
-      if (preview && preview.startsWith("data:image")) {
-        payload.imageBuffer = preview;
+      if (!product.dimensions) {
+        showToast("Dimensions are required.", "error");
+        setFormLoading(false);
+        return;
       }
+
+      const uploadPromises = previews.map(async (previewUrl, index) => {
+        if (!previewUrl) return null;
+        const file = imageFiles[index];
+        if (file) {
+          const fileToUpload = await compressToWebpUnderLimit(file, MAX_UPLOAD_BYTES);
+          return await uploadToCloudinary(fileToUpload);
+        }
+        return previewUrl;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const finalImages = uploadedUrls.filter(url => url !== null);
+
+      if (finalImages.length === 0) {
+        showToast("Please select at least a primary product image.", "error");
+        setFormLoading(false);
+        return;
+      }
+
+      const imageUrl = finalImages[0];
+      const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
+
+      const payload = { 
+        ...productWithoutWaxTypeOther,
+        dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
+        waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
+        imageUrl,
+        thumbnailUrl: imageUrl,
+        images: finalImages,
+        bulkPricingTiers 
+      };
 
       await updateProduct(editingProductId, payload, idToken);
       showToast("Product updated successfully");
@@ -478,7 +596,8 @@ export default function AdminBulkProducts() {
                   product={product}
                   updateField={updateField}
                   handleFileChange={handleFileChange}
-                  preview={preview}
+                  previews={previews}
+                  removeImage={removeImage}
                   formLoading={formLoading}
                   handleCloseEditModal={handleCloseEditModal}
                   bulkPricingTiers={bulkPricingTiers}

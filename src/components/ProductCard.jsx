@@ -182,7 +182,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
         className="aspect-square sm:aspect-[4/3] bg-[#F5F5F0] overflow-visible shrink-0 relative cursor-pointer"
         onClick={onOpenQuickView}
       >
-        <div className="w-full h-full overflow-hidden rounded-t-2xl">
+        <div className="w-full h-full overflow-hidden rounded-t-2xl relative">
           <img
             src={toCloudinaryThumb(
               getImageSrc(product.imageUrl || product.image, product.mimeType)
@@ -197,6 +197,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
                 "https://via.placeholder.com/400x300?text=No+image";
             }}
           />
+
         </div>
       </div>
 

@@ -36,3 +36,26 @@ export function getImageSrc(value, mimeType = "image/png") {
  
   return PLACEHOLDER;
 }
+
+export function optimizeCloudinaryUrl(url, options = {}) {
+  if (!url || typeof url !== "string") return url;
+  if (!url.includes("res.cloudinary.com")) return url;
+  if (!url.includes("/image/upload/")) return url;
+
+  const {
+    width = 800,
+    height,
+    crop = "fill",
+    quality = "auto",
+    format = "auto"
+  } = options;
+
+  const parts = url.split("/image/upload/");
+  if (parts.length !== 2) return url;
+
+  let transformations = `w_${width},q_${quality},f_${format}`;
+  if (height) transformations += `,h_${height}`;
+  if (crop) transformations += `,c_${crop}`;
+
+  return `${parts[0]}/image/upload/${transformations}/${parts[1]}`;
+}

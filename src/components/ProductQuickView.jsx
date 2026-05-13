@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getImageSrc } from "../utils/image";
+import { getImageSrc, optimizeCloudinaryUrl } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 import { calculateProductDiscount, getEffectiveDiscount } from "../utils/offerUtils";
-import { X, ShoppingCart, Plus, Minus, CheckCircle2 } from "lucide-react";
+import { X, ShoppingCart, Plus, Minus, CheckCircle2, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../assets/svgs/animal-icon.svg";
@@ -13,11 +13,37 @@ import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
 
 export default function ProductQuickView({ product, onClose, activeOffer }) {
   const navigate = useNavigate();
-  const [localQty, setLocalQty] = useState(1);  // qty selector before adding
-  const [added, setAdded] = useState(false);      // brief "Added!" feedback
+  const [localQty, setLocalQty] = useState(1);
+  const [added, setAdded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [discount, setDiscount] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const { addItem, updateQuantity, removeItem, cart } = useCart();
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: product?.name || "Check out this candle!",
+      text: `Check out this handcrafted candle — ${product?.name}`,
+      url: shareUrl,
+    };
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try { await navigator.share(shareData); } catch { /* user cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // clipboard not available — silently skip
+      }
+    }
+  };
+
+  const galleryImages = product && Array.isArray(product.images) && product.images.length > 0
+    ? product.images.map(url => optimizeCloudinaryUrl(url, { width: 1000 }))
+    : [optimizeCloudinaryUrl(product?.imageUrl || product?.image, { width: 1000 })].filter(Boolean);
 
   const isBulk = product ? (product.isBulk === true || (product.bulkPricingTiers && product.bulkPricingTiers.length > 0)) : false;
 
@@ -33,8 +59,16 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   // Derived: is this product already in cart?
   const cartItem = cart.find((i) => i.productId === product?.id);
   const inCart = !!cartItem;
-  // Show cart qty when in cart, local selector when not
   const displayQty = inCart ? cartItem.quantity : localQty;
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -46,6 +80,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       // Reset local selector whenever a new product is shown
       setLocalQty(1);
       setAdded(false);
+      setActiveIndex(0);
     }
   }, [product?.id, activeOffer]);
 
@@ -107,35 +142,84 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-[32px] overflow-hidden shadow-2xl flex flex-col md:flex-row animate-scaleUp">
-        {/* Close Button */}
+      <div className="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
+        {/* Close Button - Now truly fixed relative to the modal frame */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 z-50 w-10 h-10 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95"
+          className="absolute top-4 right-4 md:top-6 md:right-6 z-50 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
         >
           <X className="w-5 h-5 text-gray-900" />
         </button>
 
-        {/* Left: Image Section */}
-        <div className="w-full md:w-1/2 bg-[#F8F8F5] relative group cursor-zoom-in overflow-hidden h-[300px] md:h-auto">
-          <img
-            src={getImageSrc(product.imageUrl || product.image)}
-            alt={product.name}
-            className={`w-full h-full object-cover transition-transform duration-500 ${isZoomed ? 'scale-150 rotate-2' : 'group-hover:scale-105'}`}
-            onClick={() => setIsZoomed(!isZoomed)}
-          />
-          {!isZoomed && (
-            <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <span className="bg-white/90 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-gray-900 shadow-xl">
-                Click to Zoom
-              </span>
-            </div>
-          )}
+        {/* Scrollable Area */}
+        <div className="w-full h-full overflow-y-auto overflow-x-hidden md:overflow-hidden flex flex-col md:flex-row custom-scrollbar overscroll-contain">
 
+
+        {/* Left: Image Section (Gallery) */}
+        <div className="w-full md:w-1/2 bg-[#F8F8F5] relative group flex flex-col">
+          {/* Main Large Image */}
+          <div 
+            className="relative w-full aspect-square md:aspect-auto md:flex-1 overflow-hidden cursor-zoom-in md:min-h-[400px] group"
+            onClick={() => setIsZoomed(true)}
+          >
+            {/* Preload images for instant switching */}
+            <div className="hidden">
+              {galleryImages.map((img, i) => (
+                <img key={i} src={img} alt="preload" />
+              ))}
+            </div>
+
+            <img
+              src={galleryImages[activeIndex]}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+
+            {/* Arrows */}
+            {galleryImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow hover:bg-white transition-all text-gray-600"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow hover:bg-white transition-all text-gray-600"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+            {/* Pagination Dots */}
+            {galleryImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 bg-black/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                {galleryImages.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveIndex(i);
+                    }}
+                    className={`h-1 rounded-full transition-all duration-300 ${
+                      activeIndex === i ? "w-4 bg-white" : "w-1 bg-white/40 hover:bg-white/60"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right: Content Section */}
-        <div className="w-full md:w-1/2 p-5 md:p-8 overflow-y-auto bg-white flex flex-col">
+        <div className="w-full md:w-1/2 p-5 md:p-8 md:overflow-y-auto bg-white flex flex-col">
           {/* Header */}
           <div className="mb-4">
             <div className="flex items-center gap-3 mb-2">
@@ -148,7 +232,20 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                 {product.category} Collection
               </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif">{product.name}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif flex items-start gap-2">
+              <span className="flex-1">{product.name}</span>
+              <button
+                onClick={handleShare}
+                title={copied ? "Link copied!" : "Share this product"}
+                className={`shrink-0 mt-1 w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                  copied
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+              </button>
+            </h2>
 
             {/* Price Row */}
             <div className="flex flex-col gap-2 mt-2">
@@ -255,22 +352,81 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Zoom Overlay (Lightbox) - Outside transformed container to ensure true fullscreen */}
+      {/* Fullscreen Lightbox */}
       {isZoomed && (
-        <div
-          className="fixed inset-0 z-[2100] bg-black/95 flex items-center justify-center p-4 animate-fadeIn cursor-zoom-out"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsZoomed(false);
-          }}
+        <div 
+          className="fixed inset-0 z-[3000] bg-black/95 flex flex-col items-center justify-between backdrop-blur-md animate-fadeIn p-4 sm:p-8 overscroll-contain"
+          onClick={() => setIsZoomed(false)}
         >
-          <img
-            src={getImageSrc(product.imageUrl || product.image)}
-            alt={product.name}
-            className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp"
-          />
-          <p className="absolute bottom-10 text-white/60 text-xs font-medium tracking-widest uppercase">Click anywhere to exit</p>
+          {/* Close Button */}
+          <button
+            onClick={() => setIsZoomed(false)}
+            className="absolute top-4 right-4 sm:top-8 sm:right-8 z-[3010] w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl"
+          >
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          {/* Spacer for top */}
+          <div className="h-8 sm:h-12 w-full shrink-0"></div>
+
+          {/* Main Image */}
+          <div 
+            className="relative w-full max-w-5xl flex-1 flex items-center justify-center min-h-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={getImageSrc(galleryImages[activeIndex])}
+              alt={product.name}
+              className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp select-none"
+            />
+            
+            {/* Lightbox Arrows */}
+            {galleryImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-0 sm:-left-12 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl z-[3010]"
+                >
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+                  }}
+                  className="absolute right-0 sm:-right-12 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl z-[3010]"
+                >
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Thumbnails in Lightbox */}
+          {galleryImages.length > 1 ? (
+            <div className="w-full max-w-2xl overflow-x-auto flex gap-3 px-4 py-4 shrink-0 hide-scrollbar snap-x z-[3010] justify-center">
+              {galleryImages.map((imgUrl, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex(i);
+                  }}
+                  className={`relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden snap-center transition-all border-2 ${activeIndex === i ? "border-white opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-100"}`}
+                >
+                  <img src={getImageSrc(imgUrl)} alt={`Thumbnail ${i}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          ) : (
+             <div className="h-8 sm:h-12 w-full shrink-0"></div>
+          )}
         </div>
       )}
 
@@ -285,6 +441,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
         }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
         .animate-scaleUp { animation: scaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .overscroll-contain { overscroll-behavior: contain; }
       `}</style>
     </div>
   );

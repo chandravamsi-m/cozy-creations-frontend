@@ -56,8 +56,8 @@ export default function AdminProducts() {
   // Form states
   const [formLoading, setFormLoading] = useState(false);
   const [, setFormMsg] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
+  const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [product, setProduct] = useState({
     name: "",
     category: "",
@@ -281,8 +281,8 @@ export default function AdminProducts() {
       customizableColor: true,
       altText: "",
     });
-    setImageFile(null);
-    setPreview(null);
+    setImageFiles([null, null, null, null, null]);
+    setPreviews([null, null, null, null, null]);
     setFormMsg("");
     setBulkPricingTiers([]); // Clear tiers for new product
     setShowAddModal(true);
@@ -290,8 +290,8 @@ export default function AdminProducts() {
 
   const handleCloseAddModal = () => {
     setShowAddModal(false);
-    setImageFile(null);
-    setPreview(null);
+    setImageFiles([null, null, null, null, null]);
+    setPreviews([null, null, null, null, null]);
     setFormMsg("");
     setBulkPricingTiers([]);
   };
@@ -323,8 +323,14 @@ export default function AdminProducts() {
         customizableColor: data.customizableColor ?? true,
         altText: data.altText || "",
       });
-      setPreview(data.imageUrl);
-      setImageFile(null);
+      const initialPreviews = [null, null, null, null, null];
+      if (Array.isArray(data.images) && data.images.length > 0) {
+        data.images.slice(0, 5).forEach((url, i) => initialPreviews[i] = url);
+      } else if (data.imageUrl) {
+        initialPreviews[0] = data.imageUrl;
+      }
+      setPreviews(initialPreviews);
+      setImageFiles([null, null, null, null, null]);
       setBulkPricingTiers(
         (data.bulkPricingTiers || data.bulkPricing || []).map((tier) => ({
           minQty: String(tier.minQty ?? ""),
@@ -342,8 +348,8 @@ export default function AdminProducts() {
     setShowEditModal(false);
     setEditingProductId(null);
     setBulkPricingTiers([]);
-    setImageFile(null);
-    setPreview(null);
+    setImageFiles([null, null, null, null, null]);
+    setPreviews([null, null, null, null, null]);
     setFormMsg("");
   };
 
@@ -351,10 +357,32 @@ export default function AdminProducts() {
     setProduct((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (index, e) => {
     const file = e.target.files[0];
-    setImageFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
+    if (file) {
+      const newFiles = [...imageFiles];
+      newFiles[index] = file;
+      setImageFiles(newFiles);
+
+      const newPreviews = [...previews];
+      newPreviews[index] = URL.createObjectURL(file);
+      setPreviews(newPreviews);
+    }
+  };
+
+  const removeImage = (index) => {
+    const newFiles = [...imageFiles];
+    newFiles.splice(index, 1);
+    newFiles.push(null);
+    setImageFiles(newFiles);
+
+    const newPreviews = [...previews];
+    if (newPreviews[index] && newPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(newPreviews[index]);
+    }
+    newPreviews.splice(index, 1);
+    newPreviews.push(null);
+    setPreviews(newPreviews);
   };
 
   const compressToWebpUnderLimit = async (file, maxBytes = MAX_UPLOAD_BYTES) => {
@@ -441,18 +469,40 @@ export default function AdminProducts() {
         setFormLoading(false);
         return;
       }
+      if (!product.dimensions) {
+        setFormMsg("Dimensions are required for volumetric weight calculation.");
+        setFormLoading(false);
+        return;
+      }
       if (!product.price || Number(product.price) <= 0) {
         setFormMsg("Price is required and must be greater than 0.");
         setFormLoading(false);
         return;
       }
-      if (!imageFile) {
-        setFormMsg("Please select a product image.");
+      const hasAnyImage = imageFiles.some(f => f !== null) || previews.some(p => p !== null);
+      if (!hasAnyImage) {
+        setFormMsg("Please select at least a primary product image.");
         setFormLoading(false);
         return;
       }
-      const fileToUpload = await compressToWebpUnderLimit(imageFile, MAX_UPLOAD_BYTES);
-      const imageUrl = await uploadToCloudinary(fileToUpload);
+
+      const uploadPromises = previews.map(async (previewUrl, index) => {
+        if (!previewUrl) return null;
+        const file = imageFiles[index];
+        if (file) {
+          const fileToUpload = await compressToWebpUnderLimit(file, MAX_UPLOAD_BYTES);
+          return await uploadToCloudinary(fileToUpload);
+        }
+        return previewUrl;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const finalImages = uploadedUrls.filter(url => url !== null);
+
+      if (finalImages.length === 0) {
+        throw new Error("Please select at least a primary product image (Slot 1).");
+      }
+      const imageUrl = finalImages[0];
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
       const payload = {
         ...productWithoutWaxTypeOther,
@@ -465,8 +515,9 @@ export default function AdminProducts() {
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
         imageUrl,
-        altText: product.name,
         thumbnailUrl: imageUrl,
+        images: finalImages,
+        altText: product.name,
         bulkPricingTiers: bulkPricingTiers.map(tier => ({
           minQty: String(tier.minQty),
           pricePerPc: parseAdminNumber(tier.pricePerPc)
@@ -504,16 +555,35 @@ export default function AdminProducts() {
         setFormLoading(false);
         return;
       }
+      if (!product.dimensions) {
+        setFormMsg("Dimensions are required for volumetric weight calculation.");
+        setFormLoading(false);
+        return;
+      }
       if (!product.price || Number(product.price) <= 0) {
         setFormMsg("Price is required and must be greater than 0.");
         setFormLoading(false);
         return;
       }
-      let imageUrl = preview;
-      if (imageFile) {
-        const fileToUpload = await compressToWebpUnderLimit(imageFile, MAX_UPLOAD_BYTES);
-        imageUrl = await uploadToCloudinary(fileToUpload);
+      const uploadPromises = previews.map(async (previewUrl, index) => {
+        if (!previewUrl) return null;
+        const file = imageFiles[index];
+        if (file) {
+          const fileToUpload = await compressToWebpUnderLimit(file, MAX_UPLOAD_BYTES);
+          return await uploadToCloudinary(fileToUpload);
+        }
+        return previewUrl;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const finalImages = uploadedUrls.filter(url => url !== null);
+
+      if (finalImages.length === 0) {
+        setFormMsg("Please select at least a primary product image.");
+        setFormLoading(false);
+        return;
       }
+      const imageUrl = finalImages[0];
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
       const payload = {
         ...productWithoutWaxTypeOther,
@@ -526,8 +596,9 @@ export default function AdminProducts() {
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
         imageUrl,
-        altText: product.name,
         thumbnailUrl: imageUrl,
+        images: finalImages,
+        altText: product.name,
         bulkPricingTiers: bulkPricingTiers.map(tier => ({
           minQty: String(tier.minQty),
           pricePerPc: parseAdminNumber(tier.pricePerPc)
@@ -694,7 +765,8 @@ export default function AdminProducts() {
                 product={product}
                 updateField={updateField}
                 handleFileChange={handleFileChange}
-                preview={preview}
+                previews={previews}
+                removeImage={removeImage}
                 formLoading={formLoading}
                 handleCloseAddModal={handleCloseAddModal}
                 handleCloseEditModal={handleCloseEditModal}

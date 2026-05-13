@@ -11,7 +11,8 @@ const ProductForm = ({
   product,
   updateField,
   handleFileChange,
-  preview,
+  previews,
+  removeImage,
   formLoading,
   handleCloseAddModal,
   handleCloseEditModal,
@@ -281,10 +282,10 @@ const ProductForm = ({
       </div>
     </div>
 
-    {/* Dimensions (Optional) */}
+    {/* Dimensions */}
     <div className="space-y-1">
       <label htmlFor="product-dimensions" className="text-sm font-medium text-gray-800">
-        Dimensions <span className="text-gray-500 text-xs">(optional)</span>
+        Dimensions <span className="text-red-500">*</span>
       </label>
       <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden focus-within:ring-1 focus-within:ring-black h-10 bg-white">
         <input
@@ -294,6 +295,7 @@ const ProductForm = ({
           onChange={(e) => updateField("dimensions", e.target.value)}
           placeholder="e.g. 10x15"
           className="flex-1 p-2 outline-none border-none text-sm h-full"
+          required
         />
         <div className="relative h-full">
           <select
@@ -344,57 +346,51 @@ const ProductForm = ({
       </div>
     </div>
 
-    {/* Image Upload */}
-    <div className="space-y-2">
+    {/* Image Upload - Multi Slot */}
+    <div className="space-y-3">
       <label className="text-sm font-medium text-gray-800 block">
-        Product Image {!isEdit && <span className="text-red-500">*</span>}
+        Product Images (Up to 5) {!isEdit && <span className="text-red-500">*</span>}
       </label>
 
-      <div className="relative group">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-          id="product-image-upload"
-        />
+      <div className="flex flex-wrap gap-4">
+        {[0, 1, 2, 3, 4].map((index) => {
+          const hasPreview = previews && previews[index];
+          const isNextAvailableSlot = !hasPreview && (index === 0 || (previews && previews[index - 1]));
+          
+          if (!hasPreview && !isNextAvailableSlot) return null;
 
-        <label
-          htmlFor="product-image-upload"
-          className={`
-            relative flex flex-col items-center justify-center w-full min-h-[180px] 
-            border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 overflow-hidden
-            ${preview
-              ? 'border-transparent bg-gray-100 hover:bg-gray-200'
-              : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-black/20 hover:shadow-xl'}
-          `}
-        >
-          {preview ? (
-            <div className="w-full h-full absolute inset-0">
-              <img
-                src={preview}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                alt="Preview"
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-[2px]">
-                <div className="bg-white/90 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest text-gray-900 shadow-2xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                  Change Image
-                </div>
-              </div>
+          return (
+            <div key={index} className={`relative w-24 h-24 sm:w-28 sm:h-28 border-2 ${hasPreview ? 'border-transparent' : 'border-dashed border-gray-200'} rounded-2xl flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 group hover:border-black/20 transition-all duration-300`}>
+              {hasPreview ? (
+                <>
+                  <img src={previews[index]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Preview ${index + 1}`} />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ×
+                  </button>
+                </>
+              ) : (
+                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
+                  <ImagePlus className="w-6 h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
+                  <span className="text-[10px] text-gray-400 font-medium tracking-wide">
+                    {index === 0 ? "Primary ★" : "Add Extra"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileChange(index, e)}
+                  />
+                </label>
+              )}
             </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3 p-6 text-center">
-              <div className="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center border border-gray-100 text-gray-400 group-hover:text-black group-hover:rotate-6 transition-all duration-300">
-                <ImagePlus className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-black uppercase tracking-widest text-gray-900">Upload Product Image</p>
-                <p className="text-[10px] text-gray-400 font-medium tracking-wide">PNG, JPG up to 5MB</p>
-              </div>
-            </div>
-          )}
-        </label>
+          );
+        })}
       </div>
+      <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PNG, JPG up to 5MB per image.</p>
     </div>
 
     {/* Action Buttons */}

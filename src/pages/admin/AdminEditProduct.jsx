@@ -27,8 +27,8 @@ export default function AdminEditProduct() {
   const { showToast } = useToast();
 
   const [product, setProduct] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
+  const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [loading, setLoading] = useState(false);
 
   const scrollToTop = () => {
@@ -73,7 +73,13 @@ export default function AdminEditProduct() {
         imageUrl: data.imageUrl || "",
       });
 
-      setPreview(data.imageUrl || null);
+      const initialPreviews = [null, null, null, null, null];
+      if (Array.isArray(data.images) && data.images.length > 0) {
+        data.images.slice(0, 5).forEach((url, i) => initialPreviews[i] = url);
+      } else if (data.imageUrl) {
+        initialPreviews[0] = data.imageUrl;
+      }
+      setPreviews(initialPreviews);
     };
 
     load();
@@ -94,10 +100,31 @@ export default function AdminEditProduct() {
     );
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = (index, event) => {
     const file = event.target.files[0];
-    setImageFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
+    if (file) {
+      const newFiles = [...imageFiles];
+      newFiles[index] = file;
+      setImageFiles(newFiles);
+
+      const newPreviews = [...previews];
+      newPreviews[index] = URL.createObjectURL(file);
+      setPreviews(newPreviews);
+    }
+  };
+
+  const removeImage = (index) => {
+    const newFiles = [...imageFiles];
+    newFiles[index] = null;
+    setImageFiles(newFiles);
+
+    const newPreviews = [...previews];
+    // Don't revoke Cloudinary URLs
+    if (newPreviews[index] && newPreviews[index].startsWith("blob:")) {
+      URL.revokeObjectURL(newPreviews[index]);
+    }
+    newPreviews[index] = null;
+    setPreviews(newPreviews);
   };
 
   const compressToWebpUnderLimit = async (file, maxBytes = MAX_UPLOAD_BYTES) => {
@@ -182,12 +209,27 @@ export default function AdminEditProduct() {
     setLoading(true);
 
     try {
-      let imageUrl = product.imageUrl;
+      const uploadPromises = previews.map(async (previewUrl, index) => {
+        if (!previewUrl) return null; // Slot is empty
+        const file = imageFiles[index];
+        if (file) {
+          // New file selected for this slot, upload it
+          const fileToUpload = await compressToWebpUnderLimit(file, MAX_UPLOAD_BYTES);
+          return await uploadToCloudinary(fileToUpload);
+        } else {
+          // Existing Cloudinary URL
+          return previewUrl;
+        }
+      });
 
-      if (imageFile) {
-        const fileToUpload = await compressToWebpUnderLimit(imageFile, MAX_UPLOAD_BYTES);
-        imageUrl = await uploadToCloudinary(fileToUpload);
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const finalImages = uploadedUrls.filter(url => url !== null);
+      
+      if (finalImages.length === 0) {
+        throw new Error("Please select at least a primary product image (Slot 1).");
       }
+
+      const imageUrl = finalImages[0];
 
       const payload = {
         ...product,
@@ -199,6 +241,8 @@ export default function AdminEditProduct() {
           : "",
         waxType: product.waxType === "other" ? (product.waxTypeOther || "other") : product.waxType,
         imageUrl,
+        thumbnailUrl: imageUrl,
+        images: finalImages,
         altText: product.name,
       };
 
@@ -376,27 +420,43 @@ export default function AdminEditProduct() {
             </div>
           </div>
 
-          {/* IMAGE UPLOAD */}
+          {/* IMAGE UPLOAD - MULTI SLOT */}
           <div className="space-y-3 pt-4 border-t border-gray-100">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Product Image</label>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
-                {preview ? (
-                  <img src={preview} className="w-full h-full object-cover" alt="Preview" />
-                ) : (
-                  <span className="text-gray-300 text-xs">No image</span>
-                )}
-              </div>
-              <div className="flex-1 w-full">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleFileChange}
-                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
-                />
-                <p className="mt-2 text-[10px] text-gray-400 font-medium italic">Recommended size: 800x800px. Max 10MB.</p>
-              </div>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+              Product Images (Up to 5)
+            </label>
+            <div className="flex flex-wrap gap-4">
+              {[0, 1, 2, 3, 4].map((index) => (
+                <div key={index} className="relative w-24 h-24 sm:w-28 sm:h-28 border rounded-2xl flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 border-dashed border-gray-200">
+                  {previews[index] ? (
+                    <>
+                      <img src={previews[index]} className="w-full h-full object-cover" alt={`Preview ${index + 1}`} />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm shadow"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition">
+                      <span className="text-gray-300 text-2xl">+</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {index === 0 ? "Primary ★" : "Extra"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(index, e)}
+                      />
+                    </label>
+                  )}
+                </div>
+              ))}
             </div>
+            <p className="mt-2 text-[10px] text-gray-400 font-medium italic">Recommended size: 800x800px. Max 10MB per image.</p>
           </div>
 
           {/* SUBMIT BUTTONS */}

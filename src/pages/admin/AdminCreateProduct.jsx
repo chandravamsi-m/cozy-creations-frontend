@@ -35,8 +35,8 @@ export default function AdminCreateProduct() {
     altText: "",
   });
 
-  const [imageFile, setImageFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
+  const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -53,10 +53,28 @@ export default function AdminCreateProduct() {
   };
 
   // IMAGE PREVIEW
-  const handleFileChange = (e) => {
+  const handleFileChange = (index, e) => {
     const file = e.target.files[0];
-    setImageFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
+    if (file) {
+      const newFiles = [...imageFiles];
+      newFiles[index] = file;
+      setImageFiles(newFiles);
+
+      const newPreviews = [...previews];
+      newPreviews[index] = URL.createObjectURL(file);
+      setPreviews(newPreviews);
+    }
+  };
+
+  const removeImage = (index) => {
+    const newFiles = [...imageFiles];
+    newFiles[index] = null;
+    setImageFiles(newFiles);
+
+    const newPreviews = [...previews];
+    if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index]);
+    newPreviews[index] = null;
+    setPreviews(newPreviews);
   };
 
   // Compress/convert image to WebP by reducing dimensions (keep quality high).
@@ -147,15 +165,22 @@ export default function AdminCreateProduct() {
     setLoading(true);
 
     try {
-      if (!imageFile) {
-        setMsg("Please select a product image.");
+      if (!imageFiles[0]) {
+        setMsg("Please select a primary product image (Slot 1).");
         setLoading(false);
         return;
       }
 
-      // 1️⃣ Upload image
-      const fileToUpload = await compressToWebpUnderLimit(imageFile, MAX_UPLOAD_BYTES);
-      const imageUrl = await uploadToCloudinary(fileToUpload);
+      // 1️⃣ Upload all selected images in parallel
+      const uploadPromises = imageFiles.map(async (file, index) => {
+        if (!file) return null;
+        const fileToUpload = await compressToWebpUnderLimit(file, MAX_UPLOAD_BYTES);
+        return await uploadToCloudinary(fileToUpload);
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const finalImages = uploadedUrls.filter(url => url !== null);
+      const imageUrl = finalImages[0];
 
       // 2️⃣ Prepare payload
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
@@ -170,8 +195,9 @@ export default function AdminCreateProduct() {
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
         customizableColor: product.customizableColor === "true" || product.customizableColor === true,
         imageUrl,
+        thumbnailUrl: imageUrl,
+        images: finalImages,
         altText: product.name, // Auto-set from product name
-        thumbnailUrl: imageUrl, // you used imageUrl for thumbnail previously
       };
 
       // 3️⃣ Send to backend
@@ -195,8 +221,8 @@ export default function AdminCreateProduct() {
         customizableColor: true,
         altText: "",
       });
-      setImageFile(null);
-      setPreview(null);
+      setImageFiles([null, null, null, null, null]);
+      setPreviews([null, null, null, null, null]);
 
     } catch (err) {
       setMsg("Error: " + err.message);
@@ -412,22 +438,50 @@ export default function AdminCreateProduct() {
             </select>
           </div>
         </div>
-        {/* IMAGE UPLOAD */}
+        
+        {/* IMAGE UPLOAD - MULTI SLOT */}
         <div>
-          <label className="text-sm font-medium text-gray-800 block mb-1">
-            Product Image <span className="text-red-600">*</span>
+          <label className="text-sm font-medium text-gray-800 block mb-2">
+            Product Images (Up to 5) <span className="text-red-600">*</span>
           </label>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-          {preview && (
-            <img src={preview} className="w-40 mt-2 rounded border" />
-          )}
+          <div className="flex flex-wrap gap-4">
+            {[0, 1, 2, 3, 4].map((index) => (
+              <div key={index} className="relative w-24 h-24 border rounded flex items-center justify-center bg-gray-50 overflow-hidden shrink-0">
+                {previews[index] ? (
+                  <>
+                    <img src={previews[index]} className="w-full h-full object-cover" alt={`Preview ${index + 1}`} />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition">
+                    <span className="text-gray-400 text-2xl">+</span>
+                    <span className="text-[10px] text-gray-500 font-medium">
+                      {index === 0 ? "Primary ★" : "Extra"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileChange(index, e)}
+                    />
+                  </label>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* SUBMIT */}
         <button
           type="submit"
           disabled={loading}
-          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50 mt-4"
         >
           {loading ? "Creating..." : "Create Product"}
         </button>
