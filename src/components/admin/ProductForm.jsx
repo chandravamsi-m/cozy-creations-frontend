@@ -20,7 +20,8 @@ const ProductForm = ({
   bulkPricingTiers,
   addTier,
   removeTier,
-  updateTier
+  updateTier,
+  formMsg
 }) => {
   const handleIntegerFieldChange = (field, value) => {
     updateField(field, coerceAdminNumberInput(String(product[field] ?? ""), value));
@@ -287,6 +288,24 @@ const ProductForm = ({
       <label htmlFor="product-dimensions" className="text-sm font-medium text-gray-800">
         Dimensions <span className="text-red-500">*</span>
       </label>
+      {/* Image Optimization Progress Overlay */}
+      {formLoading && formMsg && (
+        <div className="absolute inset-0 z-[100] bg-white/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+          <div className="flex flex-col items-center gap-4 p-8 bg-white shadow-2xl rounded-3xl border border-gray-100 scale-95 animate-in zoom-in-90 duration-300">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-gray-100 border-t-black rounded-full animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 bg-black rounded-full animate-pulse" />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1 text-center">
+              <p className="text-lg font-black text-gray-900 tracking-tight">Please Wait</p>
+              <p className="text-sm font-semibold text-blue-600 animate-pulse uppercase tracking-wider">{formMsg}</p>
+              <p className="text-xs text-gray-400 mt-2">This may take a moment for high-quality images</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden focus-within:ring-1 focus-within:ring-black h-10 bg-white">
         <input
           id="product-dimensions"
@@ -352,7 +371,7 @@ const ProductForm = ({
         Product Images (Up to 5) {!isEdit && <span className="text-red-500">*</span>}
       </label>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
         {[0, 1, 2, 3, 4].map((index) => {
           const hasPreview = previews && previews[index];
           const isNextAvailableSlot = !hasPreview && (index === 0 || (previews && previews[index - 1]));
@@ -360,22 +379,22 @@ const ProductForm = ({
           if (!hasPreview && !isNextAvailableSlot) return null;
 
           return (
-            <div key={index} className={`relative w-24 h-24 sm:w-28 sm:h-28 border-2 ${hasPreview ? 'border-transparent' : 'border-dashed border-gray-200'} rounded-2xl flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 group hover:border-black/20 transition-all duration-300`}>
+            <div key={index} className={`relative aspect-square sm:w-24 sm:h-24 md:w-28 md:h-28 border-2 ${hasPreview ? 'border-transparent' : 'border-dashed border-gray-200'} rounded-xl sm:rounded-2xl flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 group hover:border-black/20 transition-all duration-300`}>
               {hasPreview ? (
                 <>
                   <img src={previews[index]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Preview ${index + 1}`} />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm shadow opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     ×
                   </button>
                 </>
               ) : (
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
-                  <ImagePlus className="w-6 h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
-                  <span className="text-[10px] text-gray-400 font-medium tracking-wide">
+                  <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
+                  <span className="text-[8px] sm:text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
                     {index === 0 ? "Primary ★" : "Add Extra"}
                   </span>
                   <input
@@ -392,6 +411,16 @@ const ProductForm = ({
       </div>
       <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PNG, JPG up to 5MB per image.</p>
     </div>
+
+    {/* Validation Error Message */}
+    {formMsg && (
+      <div className="p-3 bg-red-50 border border-red-100 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300 mb-2">
+        <p className="text-xs font-bold text-red-600 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
+          {formMsg}
+        </p>
+      </div>
+    )}
 
     {/* Action Buttons */}
     <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">

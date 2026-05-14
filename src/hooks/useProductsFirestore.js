@@ -17,10 +17,14 @@ export async function fetchFirestoreProducts(category = "", includeInactive = fa
 
     const snap = await getDocs(q);
 
-    const docs = snap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const docs = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        bulkPricingTiers: data.bulkPricingTiers || data.bulkPricing || []
+      };
+    });
 
     // Client-side sort to avoid complex index requirements
     return docs.sort((a, b) => {
@@ -39,7 +43,12 @@ export async function getProductByIdFirestore(id) {
     const ref = doc(db, "products", id);
     const snap = await getDoc(ref);
     if (!snap.exists()) return null;
-    return { id: snap.id, ...snap.data() };
+    const data = snap.data();
+    return { 
+      id: snap.id, 
+      ...data,
+      bulkPricingTiers: data.bulkPricingTiers || data.bulkPricing || []
+    };
   } catch (error) {
     console.error("Error fetching product:", error);
     return null;

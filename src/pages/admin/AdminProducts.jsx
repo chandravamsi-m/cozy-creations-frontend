@@ -5,15 +5,18 @@ import { createPortal } from "react-dom";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useProducts } from "../../contexts/ProductsContext";
 import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import { calculateProductDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
+import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { Loader2, FileText, Plus, X, Search, Package } from "lucide-react";
 import {
   parseAdminNumber,
 } from "../../utils/adminNumberInputs";
+import { optimizeCloudinaryUrl, compressToWebpUnderLimit } from "../../utils/image";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -23,8 +26,6 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export default function AdminProducts() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
-
-  const [products, setProducts] = useState([]);
 
   // URL query params for deep linking
   const queryParams = new URLSearchParams(window.location.search);
@@ -40,10 +41,15 @@ export default function AdminProducts() {
       }
     }, 100);
   };
-  const [loading, setLoading] = useState(true);
-  const [catalogueLoading, setCatalogueLoading] = useState(false);
-  const [catalogueProgress, setCatalogueProgress] = useState(0);
-  const [, setCatalogueStatusText] = useState("");
+  const { 
+    products, 
+    loading, 
+    loadProducts, 
+    catalogueLoading, 
+    catalogueProgress, 
+    catalogueType, 
+    startCatalogueGeneration 
+  } = useProducts();
 
   // Bulk pricing tiers state (optional)
   const [bulkPricingTiers, setBulkPricingTiers] = useState([]);
@@ -52,10 +58,11 @@ export default function AdminProducts() {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   // Form states
   const [formLoading, setFormLoading] = useState(false);
-  const [, setFormMsg] = useState("");
+  const [formMsg, setFormMsg] = useState("");
   const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
   const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [product, setProduct] = useState({
@@ -87,30 +94,11 @@ export default function AdminProducts() {
   const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
   const toCloudinaryThumb = (url) => {
-    if (!url || typeof url !== "string") return "";
-    if (!url.includes("res.cloudinary.com")) return url;
-    if (!url.includes("/image/upload/")) return url;
-    const parts = url.split("/image/upload/");
-    if (parts.length !== 2) return url;
-    return `${parts[0]}/image/upload/w_600,h_450,c_fill,q_auto,f_auto/${parts[1]}`;
-  };
-
-  const loadProducts = async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const snap = await getDocs(collection(db, "products"));
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setProducts(list);
-    } catch (error) {
-      console.error("Error loading products:", error);
-      setProducts([]);
-    } finally {
-      if (!silent) setLoading(false);
-    }
+    return optimizeCloudinaryUrl(url, { width: 600, height: 450 });
   };
 
   useEffect(() => {
-    loadProducts();
+    loadProducts("", false, true); // Admin mode: silent=false, includeInactive=true
   }, []);
 
   // Handle deep linking for edit modal
@@ -136,6 +124,13 @@ export default function AdminProducts() {
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [showAddModal, showEditModal]);
+  // Keep QuickView in sync with master products list
+  useEffect(() => {
+    if (quickViewProduct) {
+      const updated = products.find(p => p.id === quickViewProduct.id);
+      if (updated) setQuickViewProduct(updated);
+    }
+  }, [products]);
 
   const handleDelete = (id) => {
     setConfirmModal({
@@ -148,7 +143,7 @@ export default function AdminProducts() {
         try {
           await deleteProduct(id, idToken);
           showToast("Product deactivated successfully");
-          await loadProducts(true);
+          await loadProducts("", true, true, true); // (cat, silent, inactive, force)
           scrollToTop();
         } catch (error) {
           console.error("Failed to deactivate:", error);
@@ -169,7 +164,7 @@ export default function AdminProducts() {
         try {
           await updateProduct(id, { isActive: true }, idToken);
           showToast("Product activated successfully");
-          await loadProducts(true);
+          await loadProducts("", true, true, true);
           scrollToTop();
         } catch (error) {
           console.error("Failed to activate:", error);
@@ -190,7 +185,7 @@ export default function AdminProducts() {
         try {
           await permanentlyDeleteProduct(id, idToken);
           showToast("Product deleted permanently");
-          loadProducts();
+          loadProducts("", false, true, true);
           scrollToTop();
         } catch (error) {
           console.error("Failed to permanent delete:", error);
@@ -207,60 +202,7 @@ export default function AdminProducts() {
       message: "This will generate and download the product catalogue PDF. Proceed?",
       type: "default",
       confirmText: "Download",
-      onConfirm: async () => {
-        setCatalogueLoading(true);
-        setCatalogueProgress(0);
-        setCatalogueStatusText("Starting...");
-        let statusInterval;
-        try {
-          // Poll backend status for the generation phase
-          statusInterval = setInterval(async () => {
-            try {
-              const status = await getCatalogueStatus(idToken);
-              if (status) {
-                // Map 0-100 backend progress to 0-90% UI progress
-                setCatalogueProgress(Math.round(status.progress * 0.9));
-                setCatalogueStatusText(status.currentAction);
-              }
-            } catch (pollErr) {
-              console.warn("Status poll error:", pollErr);
-            }
-          }, 800);
-
-          const blob = await generateCatalogue(idToken, (p) => {
-            // Once real download starts (90%+), clear polling and show download progress
-            if (statusInterval) {
-              clearInterval(statusInterval);
-              statusInterval = null;
-            }
-            // Map 0-100 download progress to 90-100% UI progress
-            setCatalogueProgress(90 + Math.round(p * 0.1));
-            setCatalogueStatusText("Downloading...");
-          });
-
-          if (statusInterval) clearInterval(statusInterval);
-          setCatalogueProgress(100);
-          setCatalogueStatusText("Complete!");
-
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `cozy-catalogue.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          showToast("Catalogue generated and downloaded!");
-        } catch (error) {
-          if (statusInterval) clearInterval(statusInterval);
-          console.error("Catalogue Generation Error:", error);
-          showToast("Failed to generate catalogue", "error");
-        } finally {
-          setCatalogueLoading(false);
-          setCatalogueProgress(0);
-          setCatalogueStatusText("");
-        }
-      }
+      onConfirm: () => startCatalogueGeneration('normal', idToken, showToast)
     });
   };
 
@@ -283,7 +225,6 @@ export default function AdminProducts() {
     });
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
-    setFormMsg("");
     setBulkPricingTiers([]); // Clear tiers for new product
     setShowAddModal(true);
   };
@@ -303,7 +244,7 @@ export default function AdminProducts() {
       const ref = doc(db, "products", productId);
       const snap = await getDoc(ref);
       if (!snap.exists()) {
-        setFormMsg("Product not found");
+        showToast("Product not found", "error");
         return;
       }
       const data = snap.data();
@@ -340,7 +281,7 @@ export default function AdminProducts() {
       setShowEditModal(true);
     } catch (error) {
       console.error("Error loading product:", error);
-      setFormMsg("Error loading product");
+      showToast("Error loading product", "error");
     }
   };
 
@@ -385,44 +326,6 @@ export default function AdminProducts() {
     setPreviews(newPreviews);
   };
 
-  const compressToWebpUnderLimit = async (file, maxBytes = MAX_UPLOAD_BYTES) => {
-    if (!(file instanceof File) || !file.type.startsWith("image/")) return file;
-    const imgUrl = URL.createObjectURL(file);
-    try {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = imgUrl;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-      const quality = 0.95;
-      let scale = 1;
-      for (let attempt = 0; attempt < 8; attempt++) {
-        const width = Math.max(1, Math.round(img.naturalWidth * scale));
-        const height = Math.max(1, Math.round(img.naturalHeight * scale));
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/webp", quality)
-        );
-        if (!blob) throw new Error("Image compression failed");
-        if (blob.size <= maxBytes) {
-          const webpName = (file.name || "upload")
-            .replace(/\.[^.]+$/, "")
-            .concat(".webp");
-          return new File([blob], webpName, { type: "image/webp" });
-        }
-        scale *= 0.85;
-      }
-      throw new Error(`Image is still too large after compression. Please use a smaller image.`);
-    } finally {
-      URL.revokeObjectURL(imgUrl);
-    }
-  };
 
   const uploadToCloudinary = async (file) => {
     const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
@@ -525,11 +428,10 @@ export default function AdminProducts() {
       };
       await createProduct(payload, idToken);
       showToast("Product created successfully!");
-      await loadProducts();
-      scrollToTop();
-      setTimeout(() => handleCloseAddModal(), 1500);
+      handleCloseAddModal();
+      loadProducts("", true, true, true); // Silent refresh in background
     } catch (err) {
-      setFormMsg("Error: " + err.message);
+      showToast("Error: " + err.message, "error");
       showToast("Failed to create product", "error");
     }
     setFormLoading(false);
@@ -546,22 +448,22 @@ export default function AdminProducts() {
         return;
       }
       if (!product.burnTimeHours || Number(product.burnTimeHours) <= 0) {
-        setFormMsg("Burn Time is required and must be greater than 0.");
+        showToast("Burn Time is required and must be greater than 0.", "error");
         setFormLoading(false);
         return;
       }
       if (!product.quantityPack || Number(product.quantityPack) <= 0) {
-        setFormMsg("Quantity per Pack is required and must be at least 1.");
+        showToast("Quantity per Pack is required and must be at least 1.", "error");
         setFormLoading(false);
         return;
       }
       if (!product.dimensions) {
-        setFormMsg("Dimensions are required for volumetric weight calculation.");
+        showToast("Dimensions are required for volumetric weight calculation.", "error");
         setFormLoading(false);
         return;
       }
       if (!product.price || Number(product.price) <= 0) {
-        setFormMsg("Price is required and must be greater than 0.");
+        showToast("Price is required and must be greater than 0.", "error");
         setFormLoading(false);
         return;
       }
@@ -579,7 +481,7 @@ export default function AdminProducts() {
       const finalImages = uploadedUrls.filter(url => url !== null);
 
       if (finalImages.length === 0) {
-        setFormMsg("Please select at least a primary product image.");
+        showToast("Please select at least a primary product image.", "error");
         setFormLoading(false);
         return;
       }
@@ -606,12 +508,17 @@ export default function AdminProducts() {
       };
       await updateProduct(editingProductId, payload, idToken);
       showToast("Product updated successfully!");
-      await loadProducts();
-      scrollToTop();
-      setTimeout(() => handleCloseEditModal(), 1500);
+      
+      if (quickViewProduct && quickViewProduct.id === editingProductId) {
+        setQuickViewProduct(prev => ({ ...prev, ...payload }));
+      }
+
+      handleCloseEditModal();
+      loadProducts("", true, true, true);
     } catch (err) {
-      setFormMsg("Error: " + err.message);
+      console.error(err);
       showToast("Failed to update product", "error");
+      setFormMsg("Error: " + err.message);
     }
     setFormLoading(false);
   };
@@ -668,9 +575,9 @@ export default function AdminProducts() {
           <button
             onClick={handleGenerateCatalogue}
             disabled={loading || catalogueLoading}
-            className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-11 shadow-sm relative overflow-hidden"
+            className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-11 shadow-sm relative overflow-hidden min-w-[140px]"
           >
-            {catalogueLoading ? (
+            {catalogueLoading && catalogueType === 'normal' ? (
               <>
                 <Loader2 className="animate-spin h-3.5 w-3.5" />
                 <span>{catalogueProgress}%</span>
@@ -727,23 +634,40 @@ export default function AdminProducts() {
                 handleDelete={handleDelete}
                 handleActivate={handleActivate}
                 handlePermanentDelete={handlePermanentDelete}
+                onQuickView={() => setQuickViewProduct(p)}
               />
             ))}
           </div>
         </div>
       )}
 
+      {/* ADMIN QUICK VIEW MODAL */}
+      {quickViewProduct && (
+        <AdminProductQuickView
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          onEdit={handleOpenEditModal}
+          onToggleStatus={(id) => {
+            if (quickViewProduct.isActive !== false) {
+              handleDelete(id);
+            } else {
+              handleActivate(id);
+            }
+          }}
+          onPermanentDelete={handlePermanentDelete}
+        />
+      )}
+
       {/* ADD/EDIT MODAL CONTAINER */}
       {(showAddModal || showEditModal) && createPortal(
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
           onClick={showAddModal ? handleCloseAddModal : handleCloseEditModal}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden relative animate-in fade-in zoom-in duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
               <h2 className="text-xl font-black text-gray-900">
                 {showAddModal ? "Add New Product" : "Edit Product"}
@@ -756,8 +680,6 @@ export default function AdminProducts() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Modal Content - Scrollable */}
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
               <ProductForm
                 isEdit={showEditModal}
@@ -768,6 +690,7 @@ export default function AdminProducts() {
                 previews={previews}
                 removeImage={removeImage}
                 formLoading={formLoading}
+                formMsg={formMsg}
                 handleCloseAddModal={handleCloseAddModal}
                 handleCloseEditModal={handleCloseEditModal}
                 bulkPricingTiers={bulkPricingTiers}
@@ -801,7 +724,8 @@ const AdminProductCard = ({
   handleOpenEditModal,
   handleDelete,
   handleActivate,
-  handlePermanentDelete
+  handlePermanentDelete,
+  onQuickView
 }) => {
   const [discount, setDiscount] = useState(null);
 
@@ -814,13 +738,23 @@ const AdminProductCard = ({
   }, [p]);
 
   return (
-    <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
-      {/* Product Image */}
-      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative">
+    <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative group/card ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
+      {/* Product Image - Clickable for Quick View */}
+      <div 
+        onClick={onQuickView}
+        className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group"
+      >
         <img
           src={toCloudinaryThumb(p.imageUrl)}
           alt={p.name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            if (e.target.src !== p.imageUrl) {
+              e.target.src = p.imageUrl;
+            }
+          }}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu"
         />
 
         {/* Bulk Pricing Badge */}
@@ -833,9 +767,12 @@ const AdminProductCard = ({
         </div>
       </div>
 
-      {/* Product Info */}
-      <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
-        <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal">{p.name}</h3>
+      {/* Product Info - Clickable for Quick View */}
+      <div 
+        onClick={onQuickView}
+        className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start cursor-pointer group/info"
+      >
+        <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal group-hover/info:text-blue-600 transition-colors">{p.name}</h3>
         {discount && discount.hasDiscount ? (
           <div className="flex items-center gap-1.5">
             <span className="text-gray-400 text-[10px] diagonal-strike">₹{p.price}</span>
@@ -853,7 +790,6 @@ const AdminProductCard = ({
         <p className="shrink-0">Pack: <span className="text-gray-900 font-medium">{p.quantityPack || 1}</span></p>
       </div>
 
-      {/* Action Buttons */}
       <div className="mt-auto pt-1 space-y-1.5">
         <div className="flex flex-row gap-1">
           <button

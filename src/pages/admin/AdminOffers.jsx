@@ -13,6 +13,7 @@ import {
   parseAdminNumber,
   preventNumberWheelChange,
 } from "../../utils/adminNumberInputs";
+import { optimizeCloudinaryUrl, compressToWebpUnderLimit } from "../../utils/image";
 
 const CATEGORIES = [
   { value: "flower", label: "Flower" },
@@ -40,6 +41,8 @@ export default function AdminOffers() {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [selectionListFilter, setSelectionListFilter] = useState("all");
+  const [pendingBannerFile, setPendingBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   const [offerSettings, setOfferSettings] = useState({
     // Banner settings
@@ -119,27 +122,9 @@ export default function AdminOffers() {
       return;
     }
 
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: formData }
-      );
-
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      setOfferSettings(prev => ({ ...prev, bannerImageUrl: data.secure_url }));
-      showToast("Image uploaded successfully!");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to upload image", "error");
-    } finally {
-      setUploading(false);
-    }
+    setPendingBannerFile(file);
+    if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    setBannerPreview(URL.createObjectURL(file));
   };
 
   const handleSave = async (e) => {
@@ -147,6 +132,26 @@ export default function AdminOffers() {
 
     try {
       setSaving(true);
+
+      let finalBannerUrl = offerSettings.bannerImageUrl;
+
+      // Upload if there's a pending file
+      if (pendingBannerFile) {
+        setUploading(true);
+        const optimizedFile = await compressToWebpUnderLimit(pendingBannerFile, 5 * 1024 * 1024);
+        const formData = new FormData();
+        formData.append("file", optimizedFile);
+        formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          { method: "POST", body: formData }
+        );
+
+        if (!uploadRes.ok) throw new Error("Banner upload failed");
+        const uploadData = await uploadRes.json();
+        finalBannerUrl = uploadData.secure_url;
+      }
 
       const token = await user.getIdToken();
       const res = await apiFetch("/admin/offers", {
@@ -157,6 +162,7 @@ export default function AdminOffers() {
         },
         body: JSON.stringify({
           ...offerSettings,
+          bannerImageUrl: finalBannerUrl,
           discountValue: parseAdminNumber(offerSettings.discountValue),
         }),
       });
@@ -170,6 +176,10 @@ export default function AdminOffers() {
         ...data.offer,
         discountValue: getStableAdminNumberValue(data.offer?.discountValue ?? 0),
       }));
+      setPendingBannerFile(null);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      setBannerPreview(null);
+      setUploading(false);
 
       // Smooth scroll to top of the main container to show success message and preview
       setTimeout(() => {
@@ -294,80 +304,90 @@ export default function AdminOffers() {
           </div>
 
           {/* Banner Image & Text Group */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Image Upload */}
-            <div className="md:col-span-1">
-              <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
-                Banner Image
-              </label>
-              <div className="relative group aspect-[4/5] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center transition-all hover:border-blue-400">
-                {offerSettings.bannerImageUrl ? (
-                  <>
-                    <img
-                      src={offerSettings.bannerImageUrl}
-                      className="w-full h-full object-cover"
-                      alt="Offer Banner"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <label className="cursor-pointer bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">
-                        Change Image
-                        <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
-                      </label>
-                    </div>
-                  </>
-                ) : (
-                  <label className="cursor-pointer flex flex-col items-center gap-2 p-4 text-center">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
-                      {uploading ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      ) : (
-                        <ImageIcon className="w-6 h-6" />
+          {offerSettings.isActive && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+              {/* Image Upload */}
+              <div className="md:col-span-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
+                  Banner Image
+                </label>
+                <div className="relative group aspect-[4/5] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden flex flex-col items-center justify-center transition-all hover:border-blue-400">
+                  {(bannerPreview || offerSettings.bannerImageUrl) ? (
+                    <>
+                      <img
+                        src={bannerPreview || offerSettings.bannerImageUrl}
+                        className="w-full h-full object-cover"
+                        alt="Offer Banner"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+                        <label className="cursor-pointer bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">
+                          Change Image
+                          <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
+                        </label>
+                      </div>
+                      {uploading && (
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-20">
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="w-8 h-8 animate-spin text-white" />
+                            <p className="text-[10px] font-bold text-white uppercase tracking-widest">Uploading...</p>
+                          </div>
+                        </div>
                       )}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-900">{uploading ? "Uploading..." : "Click to Upload"}</p>
-                      <p className="text-[10px] text-gray-400 uppercase tracking-tighter mt-1">Recommended: 400x500px</p>
-                    </div>
-                    <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" disabled={uploading} />
+                    </>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center gap-2 p-4 text-center">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                        {uploading ? (
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">{uploading ? "Uploading..." : "Click to Upload"}</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-tighter mt-1">Recommended: 400x500px</p>
+                      </div>
+                      <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" disabled={uploading} />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Offer Text & Heading */}
+              <div className="md:col-span-2 space-y-5">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
+                    Offer Heading (Animated)
                   </label>
-                )}
+                  <input
+                    type="text"
+                    value={offerSettings.offerHeading}
+                    onChange={(e) =>
+                      setOfferSettings((prev) => ({ ...prev, offerHeading: e.target.value }))
+                    }
+                    placeholder="e.g., Special Offer"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium shadow-inner"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-tight">Small pulse text above the main message</p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
+                    Offer Message
+                  </label>
+                  <textarea
+                    value={offerSettings.offerText}
+                    onChange={(e) =>
+                      setOfferSettings((prev) => ({ ...prev, offerText: e.target.value }))
+                    }
+                    rows={4}
+                    placeholder="e.g., valentine's day special - limited time offer"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium resize-none shadow-inner"
+                  />
+                </div>
               </div>
             </div>
-
-            {/* Offer Text & Heading */}
-            <div className="md:col-span-2 space-y-5">
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
-                  Offer Heading (Animated)
-                </label>
-                <input
-                  type="text"
-                  value={offerSettings.offerHeading}
-                  onChange={(e) =>
-                    setOfferSettings((prev) => ({ ...prev, offerHeading: e.target.value }))
-                  }
-                  placeholder="e.g., Special Offer"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium shadow-inner"
-                />
-                <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-tight">Small pulse text above the main message</p>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 mb-1.5 uppercase tracking-[0.2em]">
-                  Offer Message
-                </label>
-                <textarea
-                  value={offerSettings.offerText}
-                  onChange={(e) =>
-                    setOfferSettings((prev) => ({ ...prev, offerText: e.target.value }))
-                  }
-                  rows={4}
-                  placeholder="e.g., valentine's day special - limited time offer"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium resize-none shadow-inner"
-                />
-              </div>
-            </div>
-          </div>
+          )}
 
 
 

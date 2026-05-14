@@ -6,8 +6,10 @@ import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
 import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue, getCatalogueStatus } from "../../api/adminProducts";
 import ProductForm from "../../components/admin/ProductForm";
+import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
 import { Loader2, FileText, Truck } from "lucide-react";
+import { optimizeCloudinaryUrl } from "../../utils/image";
 
 // Cloudinary config
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -17,10 +19,19 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 export default function AdminBulkProducts() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
-  const { products: allProducts, loadProducts } = useProducts();
+  const { 
+    products: allProducts, 
+    loadProducts,
+    catalogueLoading,
+    catalogueProgress,
+    catalogueType,
+    startCatalogueGeneration
+  } = useProducts();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [formMsg, setFormMsg] = useState("");
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
   const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [product, setProduct] = useState({
@@ -56,9 +67,6 @@ export default function AdminBulkProducts() {
   // Filter only bulk products
   const [bulkProducts, setBulkProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [catalogueLoading, setCatalogueLoading] = useState(false);
-  const [catalogueProgress, setCatalogueProgress] = useState(0);
-  const [catalogueStatus, setCatalogueStatusText] = useState("");
 
   // Confirm Modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -73,12 +81,7 @@ export default function AdminBulkProducts() {
   const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
   const toCloudinaryThumb = (url) => {
-    if (!url || typeof url !== "string") return "";
-    if (!url.includes("res.cloudinary.com")) return url;
-    if (!url.includes("/image/upload/")) return url;
-    const parts = url.split("/image/upload/");
-    if (parts.length !== 2) return url;
-    return `${parts[0]}/image/upload/w_600,h_450,c_fill,q_auto,f_auto/${parts[1]}`;
+    return optimizeCloudinaryUrl(url, { width: 600, height: 450 });
   };
 
   // Load bulk products (products with bulkPricingTiers)
@@ -136,6 +139,14 @@ export default function AdminBulkProducts() {
     setShowEditModal(true);
   };
 
+  // Keep QuickView in sync with master list
+  useEffect(() => {
+    if (quickViewProduct) {
+      const updated = bulkProducts.find(p => p.id === quickViewProduct.id);
+      if (updated) setQuickViewProduct(updated);
+    }
+  }, [bulkProducts]);
+
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setEditingProductId(null);
@@ -177,6 +188,10 @@ export default function AdminBulkProducts() {
 
   const compressToWebpUnderLimit = async (file, maxBytes = MAX_UPLOAD_BYTES) => {
     if (!(file instanceof File) || !file.type.startsWith("image/")) return file;
+    
+    // If it's already a small WebP, skip processing
+    if (file.type === "image/webp" && file.size <= maxBytes) return file;
+
     const imgUrl = URL.createObjectURL(file);
     try {
       const img = new Image();
@@ -186,29 +201,42 @@ export default function AdminBulkProducts() {
         img.onload = resolve;
         img.onerror = reject;
       });
-      const quality = 0.95;
+
+      // Target a professional but efficient resolution (Max 1920px)
+      const MAX_DIM = 1920;
       let scale = 1;
-      for (let attempt = 0; attempt < 8; attempt++) {
-        const width = Math.max(1, Math.round(img.naturalWidth * scale));
-        const height = Math.max(1, Math.round(img.naturalHeight * scale));
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/webp", quality)
-        );
-        if (!blob) throw new Error("Image compression failed");
-        if (blob.size <= maxBytes) {
-          const webpName = (file.name || "upload")
-            .replace(/\.[^.]+$/, "")
-            .concat(".webp");
-          return new File([blob], webpName, { type: "image/webp" });
-        }
-        scale *= 0.85;
+      if (img.naturalWidth > MAX_DIM || img.naturalHeight > MAX_DIM) {
+        scale = MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight);
       }
-      throw new Error(`Image is still too large after compression. Please use a smaller image.`);
+
+      // 0.85 quality is the sweet spot for WebP (indistinguishable but fast/small)
+      const quality = 0.85; 
+      
+      const width = Math.max(1, Math.round(img.naturalWidth * scale));
+      const height = Math.max(1, Math.round(img.naturalHeight * scale));
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/webp", quality)
+      );
+      
+      if (!blob) throw new Error("Image compression failed");
+
+      // If still too large (rare with 1920px/0.85), do one more aggressive pass
+      if (blob.size > maxBytes) {
+        const smallerBlob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/webp", 0.6)
+        );
+        return new File([smallerBlob || blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
+      }
+
+      return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
     } finally {
       URL.revokeObjectURL(imgUrl);
     }
@@ -250,11 +278,12 @@ export default function AdminBulkProducts() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setFormMsg("");
     setFormLoading(true);
 
     try {
       if (!product.dimensions) {
-        showToast("Dimensions are required.", "error");
+        setFormMsg("Dimensions are required.");
         setFormLoading(false);
         return;
       }
@@ -292,7 +321,13 @@ export default function AdminBulkProducts() {
       };
 
       await updateProduct(editingProductId, payload, idToken);
-      showToast("Product updated successfully");
+      showToast("Product updated successfully!");
+
+      // Update quick view state if it's open for this product
+      if (quickViewProduct && quickViewProduct.id === editingProductId) {
+        setQuickViewProduct(prev => ({ ...prev, ...payload }));
+      }
+
       handleCloseEditModal();
       refreshLocalProducts(true);
     } catch (error) {
@@ -307,63 +342,10 @@ export default function AdminBulkProducts() {
     setConfirmModal({
       isOpen: true,
       title: "Generate Bulk Catalogue",
-      message: "This will generate and download the bulk products catalogue PDF. Proceed?",
+      message: "This will generate and download the bulk pricing catalogue PDF. Proceed?",
       type: "default",
       confirmText: "Download",
-      onConfirm: async () => {
-        setCatalogueLoading(true);
-        setCatalogueProgress(0);
-        setCatalogueStatusText("Starting...");
-        let statusInterval;
-        try {
-          // Poll backend status for the generation phase
-          statusInterval = setInterval(async () => {
-            try {
-              const status = await getCatalogueStatus(idToken);
-              if (status) {
-                // Map 0-100 backend progress to 0-90% UI progress
-                setCatalogueProgress(Math.round(status.progress * 0.9));
-                setCatalogueStatusText(status.currentAction);
-              }
-            } catch (pollErr) {
-              console.warn("Status poll error:", pollErr);
-            }
-          }, 800);
-
-          const blob = await generateBulkCatalogue(idToken, (p) => {
-            // Once real download starts (90%+), clear polling and show download progress
-            if (statusInterval) {
-              clearInterval(statusInterval);
-              statusInterval = null;
-            }
-            // Map 0-100 download progress to 90-100% UI progress
-            setCatalogueProgress(90 + Math.round(p * 0.1));
-            setCatalogueStatusText("Downloading...");
-          });
-
-          if (statusInterval) clearInterval(statusInterval);
-          setCatalogueProgress(100);
-          setCatalogueStatusText("Complete!");
-
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `cozy-bulk-catalogue.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          showToast("Bulk catalogue generated and downloaded!");
-        } catch (error) {
-          if (statusInterval) clearInterval(statusInterval);
-          console.error("Bulk Catalogue Generation Error:", error);
-          showToast("Failed to generate bulk catalogue", "error");
-        } finally {
-          setCatalogueLoading(false);
-          setCatalogueProgress(0);
-          setCatalogueStatusText("");
-        }
-      }
+      onConfirm: () => startCatalogueGeneration('bulk', idToken, showToast)
     });
   };
 
@@ -463,9 +445,9 @@ export default function AdminBulkProducts() {
           <button
             onClick={handleGenerateCatalogue}
             disabled={loading || catalogueLoading}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 h-10 shadow-sm relative overflow-hidden"
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 h-10 shadow-sm relative overflow-hidden min-w-[140px]"
           >
-            {catalogueLoading ? (
+            {catalogueLoading && catalogueType === 'bulk' ? (
               <>
                 <Loader2 className="animate-spin h-3 w-3" />
                 <span>{catalogueProgress}%</span>
@@ -490,18 +472,31 @@ export default function AdminBulkProducts() {
               {bulkProducts.map((p) => {
                 return (
                   <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
-                    {/* Product Image */}
-                    <div className="w-full aspect-[4/3] rounded-xl overflow-visible mb-2 bg-gray-50 relative group">
+                    {/* Product Image - Clickable for Quick View */}
+                    <div 
+                      onClick={() => setQuickViewProduct(p)}
+                      className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative group isolation-isolate cursor-pointer"
+                    >
                       <img
                         src={toCloudinaryThumb(p.imageUrl)}
                         alt={p.name}
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110 rounded-xl"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          if (e.target.src !== p.imageUrl) {
+                            e.target.src = p.imageUrl;
+                          }
+                        }}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110 transform-gpu"
                       />
                     </div>
 
-                    {/* Product Info */}
-                    <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
-                      <h3 className="font-semibold text-[clamp(14px,4vw,16px)] text-gray-900 leading-[1.2] whitespace-normal mb-1.5">{p.name}</h3>
+                    {/* Product Info - Clickable for Quick View */}
+                    <div 
+                      onClick={() => setQuickViewProduct(p)}
+                      className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start cursor-pointer group/info"
+                    >
+                      <h3 className="font-semibold text-[clamp(14px,4vw,16px)] text-gray-900 leading-[1.2] whitespace-normal mb-1.5 group-hover/info:text-blue-600 transition-colors">{p.name}</h3>
                       {p.bulkPricingTiers && p.bulkPricingTiers.length > 0 ? (
                         <div className="space-y-0.5">
                           {p.bulkPricingTiers.map((tier, idx) => (
@@ -564,6 +559,27 @@ export default function AdminBulkProducts() {
             </div>
           )}
         </div>
+
+        {/* ADMIN QUICK VIEW MODAL */}
+        {quickViewProduct && (
+          <AdminProductQuickView
+            product={quickViewProduct}
+            onClose={() => setQuickViewProduct(null)}
+            onEdit={(pId) => {
+              const p = bulkProducts.find(item => item.id === pId);
+              if (p) handleOpenEditModal(p);
+            }}
+            onToggleStatus={(id) => {
+              if (quickViewProduct.isActive !== false) {
+                handleDelete(id);
+              } else {
+                handleActivate(id);
+              }
+            }}
+            onPermanentDelete={handlePermanentDelete}
+          />
+        )}
+
         {/* EDIT MODAL */}
         {showEditModal && (
           <div
@@ -599,6 +615,7 @@ export default function AdminBulkProducts() {
                   previews={previews}
                   removeImage={removeImage}
                   formLoading={formLoading}
+                  formMsg={formMsg}
                   handleCloseEditModal={handleCloseEditModal}
                   bulkPricingTiers={bulkPricingTiers}
                   addTier={addTier}

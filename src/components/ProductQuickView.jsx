@@ -142,7 +142,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
+      <div className="relative bg-white w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
         {/* Close Button - Now truly fixed relative to the modal frame */}
         <button
           onClick={onClose}
@@ -172,7 +172,15 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             <img
               src={galleryImages[activeIndex]}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={(e) => {
+                const original = Array.isArray(product.images) && product.images.length > activeIndex 
+                  ? product.images[activeIndex] 
+                  : (product.imageUrl || product.image);
+                if (e.target.src !== original && original) {
+                  e.target.src = original;
+                }
+              }}
+              className="w-full h-full object-cover transition-transform duration-500"
             />
 
             {/* Arrows */}
@@ -183,18 +191,18 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     e.stopPropagation();
                     setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
                   }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow hover:bg-white transition-all text-gray-600"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow hover:bg-white transition-all text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-6 h-6" />
                 </button>
               </>
             )}

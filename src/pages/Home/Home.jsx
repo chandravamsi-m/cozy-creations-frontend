@@ -201,13 +201,13 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
       <div
         ref={productSectionRef}
         data-section="product"
-        className="relative w-full h-auto lg:h-[65vh] lg:max-h-[600px] bg-white flex flex-col md:flex-row overflow-hidden z-20"
+        className="relative w-full h-auto lg:h-[85vh] bg-white flex flex-col md:flex-row overflow-hidden z-20"
       >
         <div
-          className={`w-full md:w-1/2 flex flex-col justify-center px-3 sm:px-6 md:px-4 lg:px-8 xl:px-10 lg:pl-12 xl:pl-[100px] pt-8 pb-10 sm:pt-12 sm:pb-8 md:py-16 lg:py-10 h-auto lg:h-full transition-all duration-700 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
+          className={`w-full md:w-1/2 flex flex-col justify-center px-3 sm:px-6 md:px-4 lg:px-12 xl:px-20 pt-8 pb-10 sm:pt-12 sm:pb-8 md:py-20 lg:py-24 h-auto lg:h-full transition-all duration-700 ${isVisible.product ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
             }`}
         >
-          <h2 className="font-normal text-[28px] xs:text-[32px] sm:text-3xl md:text-2xl lg:text-4xl xl:text-[54px] 2xl:text-[62px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.15] text-black uppercase max-w-none md:max-w-xl mb-4 sm:mb-8 md:mb-12 break-words text-left">
+          <h2 className="font-normal text-[28px] xs:text-[32px] sm:text-3xl md:text-2xl lg:text-5xl xl:text-[58px] 2xl:text-[64px] leading-tight sm:leading-snug md:leading-tight lg:leading-[1.1] text-black uppercase max-w-none md:max-w-xl mb-4 sm:mb-8 md:mb-12 break-words text-left">
             Elevate Your Space With Handcrafted Glow
           </h2>
           <div className="hidden md:block w-full max-w-[540px] h-[1px] bg-black mb-8"></div>
