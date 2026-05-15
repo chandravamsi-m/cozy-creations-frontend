@@ -12,7 +12,7 @@ import ProductForm from "../../components/admin/ProductForm";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
-import { Loader2, FileText, Plus, X, Search, Package } from "lucide-react";
+import { Loader2, FileText, Plus, X, Search, Package, ChevronDown } from "lucide-react";
 import {
   parseAdminNumber,
 } from "../../utils/adminNumberInputs";
@@ -59,6 +59,65 @@ export default function AdminProducts() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+  // Search and Sort states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("featured");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  const SORT_OPTIONS = [
+    { value: "featured", label: "Featured", shortLabel: "Featured" },
+    { value: "price-low", label: "Price: Low to High", shortLabel: "Low to High" },
+    { value: "price-high", label: "Price: High to Low", shortLabel: "High to Low" },
+    { value: "name-asc", label: "Name: A to Z", shortLabel: "A to Z" },
+    { value: "name-desc", label: "Name: Z to A", shortLabel: "Z to A" },
+  ];
+
+  const filteredProducts = React.useMemo(() => {
+    let result = [...products];
+
+    // 1. Search Filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(term) ||
+          p.category?.toLowerCase().includes(term) ||
+          p.waxType?.toLowerCase().includes(term) ||
+          (term === "bulk" && (
+            (p.bulkPricingTiers && p.bulkPricingTiers.length > 0) || 
+            (p.bulkPricing && p.bulkPricing.length > 0)
+          ))
+      );
+    }
+
+    // 2. Sort Logic
+    switch (sortBy) {
+      case "price-low":
+        result.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+        break;
+      case "price-high":
+        result.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+        break;
+      case "name-asc":
+        result.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        break;
+      case "name-desc":
+        result.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+        break;
+      case "featured":
+      default:
+        // Default: Sort by Recently Added (using createdAt)
+        result.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
+        break;
+    }
+
+    return result;
+  }, [products, searchTerm, sortBy]);
 
   // Form states
   const [formLoading, setFormLoading] = useState(false);
@@ -124,6 +183,17 @@ export default function AdminProducts() {
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [showAddModal, showEditModal]);
+
+  // Click outside sort menu handler
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showSortMenu && !e.target.closest("[data-sort-menu]")) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSortMenu]);
   // Keep QuickView in sync with master products list
   useEffect(() => {
     if (quickViewProduct) {
@@ -566,7 +636,7 @@ export default function AdminProducts() {
           <div className="flex flex-col">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 leading-tight">Product Inventory</h2>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-              {loading ? "..." : `${products.length} Items listed`}
+              {loading ? "..." : `${filteredProducts.length} ${filteredProducts.length === 1 ? 'Item' : 'Items'} found`}
             </p>
           </div>
         </div>
@@ -575,7 +645,7 @@ export default function AdminProducts() {
           <button
             onClick={handleGenerateCatalogue}
             disabled={loading || catalogueLoading}
-            className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-11 shadow-sm relative overflow-hidden min-w-[140px]"
+            className="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-10 shadow-sm relative overflow-hidden min-w-[140px]"
           >
             {catalogueLoading && catalogueType === 'normal' ? (
               <>
@@ -591,11 +661,78 @@ export default function AdminProducts() {
           </button>
           <button
             onClick={handleOpenAddModal}
-            className="flex-1 sm:flex-none px-5 py-2.5 bg-black text-white rounded-xl font-bold text-xs hover:bg-gray-800 transition-all active:scale-95 h-11 flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
+            className="flex-1 sm:flex-none px-5 py-2.5 bg-black text-white rounded-xl font-bold text-xs hover:bg-gray-800 transition-all active:scale-95 h-10 flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
           >
             <Plus className="w-4 h-4" />
             <span>New Product</span>
           </button>
+        </div>
+      </div>
+
+      {/* Search and Sort Row */}
+      <div className="flex flex-row gap-2 mb-6">
+        <div className="relative flex-1 group">
+          <div className="absolute inset-y-0 left-0 pl-3 flex sm:pl-3.5 items-center pointer-events-none transition-colors group-focus-within:text-indigo-600 text-gray-400">
+            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search products..."
+            className={`block w-full pl-8 sm:pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-[11px] sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all shadow-sm h-10`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-indigo-600 transition-colors active:scale-90"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="relative w-[125px] sm:w-[210px]" data-sort-menu>
+          <button
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[11px] sm:text-sm font-medium focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all shadow-sm h-10 text-gray-700"
+          >
+            <div className="flex items-center truncate">
+              <span className="text-gray-400 mr-1 hidden sm:inline font-normal">Sort:</span>
+              <span className="truncate">
+                <span className="hidden sm:inline">
+                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label || "Featured"}
+                </span>
+                <span className="sm:hidden">
+                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.shortLabel || "Featured"}
+                </span>
+              </span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 ml-1.5 transition-transform duration-200 ${showSortMenu ? "rotate-180" : ""}`} />
+          </button>
+
+          {showSortMenu && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-[100] py-1 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
+              {SORT_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => {
+                    setSortBy(o.value);
+                    setShowSortMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-[13px] sm:text-sm transition-colors ${
+                    sortBy === o.value
+                      ? "bg-indigo-50 text-indigo-600 font-bold"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <span className="hidden sm:inline">{o.label}</span>
+                  <span className="sm:hidden">{o.shortLabel}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -607,25 +744,27 @@ export default function AdminProducts() {
         </div>
       )}
 
-      {!loading && products.length === 0 && (
+      {!loading && filteredProducts.length === 0 && (
         <div className="border rounded bg-white p-6 text-center">
-          <p className="font-medium">No products yet</p>
+          <p className="font-medium">{searchTerm ? "No products match your search" : "No products yet"}</p>
           <p className="text-sm text-gray-500 mt-1">
-            Create your first product to see it listed here.
+            {searchTerm ? "Try adjusting your search terms" : "Create your first product to see it listed here."}
           </p>
-          <button
-            onClick={handleOpenAddModal}
-            className="mt-4 px-4 py-2 bg-black text-white rounded flex items-center gap-2 mx-auto"
-          >
-            <Plus className="w-4 h-4" /> Add Product
-          </button>
+          {!searchTerm && (
+            <button
+              onClick={handleOpenAddModal}
+              className="mt-4 px-4 py-2 bg-black text-white rounded flex items-center gap-2 mx-auto"
+            >
+              <Plus className="w-4 h-4" /> Add Product
+            </button>
+          )}
         </div>
       )}
 
-      {!loading && products.length > 0 && (
+      {!loading && filteredProducts.length > 0 && (
         <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <AdminProductCard
                 key={p.id}
                 p={p}
