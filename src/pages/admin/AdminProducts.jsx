@@ -7,7 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
 import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus } from "../../api/adminProducts";
-import { calculateProductDiscount } from "../../utils/offerUtils";
+import { calculateProductDiscount, getEffectiveDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -48,6 +48,7 @@ export default function AdminProducts() {
     catalogueLoading, 
     catalogueProgress, 
     catalogueType, 
+    activeOffers,
     startCatalogueGeneration 
   } = useProducts();
 
@@ -768,6 +769,7 @@ export default function AdminProducts() {
               <AdminProductCard
                 key={p.id}
                 p={p}
+                activeOffers={activeOffers}
                 toCloudinaryThumb={toCloudinaryThumb}
                 handleOpenEditModal={handleOpenEditModal}
                 handleDelete={handleDelete}
@@ -859,6 +861,7 @@ export default function AdminProducts() {
 
 const AdminProductCard = ({
   p,
+  activeOffers,
   toCloudinaryThumb,
   handleOpenEditModal,
   handleDelete,
@@ -869,12 +872,13 @@ const AdminProductCard = ({
   const [discount, setDiscount] = useState(null);
 
   useEffect(() => {
-    calculateProductDiscount(p)
-      .then((data) => {
-        if (data.hasDiscount) setDiscount(data);
-      })
-      .catch((err) => console.error("Discount error:", err));
-  }, [p]);
+    if (activeOffers?.length > 0) {
+      const data = getEffectiveDiscount(p, activeOffers);
+      setDiscount(data.hasDiscount ? data : null);
+    } else {
+      setDiscount(null);
+    }
+  }, [p, activeOffers]);
 
   return (
     <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative group/card ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>

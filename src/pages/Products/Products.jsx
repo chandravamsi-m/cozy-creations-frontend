@@ -59,6 +59,7 @@ export default function ProductsPage() {
     loading: contextLoading,
     error: contextError,
     loadProducts: refreshProducts,
+    activeOffers,
   } = useProducts();
 
   const [products, setProducts] = useState([]);
@@ -71,7 +72,6 @@ export default function ProductsPage() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [activeOffer, setActiveOffer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const heroContentRef = useRef(null);
@@ -90,7 +90,7 @@ export default function ProductsPage() {
   useAutoScrollFromHero({
     enabled: typeof window !== "undefined" && window.innerWidth > 768,
     targetRef: productsSectionRef,
-    delayMs: 5000,
+    delayMs: 10000,
   });
 
   // --- Deep-link helpers ---
@@ -137,29 +137,19 @@ export default function ProductsPage() {
     // If contextProducts is still loading, this effect re-runs when it populates
   }, [searchParams, contextProducts]);
 
-  async function fetchActiveOffer() {
-    try {
-      const res = await apiFetch("/offers/active");
-      const data = await res.json();
-      if (data.offer && data.offer.isActive) {
-        setActiveOffer(data.offer);
-      }
-    } catch (err) {
-      console.error("Failed to fetch active offer for sorting:", err);
-    }
-  }
-
   useEffect(() => {
     setIsVisible((prev) => ({ ...prev, hero: true }));
-    fetchActiveOffer();
   }, []);
 
-  const checkQualifies = (product, offer) => {
-    if (!offer || !offer.hasDiscount) return false;
-    if (offer.applicableToAll) return true;
-    if (offer.applicableCategories?.includes(product.category)) return true;
-    if (offer.applicableProducts?.includes(product.id)) return true;
-    return false;
+  const checkQualifies = (product, offers) => {
+    if (!offers || offers.length === 0) return false;
+    return offers.some(offer => {
+      if (!offer.hasDiscount) return false;
+      if (offer.applicableToAll) return true;
+      if (offer.applicableCategories?.includes(product.category)) return true;
+      if (offer.applicableProducts?.includes(product.id)) return true;
+      return false;
+    });
   };
 
   const isInitialMount = useRef(true);
@@ -249,10 +239,10 @@ export default function ProductsPage() {
       case "name-asc": list.sort((a, b) => (a.name || "").localeCompare(b.name || "")); break;
       case "name-desc": list.sort((a, b) => (b.name || "").localeCompare(a.name || "")); break;
       default:
-        if (activeOffer?.hasDiscount) {
+        if (activeOffers?.length > 0) {
           list.sort((a, b) => {
-            const aQ = checkQualifies(a, activeOffer);
-            const bQ = checkQualifies(b, activeOffer);
+            const aQ = checkQualifies(a, activeOffers);
+            const bQ = checkQualifies(b, activeOffers);
             if (aQ && !bQ) return -1;
             if (!aQ && bQ) return 1;
             return 0;
@@ -261,7 +251,7 @@ export default function ProductsPage() {
     }
     setFiltered(list);
     setCurrentPage(1);
-  }, [products, category, search, priceRange, sortBy, activeOffer]);
+  }, [products, category, search, priceRange, sortBy, activeOffers]);
 
   useEffect(() => {
     refreshProducts(category || "");
@@ -494,7 +484,7 @@ export default function ProductsPage() {
                         <div key={p.id} data-product-card>
                           <ProductCard
                             product={p}
-                            activeOffer={activeOffer}
+                            activeOffer={activeOffers}
                             onOpenQuickView={() => openProduct(p)}
                           />
                         </div>
@@ -534,7 +524,7 @@ export default function ProductsPage() {
       {selectedProduct && (
         <ProductQuickView
           product={selectedProduct}
-          activeOffer={activeOffer}
+          activeOffer={activeOffers}
           onClose={closeProduct}
         />
       )}

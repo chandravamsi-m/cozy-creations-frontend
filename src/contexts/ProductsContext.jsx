@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { fetchFirestoreProducts } from "../hooks/useProductsFirestore";
 import { generateCatalogue, generateBulkCatalogue, getCatalogueStatus } from "../api/adminProducts";
+import { apiFetch } from "../lib/api";
 
 const ProductsContext = createContext(null);
 
@@ -15,6 +16,10 @@ export function ProductsProvider({ children }) {
     categories: {},
     adminAll: null // New: Cache for admin view (includeInactive=true)
   });
+
+  // Global Active Offers State
+  const [activeOffers, setActiveOffers] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(true);
 
   // Global Catalogue State
   const [catalogueLoading, setCatalogueLoading] = useState(false);
@@ -144,9 +149,15 @@ export function ProductsProvider({ children }) {
     }
   }, [catalogueLoading]);
 
-  // Load all products at first mount
+  // Load all products and active offers at first mount
   useEffect(() => {
     loadProducts("");
+    // Fetch active offers
+    apiFetch("/offers/active")
+      .then((res) => res.json())
+      .then((data) => setActiveOffers(data.offers || []))
+      .catch(() => setActiveOffers([]))
+      .finally(() => setOffersLoading(false));
   }, []);
 
   return (
@@ -156,7 +167,9 @@ export function ProductsProvider({ children }) {
         loading,
         error,
         loadProducts,
-        refreshProducts: () => loadProducts(""), // For admin panel usage
+        refreshProducts: () => loadProducts(""),
+        activeOffers,
+        offersLoading,
         catalogueLoading,
         catalogueProgress,
         catalogueStatusText,

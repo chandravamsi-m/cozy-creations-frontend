@@ -87,11 +87,11 @@ export default function ContactUs() {
     form: false,
   });
 
-  // Auto-scroll after 5s on hero (Desktop only)
+  // Auto-scroll after 10s on hero (Desktop only)
   useAutoScrollFromHero({
     enabled: typeof window !== 'undefined' && window.innerWidth > 768,
     targetRef: contactCardsRef,
-    delayMs: 5000,
+    delayMs: 10000,
   });
 
   // Hero fade-in on mount

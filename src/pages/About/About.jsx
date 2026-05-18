@@ -34,8 +34,8 @@ export default function About() {
     collections: false,
   });
 
-  // Auto-scroll after 5s on hero (exclude Contact only; About included)
-  useAutoScrollFromHero({ enabled: typeof window !== 'undefined' && window.innerWidth > 768, targetRef: afterHeroRef, delayMs: 5000 });
+  // Auto-scroll after 10s on hero (exclude Contact only; About included)
+  useAutoScrollFromHero({ enabled: typeof window !== 'undefined' && window.innerWidth > 768, targetRef: afterHeroRef, delayMs: 10000 });
 
   // Hero fade-in on mount
   useEffect(() => {

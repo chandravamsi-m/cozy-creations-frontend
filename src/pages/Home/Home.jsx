@@ -46,11 +46,11 @@ export default function Home({ heroRef, productSectionRef, menuOpen, setMenuOpen
     features: false,
   });
 
-  // Auto-scroll after 5s on hero (Home included)
+  // Auto-scroll after 10s on hero (Home included)
   useAutoScrollFromHero({
     enabled: true,
     targetRef: productSectionRef,
-    delayMs: 5000,
+    delayMs: 10000,
   });
 
   // Hero fade-in on mount

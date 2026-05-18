@@ -29,22 +29,22 @@ export default function AdminProductQuickView({
   );
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 font-sans animate-in fade-in duration-300">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 font-sans">
+      {/* Backdrop with immediate blur and fast fade */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden">
+      {/* Modal Container with standardized entrance */}
+      <div className="relative bg-white w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-in zoom-in-95 fade-in duration-300 flex flex-col overflow-hidden">
         
         {/* Close Button - Stationary */}
         <button 
           onClick={onClose}
-          className="absolute top-3 right-3 z-50 w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all text-gray-500 hover:text-gray-900"
+          className="absolute top-2.5 right-2.5 md:top-3 md:right-3 z-50 w-6 h-6 md:w-7 md:h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all text-gray-500 hover:text-gray-900"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5 md:w-4 md:h-4" />
         </button>
 
         {/* Scrollable Wrapper */}
@@ -73,18 +73,18 @@ export default function AdminProductQuickView({
                       e.stopPropagation();
                       setActiveIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1);
                     }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-md text-gray-800 hover:bg-white transition-all z-20 cursor-pointer active:scale-90"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 md:w-10 md:h-10 bg-white/90 rounded-full flex items-center justify-center shadow-md text-gray-800 hover:bg-white transition-all z-20 cursor-pointer active:scale-90"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
                   </button>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveIndex(prev => prev === galleryImages.length - 1 ? 0 : prev + 1);
                     }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-md text-gray-800 hover:bg-white transition-all z-20 cursor-pointer active:scale-90"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 md:w-10 md:h-10 bg-white/90 rounded-full flex items-center justify-center shadow-md text-gray-800 hover:bg-white transition-all z-20 cursor-pointer active:scale-90"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
                   </button>
 
                   {/* Pagination Dots */}

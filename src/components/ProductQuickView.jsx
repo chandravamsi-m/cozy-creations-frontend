@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getImageSrc, optimizeCloudinaryUrl } from "../utils/image";
 import { useCart } from "../hooks/useCart";
@@ -20,6 +20,39 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const { addItem, updateQuantity, removeItem, cart } = useCart();
+
+  // Mobile swipe refs and handlers
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const handlePrevImage = () => {
+    setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!galleryImages || galleryImages.length <= 1) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // Swipe threshold in pixels
+
+    if (distance > minSwipeDistance) {
+      handleNextImage();
+    } else if (distance < -minSwipeDistance) {
+      handlePrevImage();
+    }
+  };
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -146,9 +179,9 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
         {/* Close Button - Now truly fixed relative to the modal frame */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 md:top-6 md:right-6 z-50 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
+          className="absolute top-3 right-3 md:top-6 md:right-6 z-50 w-8 h-8 md:w-10 md:h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
         >
-          <X className="w-5 h-5 text-gray-900" />
+          <X className="w-4 h-4 md:w-5 md:h-5 text-gray-900" />
         </button>
 
         {/* Scrollable Area */}
@@ -161,6 +194,9 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
           <div 
             className="relative w-full aspect-square md:aspect-auto md:flex-1 overflow-hidden cursor-zoom-in md:min-h-[400px] group"
             onClick={() => setIsZoomed(true)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             {/* Preload images for instant switching */}
             <div className="hidden">
@@ -189,20 +225,20 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+                    handlePrevImage();
                   }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-11 md:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronLeft className="w-6 h-6" />
+                  <ChevronLeft className="w-4.5 h-4.5 md:w-6 md:h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+                    handleNextImage();
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-11 md:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronRight className="w-6 h-6" />
+                  <ChevronRight className="w-4.5 h-4.5 md:w-6 md:h-6" />
                 </button>
               </>
             )}
@@ -270,7 +306,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
               {discount?.hasDiscount && (
                 <div className="inline-flex items-center gap-2 bg-yellow-accent/20 border border-yellow-accent/30 text-yellow-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit">
-                  Offer Applied
+                  {discount.offerName || "Offer"} Applied
                 </div>
               )}
             </div>

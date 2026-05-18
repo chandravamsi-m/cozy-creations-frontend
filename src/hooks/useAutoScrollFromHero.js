@@ -14,7 +14,7 @@ export function useAutoScrollFromHero({
   enabled,
   targetRef = null,
   targetId = null,
-  delayMs = 5000,
+  delayMs = 10000,
 }) {
   useEffect(() => {
     if (!enabled) return;
