@@ -550,9 +550,12 @@ export default function AdminOffers() {
                 {!formData.applicableToAll && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-400 space-y-8">
                     
-                    {/* Category Filter Pills */}
-                    <div className="space-y-4">
-                      <label className="text-sm font-medium text-gray-800">Filter by Categories</label>
+                    {/* Category Bulk Selection Pills */}
+                    <div className="space-y-3">
+                      <div className="flex flex-col gap-0.5">
+                        <label className="text-sm font-medium text-gray-800">Select Entire Category</label>
+                        {/* <span className="text-[11px] text-gray-500">Toggling a category will automatically select or deselect all products in that collection below.</span> */}
+                      </div>
                       <div className="flex flex-wrap gap-2.5">
                         {CATEGORIES.map(cat => (
                           <button
