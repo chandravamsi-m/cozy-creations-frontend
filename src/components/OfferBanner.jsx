@@ -92,12 +92,16 @@ export default function OfferBanner() {
   const handlePrev = (e) => {
     if (e) e.stopPropagation();
     if (!isTransitioning) return;
+    // Prevent going out of bounds during warp reset animation
+    if (currentOfferIndex <= 0 || currentOfferIndex > bannerOffers.length) return;
     setCurrentOfferIndex(prev => prev - 1);
   };
  
   const handleNext = (e) => {
     if (e) e.stopPropagation();
     if (!isTransitioning) return;
+    // Prevent going out of bounds during warp reset animation
+    if (currentOfferIndex < 1 || currentOfferIndex >= bannerOffers.length + 1) return;
     setCurrentOfferIndex(prev => prev + 1);
   };
 
@@ -133,7 +137,7 @@ export default function OfferBanner() {
     <div className={`fixed right-0 z-[100] pointer-events-none transition-all duration-500 
       ${isMinimized
         ? 'bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 pr-4 md:pr-0'
-        : 'bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 pr-3 md:pr-4'
+        : 'top-1/2 -translate-y-1/2 pr-3 md:pr-4'
       }`}
     >
       {!isMinimized ? (
