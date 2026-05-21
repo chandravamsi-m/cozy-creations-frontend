@@ -180,13 +180,18 @@ export default function OfferBanner() {
  
                   {/* Offer Content */}
                   <div className="h-1/2 p-3 sm:p-5 flex flex-col items-center justify-between text-center bg-white relative">
-                    <div className="space-y-1 flex-1 flex flex-col justify-center">
+                    <div className="space-y-1.5 flex-1 flex flex-col justify-center items-center">
                       <span className="text-[8px] sm:text-[9px] font-black text-yellow-600 uppercase tracking-[0.2em] animate-pulse mb-1">
                         {offer.offerHeading || "Special Offer"}
                       </span>
-                      <h3 className="text-[10px] sm:text-xs md:text-sm font-black text-gray-900 leading-tight uppercase tracking-tight line-clamp-3">
+                      <h3 className="text-[10px] sm:text-xs md:text-sm font-black text-gray-900 leading-tight uppercase tracking-tight line-clamp-2">
                         {offer.offerText || offer.name}
                       </h3>
+                      {offer.discountValue && (
+                        <div className="mt-2 px-3 py-0.5 bg-[#FEFBF2] text-[#B2822A] text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full border border-[#F5E6C4] shadow-[0_1px_2px_rgba(251,191,36,0.05)]">
+                          Discount: {offer.discountType?.toLowerCase() === "percentage" ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                        </div>
+                      )}
                     </div>
  
                     <button
