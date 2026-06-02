@@ -17,7 +17,8 @@ import {
   Gift,
   Image as ImageIcon,
   Check,
-  ChevronDown
+  ChevronDown,
+  Megaphone,
 } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import {
@@ -74,6 +75,73 @@ export default function AdminOffers() {
   const { user } = useAuth();
   const { showToast } = useToast();
   
+  // ── Announcement Strip State ─────────────────────────────────────────────────
+  const [strip, setStrip] = useState({ isActive: false, messages: [] });
+  const [stripLoading, setStripLoading] = useState(true);
+  const [stripSaving, setStripSaving] = useState(false);
+  const [stripHasChanges, setStripHasChanges] = useState(false);
+
+  const fetchStrip = useCallback(async () => {
+    try {
+      setStripLoading(true);
+      const res = await apiFetch("/settings/public");
+      const data = await res.json();
+      setStrip(data.announcementStrip || { isActive: false, messages: [] });
+    } catch {
+      // silently default
+    } finally {
+      setStripLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchStrip(); }, [fetchStrip]);
+
+  const handleStripToggle = () => {
+    setStrip(prev => ({ ...prev, isActive: !prev.isActive }));
+    setStripHasChanges(true);
+  };
+
+  const handleStripMessageChange = (id, value) => {
+    setStrip(prev => ({
+      ...prev,
+      messages: prev.messages.map(m => m.id === id ? { ...m, text: value } : m),
+    }));
+    setStripHasChanges(true);
+  };
+
+  const handleStripAddMessage = () => {
+    const newMsg = { id: `msg_${Date.now()}`, text: '' };
+    setStrip(prev => ({ ...prev, messages: [...prev.messages, newMsg] }));
+    setStripHasChanges(true);
+  };
+
+  const handleStripRemoveMessage = (id) => {
+    setStrip(prev => ({ ...prev, messages: prev.messages.filter(m => m.id !== id) }));
+    setStripHasChanges(true);
+  };
+
+  const handleStripSave = async () => {
+    try {
+      setStripSaving(true);
+      const token = await user.getIdToken();
+      const res = await apiFetch("/admin/settings/announcement-strip", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(strip),
+      });
+      if (!res.ok) throw new Error();
+      showToast("Announcement strip saved!");
+      setStripHasChanges(false);
+      await fetchStrip();
+    } catch {
+      showToast("Failed to save strip", "error");
+    } finally {
+      setStripSaving(false);
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ── Offers State ─────────────────────────────────────────────────────────────
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -339,7 +407,11 @@ export default function AdminOffers() {
   );
 
   return (
-    <div className="animate-in fade-in duration-500 pb-20 space-y-6">
+    <div className="animate-in fade-in duration-500 pb-20 space-y-0">
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          SECTION 1 — MANAGE OFFERS (EXISTING UI — UNCHANGED)
+      ════════════════════════════════════════════════════════════════════════ */}
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1 pt-1 mb-6">
@@ -444,6 +516,100 @@ export default function AdminOffers() {
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-900">Add New Offer</p>
         </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          SECTION 2 — ANNOUNCEMENT STRIP
+      ════════════════════════════════════════════════════════════════════════ */}
+      <div className="mb-0" style={{ marginTop: '44px' }}>
+        {/* Section Header */}
+        <div className="flex items-center gap-3 px-1 pt-1 mb-5">
+          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+            <Megaphone className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 leading-tight">Announcement Strip</h2>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+              Thin text strip shown at top of homepage hero
+            </p>
+          </div>
+        </div>
+
+        {stripLoading ? (
+          <Skeleton height="160px" borderRadius="16px" />
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+
+            {/* Toggle row */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-900">Show strip on homepage</p>
+                <p className="text-xs text-gray-400 mt-0.5">Appears above the navbar while hero is in view</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={strip.isActive}
+                  onChange={handleStripToggle}
+                />
+                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-emerald-500 peer-focus:outline-none transition-all duration-300 relative after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-[18px] after:w-[18px] after:transition-all after:duration-300 peer-checked:after:translate-x-5 shadow-inner" />
+              </label>
+            </div>
+
+            {/* Messages list */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Messages</p>
+              {strip.messages.length === 0 && (
+                <p className="text-xs text-gray-400 italic py-2">No messages yet. Add one below.</p>
+              )}
+              {strip.messages.map((msg, idx) => (
+                <div key={msg.id} className="flex items-center gap-2 group">
+                  <span className="text-xs text-gray-300 font-bold w-5 text-right shrink-0">{idx + 1}.</span>
+                  <input
+                    type="text"
+                    value={msg.text}
+                    onChange={e => handleStripMessageChange(msg.id, e.target.value)}
+                    placeholder="e.g. 🎉 Free shipping on orders above ₹999!"
+                    maxLength={200}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-gray-300 bg-gray-50 focus:bg-white"
+                  />
+                  <button
+                    onClick={() => handleStripRemoveMessage(msg.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all shrink-0"
+                    title="Remove message"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions row */}
+            <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
+              <button
+                onClick={handleStripAddMessage}
+                className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50 border border-dashed border-gray-200 hover:border-gray-300"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Message
+              </button>
+              <button
+                onClick={handleStripSave}
+                disabled={!stripHasChanges || stripSaving}
+                className={`ml-auto flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  stripHasChanges && !stripSaving
+                    ? 'bg-black hover:bg-gray-800 text-white shadow-lg shadow-gray-200'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {stripSaving ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                Save Strip
+              </button>
+            </div>
+
+          </div>
+        )}
       </div>
 
       {/* Modal */}

@@ -8,11 +8,13 @@ import { useLoginModal } from "../contexts/LoginModalContext";
 import { Menu, ChevronDown, ChevronUp } from "lucide-react";
 
 import cartIcon from "../assets/svgs/cart-icon.svg";
+import AnnouncementStrip from "./AnnouncementStrip";
 
 export default function Navbar({
   stickyNavRef,
   menuOpen,
   setMenuOpen,
+  heroRef,
 }) {
   const { openLoginModal } = useLoginModal();
   const navigate = useNavigate();
@@ -72,6 +74,9 @@ export default function Navbar({
       className={`fixed top-0 left-0 right-0 z-50 ${location.pathname === "/" ? "cc-nav-hero" : "cc-nav-solid"
         }`}
     >
+      {location.pathname === "/" && (
+        <AnnouncementStrip heroRef={heroRef} />
+      )}
       <div className="relative max-w-[1280px] mx-auto px-4 py-2">
         <div className="flex justify-between items-center">
           {/* LOGO */}

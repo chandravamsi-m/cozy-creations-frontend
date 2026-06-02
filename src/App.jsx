@@ -12,7 +12,6 @@ import { useAuth } from "./contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OfferBanner from "./components/OfferBanner";
-
 import { ToastProvider } from "./contexts/ToastContext";
 import { rootUrl } from "./lib/api";
 
@@ -153,6 +152,7 @@ function AppContent({
                 stickyNavRef={stickyNavRef}
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
+                heroRef={heroRef}
               />
             }
           >
