@@ -220,7 +220,7 @@ export default function AnnouncementStrip({ heroRef }) {
               className="flex flex-col h-full"
               style={{
                 transform: `translateY(-${currentIndex * 100}%)`,
-                transition: isTransitioning ? 'transform 700ms ease-in-out' : 'none',
+                transition: isTransitioning ? 'transform 500ms ease-in-out' : 'none',
               }}
             >
               {displayMessages.map((m, idx) => {
