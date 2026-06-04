@@ -253,6 +253,12 @@ export default function CartPage() {
                             >
                               {item.name}
                             </h2>
+                            {/* Variant label badge (e.g., "6ml", "100g") */}
+                            {item.variantLabel && (
+                              <span className="inline-block text-[9px] font-black uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full mb-0.5">
+                                {item.variantLabel}
+                              </span>
+                            )}
                             {itemDiscounts[item.productId]?.hasDiscount ? (
                               <div className="flex flex-col">
                                 <span className="text-[10px] text-gray-400 line-through leading-none">

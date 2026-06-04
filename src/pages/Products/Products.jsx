@@ -33,23 +33,6 @@ const CANDLE_COLLECTIONS = {
 // Keep legacy alias for existing references below
 const COLLECTIONS = CANDLE_COLLECTIONS;
 
-// COLLECTIONS — Scented Sticks
-const SCENTED_STICK_CATEGORIES = {
-  floral: { label: "Floral" },
-  woody: { label: "Woody" },
-  spiritual: { label: "Spiritual" },
-  fruity: { label: "Fruity" },
-  mixed: { label: "Mixed" },
-};
-
-// COLLECTIONS — Perfumes / Attar
-const PERFUME_CATEGORIES = {
-  attar: { label: "Attar" },
-  "eau-de-parfum": { label: "Eau de Parfum" },
-  "body-mist": { label: "Body Mist" },
-  "roll-on": { label: "Roll-On" },
-};
-
 // SORT OPTIONS
 const SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
@@ -262,20 +245,29 @@ export default function ProductsPage() {
       return;
     }
     const s = search.trim().toLowerCase();
+    // For variant-based products (attar/dhoop), derive a sortable price from variants
+    const getEffectivePrice = (p) => {
+      if (Array.isArray(p.variants) && p.variants.length > 0) {
+        const prices = p.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+        return prices.length > 0 ? Math.min(...prices) : Infinity;
+      }
+      return Number(p.price) || 0;
+    };
     let list = products.filter((p) => {
-      const matchesCategory = category ? p.category === category : true;
+      // Category filter only applies to candles
+      const matchesCategory = (productType === "candle" && category) ? p.category === category : true;
       const matchesSearch = s
         ? p.name?.toLowerCase().includes(s) || p.productName?.toLowerCase().includes(s)
         : true;
       const matchesPrice =
-        (!priceRange.min || p.price >= Number(priceRange.min)) &&
-        (!priceRange.max || p.price <= Number(priceRange.max));
+        (!priceRange.min || getEffectivePrice(p) >= Number(priceRange.min)) &&
+        (!priceRange.max || getEffectivePrice(p) <= Number(priceRange.max));
       return matchesCategory && matchesSearch && matchesPrice;
     });
 
     switch (sortBy) {
-      case "price-low": list.sort((a, b) => a.price - b.price); break;
-      case "price-high": list.sort((a, b) => b.price - a.price); break;
+      case "price-low": list.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b)); break;
+      case "price-high": list.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a)); break;
       case "name-asc": list.sort((a, b) => (a.name || "").localeCompare(b.name || "")); break;
       case "name-desc": list.sort((a, b) => (b.name || "").localeCompare(a.name || "")); break;
       default:
@@ -291,7 +283,7 @@ export default function ProductsPage() {
     }
     setFiltered(list);
     setCurrentPage(1);
-  }, [products, category, search, priceRange, sortBy, activeOffers]);
+  }, [products, category, search, priceRange, sortBy, activeOffers, productType]);
 
   useEffect(() => {
     refreshProducts(category || "");
@@ -410,51 +402,42 @@ export default function ProductsPage() {
             className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[130px] self-start max-h-[calc(100vh-140px)] overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
           >
             <h2 className="text-xl font-semibold mb-6">
-              {productType === "scented-stick" ? "Scent Family" : productType === "perfume" ? "Fragrance Type" : "Collections"}
+              {productType === "candle" ? "Collections" : productType === "scented-stick" ? "Dhoop Sticks" : "Attar"}
             </h2>
-            <button onClick={() => setCategory("")} className={`w-full p-3 rounded-lg text-left ${!category ? "bg-gray-100" : ""}`}>
-              All {productType === "scented-stick" ? "Agarbatti" : productType === "perfume" ? "Perfumes" : "Products"}
-            </button>
-            {productType === "candle" && Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
-              <button
-                key={key}
-                onClick={() => setCategory(key)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
-              >
-                <img src={c.icon} alt={c.label} className="w-5 h-5" />
-                <span>{c.label}</span>
-              </button>
-            ))}
-            {productType === "scented-stick" && Object.entries(SCENTED_STICK_CATEGORIES).map(([key, c]) => (
-              <button
-                key={key}
-                onClick={() => setCategory(key)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
-              >
-                <span>{c.label}</span>
-              </button>
-            ))}
-            {productType === "perfume" && Object.entries(PERFUME_CATEGORIES).map(([key, c]) => (
-              <button
-                key={key}
-                onClick={() => setCategory(key)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
-              >
-                <span>{c.label}</span>
-              </button>
-            ))}
             {productType === "candle" && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-700 leading-relaxed">
-                      <span className="font-semibold text-gray-900">Customize your order</span>{" "}
-                      with fragrance &amp; color options in your cart.
-                    </p>
+              <>
+                <button onClick={() => setCategory("")} className={`w-full p-3 rounded-lg text-left ${!category ? "bg-gray-100" : ""}`}>
+                  All Products
+                </button>
+                {Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
+                  <button
+                    key={key}
+                    onClick={() => setCategory(key)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
+                  >
+                    <img src={c.icon} alt={c.label} className="w-5 h-5" />
+                    <span>{c.label}</span>
+                  </button>
+                ))}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        <span className="font-semibold text-gray-900">Customize your order</span>{" "}
+                        with fragrance &amp; color options in your cart.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
+            )}
+            {productType !== "candle" && (
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {productType === "scented-stick"
+                  ? "Handcrafted Dhoop Sticks & Agarbatti. Available in multiple sizes."
+                  : "Pure Attar & Natural Perfumes. Available in multiple volumes."}
+              </p>
             )}
           </aside>
 
@@ -471,49 +454,37 @@ export default function ProductsPage() {
                     {" "}in <span className="font-medium text-gray-700">{COLLECTIONS[category]?.label || category}</span>
                   </span>
                 )}
-              </div>
-
-              {/* Mobile Dropdowns Row */}
+                {/* Mobile Dropdowns Row */}
               <div className="lg:hidden flex flex-row gap-3 w-full">
-                <div className="relative flex-1" data-category-dropdown>
-                  <button
-                    onClick={() => { setShowCategoryMenu(!showCategoryMenu); setShowSortMenu(false); }}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition z-[100]"
-                  >
-                    <span className="text-sm font-semibold text-gray-800">
-                      {productType === "candle"
-                        ? (category ? CANDLE_COLLECTIONS[category]?.label || category : "All Products")
-                        : productType === "scented-stick"
-                        ? (category ? SCENTED_STICK_CATEGORIES[category]?.label || category : "All Agarbatti")
-                        : (category ? PERFUME_CATEGORIES[category]?.label || category : "All Perfumes")}
-                    </span>
-                    <svg className={`w-4 h-4 text-gray-500 transition-transform ${showCategoryMenu ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  {showCategoryMenu && (
-                    <div className="absolute left-0 top-full mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] py-1 overflow-hidden max-h-[400px] overflow-y-auto">
-                      <button className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${!category ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(""); setShowCategoryMenu(false); }}>
-                        All {productType === "scented-stick" ? "Agarbatti" : productType === "perfume" ? "Perfumes" : "Products"}
-                      </button>
-                      {productType === "candle" && Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
-                        <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
-                          <img src={c.icon} alt={c.label} className="w-5 h-5" />
-                          {c.label}
+                {/* Category dropdown only for candles */}
+                {productType === "candle" && (
+                  <div className="relative flex-1" data-category-dropdown>
+                    <button
+                      onClick={() => { setShowCategoryMenu(!showCategoryMenu); setShowSortMenu(false); }}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition z-[100]"
+                    >
+                      <span className="text-sm font-semibold text-gray-800">
+                        {category ? CANDLE_COLLECTIONS[category]?.label || category : "All Products"}
+                      </span>
+                      <svg className={`w-4 h-4 text-gray-500 transition-transform ${showCategoryMenu ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    {showCategoryMenu && (
+                      <div className="absolute left-0 top-full mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] py-1 overflow-hidden max-h-[400px] overflow-y-auto">
+                        <button className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${!category ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(""); setShowCategoryMenu(false); }}>
+                          All Products
                         </button>
-                      ))}
-                      {productType === "scented-stick" && Object.entries(SCENTED_STICK_CATEGORIES).map(([key, c]) => (
-                        <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
-                          {c.label}
-                        </button>
-                      ))}
-                      {productType === "perfume" && Object.entries(PERFUME_CATEGORIES).map(([key, c]) => (
-                        <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        {Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
+                          <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
+                            <img src={c.icon} alt={c.label} className="w-5 h-5" />
+                            {c.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 </div>
 
                 <div className="relative flex-1" data-sort-dropdown>

@@ -11,28 +11,44 @@ export function CartProvider({ children }) {
 
   const addItem = (item) => {
     setCart((prev) => {
-      const exists = prev.find((p) => p.productId === item.productId);
+      // For variant products, identity = productId + variantLabel
+      const exists = prev.find((p) =>
+        p.productId === item.productId &&
+        (item.variantLabel ? p.variantLabel === item.variantLabel : !p.variantLabel)
+      );
       if (exists) {
-        return prev.map((p) =>
-          p.productId === item.productId
+        return prev.map((p) => {
+          const sameItem = p.productId === item.productId &&
+            (item.variantLabel ? p.variantLabel === item.variantLabel : !p.variantLabel);
+          return sameItem
             ? { ...p, ...item, quantity: p.quantity + (item.quantity || 1) }
-            : p
-        );
+            : p;
+        });
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
   };
 
-  const updateQuantity = (id, quantity) => {
+  // variantLabel is optional — if provided, only update the matching variant
+  const updateQuantity = (id, quantity, variantLabel = null) => {
     setCart((prev) =>
-      prev.map((p) =>
-        p.productId === id ? { ...p, quantity: quantity } : p
-      )
+      prev.map((p) => {
+        const matches = p.productId === id &&
+          (variantLabel !== null ? p.variantLabel === variantLabel : true);
+        return matches ? { ...p, quantity } : p;
+      })
     );
   };
 
-  const removeItem = (id) => {
-    setCart((prev) => prev.filter((p) => p.productId !== id));
+  // variantLabel is optional — if provided, only remove the matching variant
+  const removeItem = (id, variantLabel = null) => {
+    setCart((prev) =>
+      prev.filter((p) => {
+        if (p.productId !== id) return true;
+        if (variantLabel !== null) return p.variantLabel !== variantLabel;
+        return false;
+      })
+    );
   };
 
   const clearCart = () => setCart([]);

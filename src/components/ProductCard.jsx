@@ -79,14 +79,14 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
     if (type === "scented-stick") {
       if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
-      if (product.stickCount) chips.push({ label: `${product.stickCount} Sticks`, key: "stickCount" });
       if (product.burnTimeMinutes) chips.push({ label: `~${product.burnTimeMinutes}min Burn`, key: "burnTime" });
-      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+      const availSizes = Array.isArray(product.variants) ? product.variants.filter(v => v.isAvailable !== false).length : 0;
+      if (availSizes > 0) chips.push({ label: `${availSizes} Sizes`, key: "sizes" });
     } else if (type === "perfume") {
-      if (product.volumeMl) chips.push({ label: `${product.volumeMl}ml`, key: "volume" });
-      if (product.concentration) chips.push({ label: product.concentration, key: "concentration" });
       if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
-      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+      if (product.isAlcoholFree) chips.push({ label: "Alcohol Free", key: "alcoholFree" });
+      const availSizes = Array.isArray(product.variants) ? product.variants.filter(v => v.isAvailable !== false).length : 0;
+      if (availSizes > 0) chips.push({ label: `${availSizes} Volumes`, key: "sizes" });
     } else {
       // Default: Candle
       if (product.waxType) {
@@ -207,7 +207,20 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
           >
             {product.name}
           </h3>
-          {discount && discount.hasDiscount ? (
+          {/* VARIANT-BASED PRODUCT: show "From ₹X" and redirect to quick view for size selection */}
+          {(product.productType === "scented-stick" || product.productType === "perfume") && Array.isArray(product.variants) && product.variants.length > 0 ? (
+            (() => {
+              const availPrices = product.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+              const fromPrice = availPrices.length > 0 ? Math.min(...availPrices) : null;
+              return (
+                <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
+                  <span className="text-[10px] sm:text-sm md:text-base lg:text-sm font-bold text-[#6F573D] leading-none">
+                    {fromPrice !== null ? `From ₹${fromPrice.toLocaleString()}` : "Select Size"}
+                  </span>
+                </div>
+              );
+            })()
+          ) : discount && discount.hasDiscount ? (
             <div className="flex items-center gap-1 bg-yellow-accent/60 border border-yellow-accent/70 px-1 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
               <span className="text-[9px] text-gray-400 diagonal-strike font-medium leading-none">
                 ₹{product.price.toLocaleString()}

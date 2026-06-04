@@ -19,6 +19,11 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   const [discount, setDiscount] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Variant selection for Attar / Dhoop Sticks
+  const isVariantProduct = ["scented-stick", "perfume"].includes(product?.productType) && Array.isArray(product?.variants) && product.variants.length > 0;
+  const availableVariants = isVariantProduct ? product.variants.filter(v => v.isAvailable !== false) : [];
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
+  const selectedVariant = isVariantProduct && availableVariants.length > 0 ? availableVariants[Math.min(selectedVariantIdx, availableVariants.length - 1)] : null;
   const { addItem, updateQuantity, removeItem, cart } = useCart();
 
   // Mobile swipe refs and handlers
@@ -89,8 +94,12 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
     glassJar: GlassJarIcon,
   };
 
-  // Derived: is this product already in cart?
-  const cartItem = cart.find((i) => i.productId === product?.id);
+  // Derived: is this product already in cart? For variant products, match by productId + variantLabel
+  const cartItem = cart.find((i) => {
+    if (i.productId !== product?.id) return false;
+    if (selectedVariant) return i.variantLabel === selectedVariant.label;
+    return true;
+  });
   const inCart = !!cartItem;
   const displayQty = inCart ? cartItem.quantity : localQty;
 
@@ -105,17 +114,20 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   useEffect(() => {
     if (product) {
-      if (activeOffer) {
+      if (activeOffer && !isVariantProduct) {
         setDiscount(getEffectiveDiscount(product, activeOffer));
-      } else {
+      } else if (!isVariantProduct) {
         calculateProductDiscount(product).then(setDiscount);
+      } else {
+        setDiscount(null); // variant products don't use offer discounts
       }
       // Reset local selector whenever a new product is shown
       setLocalQty(1);
       setAdded(false);
       setActiveIndex(0);
+      setSelectedVariantIdx(0);
     }
-  }, [product?.id, activeOffer]);
+  }, [product?.id, activeOffer, isVariantProduct]);
 
   if (!product) return null;
 
@@ -126,13 +138,19 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       onClose();
       return;
     }
+    if (isVariantProduct && !selectedVariant) {
+      // Shouldn't happen if UI is correct, but guard anyway
+      return;
+    }
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
-      category: product.category,
+      price: selectedVariant ? selectedVariant.price : product.price,
+      category: product.category || null,
       productType: product.productType || "candle",
-      weightGrams: product.weightGrams || 0,
+      variantLabel: selectedVariant ? selectedVariant.label : null,
+      variantPrice: selectedVariant ? selectedVariant.price : null,
+      weightGrams: selectedVariant ? (selectedVariant.weightGrams || 0) : (product.weightGrams || 0),
       dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,
       thumbnailUrl: product.thumbnailUrl || product.imageUrl,
@@ -145,12 +163,13 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   const handleQuantityChange = (delta) => {
     if (inCart) {
-      // Directly update the cart quantity
+      // Directly update the cart quantity — match by productId + variantLabel
       const newQty = cartItem.quantity + delta;
       if (newQty <= 0) {
-        removeItem(product.id);
+        // Remove by productId + variantLabel composite key
+        removeItem(product.id, selectedVariant?.label || null);
       } else {
-        updateQuantity(product.id, newQty);
+        updateQuantity(product.id, newQty, selectedVariant?.label || null);
       }
     } else {
       // Just move the local selector (min 1)
@@ -164,12 +183,8 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
     if (type === "scented-stick") {
       if (product.scentFamily) chips.push({ label: `${product.scentFamily} Scent`, key: "scentFamily" });
-      if (product.stickCount) chips.push({ label: `${product.stickCount} STICKS`, key: "stickCount" });
       if (product.burnTimeMinutes) chips.push({ label: `~${product.burnTimeMinutes}MIN BURN`, key: "burn" });
-      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
     } else if (type === "perfume") {
-      if (product.volumeMl) chips.push({ label: `${product.volumeMl}ML`, key: "volume" });
-      if (product.concentration) chips.push({ label: product.concentration, key: "concentration" });
       if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
       if (product.longevityHours) chips.push({ label: `~${product.longevityHours}H LONGEVITY`, key: "longevity" });
       if (product.isAlcoholFree) chips.push({ label: "ALCOHOL FREE", key: "alcoholFree" });
@@ -311,17 +326,21 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             {/* Price Row */}
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center gap-4">
-                {discount?.hasDiscount ? (
+                {isVariantProduct && selectedVariant ? (
+                  <span className="text-2xl md:text-3xl font-black text-gray-900">
+                    ₹{selectedVariant.price.toLocaleString()}
+                  </span>
+                ) : discount?.hasDiscount ? (
                   <div className="flex items-center gap-3">
                     <span className="text-2xl md:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
                     <span className="text-base text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
                   </div>
                 ) : (
-                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
+                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{(product.price || 0).toLocaleString()}</span>
                 )}
               </div>
 
-              {discount?.hasDiscount && (
+              {!isVariantProduct && discount?.hasDiscount && (
                 <div className="inline-flex items-center gap-2 bg-yellow-accent/20 border border-yellow-accent/30 text-yellow-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit">
                   {discount.offerName || "Offer"} Applied
                 </div>
@@ -329,8 +348,37 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             </div>
           </div>
 
+          {/* Variant Size Picker — Attar / Dhoop Sticks */}
+          {isVariantProduct && availableVariants.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                {product.productType === "perfume" ? "Select Volume" : "Select Size"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {availableVariants.map((v, idx) => (
+                  <button
+                    key={v.label}
+                    type="button"
+                    onClick={() => setSelectedVariantIdx(idx)}
+                    className={`px-3 py-1.5 rounded-xl border-2 text-xs font-black transition-all ${
+                      selectedVariantIdx === idx
+                        ? "border-gray-900 bg-gray-900 text-white shadow-lg"
+                        : "border-gray-200 text-gray-700 hover:border-gray-400 bg-white"
+                    }`}
+                  >
+                    {v.label}
+                    {Number(v.price) > 0 && (
+                      <span className={`ml-1.5 font-medium ${selectedVariantIdx === idx ? "text-gray-300" : "text-gray-400"}`}>
+                        ₹{Number(v.price).toLocaleString()}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Specs Chips */}
+          {/* Specs Chips — only show for candles or non-variant products */}
           <div className="flex flex-wrap gap-2 mb-4">
             {getDetailChips(product).map(chip => (
               <div key={chip.key} className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-[9px] font-bold text-gray-500 tracking-wider">

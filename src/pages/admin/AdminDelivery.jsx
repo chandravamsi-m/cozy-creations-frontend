@@ -28,8 +28,20 @@ export default function AdminDelivery() {
   const [deliverySettings, setDeliverySettings] = useState({
     isActive: false,
     amount: 0,
-    freeDeliveryThreshold: 0
+    freeDeliveryThreshold: 0,
+    attarWeights: {
+      "3ml": 80,
+      "6ml": 120,
+      "9ml": 150,
+      "12ml": 200,
+      "25ml": 300,
+      "50ml": 400,
+      "100ml": 500
+    }
   });
+
+  const [originalPaymentSettings, setOriginalPaymentSettings] = useState(null);
+  const [originalDeliverySettings, setOriginalDeliverySettings] = useState(null);
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -43,20 +55,25 @@ export default function AdminDelivery() {
       if (payRes.ok) {
         const d = await payRes.json();
         if (d.payment) {
-          setPaymentSettings({
+          const parsed = {
             ...d.payment,
             platformFee: getStableAdminNumberValue(d.payment.platformFee ?? 0),
-          });
+          };
+          setPaymentSettings(parsed);
+          setOriginalPaymentSettings(parsed);
         }
       }
       if (delRes.ok) {
         const d = await delRes.json();
         if (d.delivery) {
-          setDeliverySettings({
+          const parsed = {
             ...d.delivery,
             amount: getStableAdminNumberValue(d.delivery.amount ?? 0),
             freeDeliveryThreshold: getStableAdminNumberValue(d.delivery.freeDeliveryThreshold ?? 0),
-          });
+            attarWeights: d.delivery.attarWeights || deliverySettings.attarWeights,
+          };
+          setDeliverySettings(parsed);
+          setOriginalDeliverySettings(parsed);
         }
       }
     } catch {
@@ -85,6 +102,7 @@ export default function AdminDelivery() {
             ...deliverySettings,
             amount: parseAdminNumber(deliverySettings.amount),
             freeDeliveryThreshold: parseAdminNumber(deliverySettings.freeDeliveryThreshold),
+            attarWeights: deliverySettings.attarWeights,
           }),
         })
       ]);
@@ -93,6 +111,10 @@ export default function AdminDelivery() {
 
       // Update global context cache
       await refreshSettings();
+      
+      // Update original settings so button disables again
+      setOriginalPaymentSettings(paymentSettings);
+      setOriginalDeliverySettings(deliverySettings);
 
       showToast("Settings saved!", "success");
     } catch {
@@ -115,6 +137,12 @@ export default function AdminDelivery() {
     );
   }
 
+  const hasChanges =
+    JSON.stringify(paymentSettings) !== JSON.stringify(originalPaymentSettings) ||
+    JSON.stringify(deliverySettings) !== JSON.stringify(originalDeliverySettings);
+
+  const sortedAttarWeights = Object.entries(deliverySettings.attarWeights).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+
   return (
     <div className="space-y-4 font-sans">
       <div className="flex flex-row items-center justify-between gap-2 px-1 pt-1 mb-6">
@@ -122,6 +150,21 @@ export default function AdminDelivery() {
           <Truck className="w-6 h-6 text-blue-600" />
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Delivery & Store Settings</h2>
         </div>
+        
+        <button
+          onClick={handleSave}
+          disabled={saving || !hasChanges}
+          className="bg-black hover:bg-gray-800 text-white flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold tracking-widest text-xs disabled:bg-gray-300 shadow-sm active:scale-95 disabled:active:scale-100"
+        >
+          {saving ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Settings"
+          )}
+        </button>
       </div>
       <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-sm">
 
@@ -199,23 +242,47 @@ export default function AdminDelivery() {
 
         </div>
 
-        {/* ── Save Button ── */}
-        <div className="mt-8 flex justify-end pt-6 border-t border-gray-50">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-black hover:bg-gray-800 text-white flex items-center gap-2 px-8 py-3 rounded-xl transition-all font-bold tracking-widest text-xs disabled:bg-gray-300 shadow-lg shadow-gray-200 active:scale-95"
-          >
-            {saving ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Settings"
-            )}
-          </button>
-        </div>
+        {/* ── Default Shipping Weights Section ── */}
+        <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mt-6">
+          <div className="bg-gray-50/50 p-6 border-b border-gray-100">
+            <h3 className="font-bold text-gray-900 text-sm tracking-wide uppercase mb-1">Attar Shipping Weights (Grams)</h3>
+            <p className="text-[11px] text-gray-500 font-medium">Configure exact package weight (including box, glass bottle, etc.) for each size to calculate accurate Shiprocket shipping.</p>
+          </div>
+          
+          <div className="p-6">
+              <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                Attar Volumes
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedAttarWeights.map(([label, weight]) => (
+                  <div key={label} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-white hover:border-purple-200 transition-colors group">
+                    <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">{label}</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={weight}
+                        onChange={(e) => {
+                          const val = coerceAdminNumberInput(String(weight), e.target.value);
+                          setDeliverySettings(p => ({
+                            ...p,
+                            attarWeights: { ...p.attarWeights, [label]: val }
+                          }));
+                        }}
+                        onWheel={preventNumberWheelChange}
+                        className="w-16 px-2 py-1 text-right bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all text-xs font-bold text-gray-900"
+                        placeholder="0"
+                      />
+                      <span className="text-[10px] font-bold text-gray-400">g</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
       </div>
     </div>
   );
