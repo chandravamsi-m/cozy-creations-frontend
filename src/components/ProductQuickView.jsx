@@ -131,6 +131,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       name: product.name,
       price: product.price,
       category: product.category,
+      productType: product.productType || "candle",
       weightGrams: product.weightGrams || 0,
       dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,
@@ -159,10 +160,26 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   const getDetailChips = (product) => {
     const chips = [];
-    if (product.waxType) chips.push({ label: `${product.waxType.toUpperCase()} WAX`, key: "wax" });
-    if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
-    if (product.burnTimeHours) chips.push({ label: `${product.burnTimeHours}h BURN`, key: "burn" });
-    if (product.dimensions) chips.push({ label: product.dimensions, key: "dims" });
+    const type = product.productType || "candle";
+
+    if (type === "scented-stick") {
+      if (product.scentFamily) chips.push({ label: `${product.scentFamily} Scent`, key: "scentFamily" });
+      if (product.stickCount) chips.push({ label: `${product.stickCount} STICKS`, key: "stickCount" });
+      if (product.burnTimeMinutes) chips.push({ label: `~${product.burnTimeMinutes}MIN BURN`, key: "burn" });
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+    } else if (type === "perfume") {
+      if (product.volumeMl) chips.push({ label: `${product.volumeMl}ML`, key: "volume" });
+      if (product.concentration) chips.push({ label: product.concentration, key: "concentration" });
+      if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
+      if (product.longevityHours) chips.push({ label: `~${product.longevityHours}H LONGEVITY`, key: "longevity" });
+      if (product.isAlcoholFree) chips.push({ label: "ALCOHOL FREE", key: "alcoholFree" });
+    } else {
+      // Default: Candle
+      if (product.waxType) chips.push({ label: `${product.waxType.toUpperCase()} WAX`, key: "wax" });
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+      if (product.burnTimeHours) chips.push({ label: `${product.burnTimeHours}h BURN`, key: "burn" });
+      if (product.dimensions) chips.push({ label: product.dimensions, key: "dims" });
+    }
     return chips;
   };
 
@@ -321,6 +338,41 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
               </div>
             ))}
           </div>
+
+          {/* Fragrance Notes (Perfume/Attar specific) */}
+          {product.productType === "perfume" && product.scentNotes && (
+            <div className="mb-4 p-4 bg-purple-50/50 border border-purple-100 rounded-2xl">
+              <h4 className="text-[10px] font-black text-purple-900 uppercase tracking-widest mb-3">Fragrance Notes</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {product.scentNotes.top && (
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-100/50 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-0.5">Top</p>
+                    <p className="text-xs font-bold text-gray-700">{product.scentNotes.top}</p>
+                  </div>
+                )}
+                {product.scentNotes.middle && (
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-100/50 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-0.5">Middle</p>
+                    <p className="text-xs font-bold text-gray-700">{product.scentNotes.middle}</p>
+                  </div>
+                )}
+                {product.scentNotes.base && (
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-100/50 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-0.5">Base</p>
+                    <p className="text-xs font-bold text-gray-700">{product.scentNotes.base}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Ingredients */}
+          {product.ingredients && (
+            <div className="mb-4 text-xs text-gray-500">
+              <span className="font-bold text-gray-700">Ingredients: </span>
+              {product.ingredients}
+            </div>
+          )}
 
           {/* Bulk Pricing Tiers */}
           {isBulk && product.bulkPricingTiers?.length > 0 && (

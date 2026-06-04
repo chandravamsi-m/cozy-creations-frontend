@@ -58,11 +58,16 @@ export default function CartPage() {
 
   const handleOpenQuickView = async (item) => {
     try {
+      const type = item.productType || "candle";
+      let colName = "products";
+      if (type === "scented-stick") colName = "scented-sticks";
+      else if (type === "perfume") colName = "perfumes";
+
       // Fetch full product document directly from Firestore
       // (same data source used by the Products page)
-      const snap = await getDoc(doc(db, "products", item.productId));
+      const snap = await getDoc(doc(db, colName, item.productId));
       if (snap.exists()) {
-        setQuickViewProduct({ id: snap.id, ...snap.data() });
+        setQuickViewProduct({ id: snap.id, ...snap.data(), productType: type });
         return;
       }
     } catch (e) {
@@ -76,6 +81,7 @@ export default function CartPage() {
       category: item.category,
       weightGrams: item.weightGrams,
       imageUrl: item.thumbnailUrl || item.imageUrl,
+      productType: item.productType || "candle",
     });
   };
 
@@ -326,7 +332,9 @@ export default function CartPage() {
                             <span className="min-w-[24px] text-center font-bold text-gray-900 text-sm">{item.quantity}</span>
                             <button onClick={() => increaseQuantity(item.productId)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">+</button>
                           </div>
-                          <button onClick={() => openCustomize(item)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 transition-all hover:border-gray-400">{customizations[item.productId] ? "Edit" : "Customize"}</button>
+                          {(!item.productType || item.productType === "candle") && (
+                            <button onClick={() => openCustomize(item)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 transition-all hover:border-gray-400">{customizations[item.productId] ? "Edit" : "Customize"}</button>
+                          )}
                           <button onClick={() => removeFromCart(item.productId)} className="px-4 py-2 rounded-lg border border-red-200 bg-white text-xs font-semibold text-red-600 transition-all hover:border-red-300">Remove</button>
                         </div>
 
@@ -358,12 +366,14 @@ export default function CartPage() {
                             </button>
                           </div>
 
-                          <button
-                            onClick={() => openCustomize(item)}
-                            className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] sm:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400"
-                          >
-                            {customizations[item.productId] ? "Edit" : "Customize"}
-                          </button>
+                          {(!item.productType || item.productType === "candle") && (
+                            <button
+                              onClick={() => openCustomize(item)}
+                              className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] sm:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400"
+                            >
+                              {customizations[item.productId] ? "Edit" : "Customize"}
+                            </button>
+                          )}
 
                           <button
                             onClick={() => removeFromCart(item.productId)}

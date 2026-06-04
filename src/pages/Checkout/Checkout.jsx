@@ -331,6 +331,7 @@ export default function Checkout() {
         items: cart.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          productType: item.productType || "candle",
           customization: customizations[item.productId] || null,
         })),
         shippingAddress: finalAddress,

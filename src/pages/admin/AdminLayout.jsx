@@ -13,7 +13,9 @@ import {
   Users,
   Gift,
   Truck,
-  LayoutDashboard
+  LayoutDashboard,
+  Sparkles,
+  Flower2
 } from "lucide-react";
 
 export default function AdminLayout() {
@@ -108,6 +110,8 @@ export default function AdminLayout() {
             {[
               { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
               { to: "/admin/products", icon: Package, label: "Products" },
+              { to: "/admin/scented-sticks", icon: Flower2, label: "Scented Sticks" },
+              { to: "/admin/perfumes", icon: Sparkles, label: "Perfumes" },
               { to: "/admin/bulk-products", icon: Layers, label: "Bulk Products" },
               { to: "/admin/orders", icon: FileText, label: "Orders" },
               { to: "/admin/users", icon: Users, label: "Users" },

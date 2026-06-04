@@ -17,6 +17,12 @@ export function ProductsProvider({ children }) {
     adminAll: null // New: Cache for admin view (includeInactive=true)
   });
 
+  // Scented Sticks & Perfumes state
+  const [scentedSticks, setScentedSticks] = useState([]);
+  const [scentedSticksLoading, setScentedSticksLoading] = useState(true);
+  const [perfumes, setPerfumes] = useState([]);
+  const [perfumesLoading, setPerfumesLoading] = useState(true);
+
   // Global Active Offers State
   const [activeOffers, setActiveOffers] = useState([]);
   const [offersLoading, setOffersLoading] = useState(true);
@@ -149,9 +155,24 @@ export function ProductsProvider({ children }) {
     }
   }, [catalogueLoading]);
 
-  // Load all products and active offers at first mount
+  // Load all products, scented sticks, perfumes, and active offers at first mount
   useEffect(() => {
     loadProducts("");
+
+    // Fetch scented sticks
+    apiFetch("/scented-sticks")
+      .then((res) => res.json())
+      .then((data) => setScentedSticks(Array.isArray(data) ? data : []))
+      .catch(() => setScentedSticks([]))
+      .finally(() => setScentedSticksLoading(false));
+
+    // Fetch perfumes
+    apiFetch("/perfumes")
+      .then((res) => res.json())
+      .then((data) => setPerfumes(Array.isArray(data) ? data : []))
+      .catch(() => setPerfumes([]))
+      .finally(() => setPerfumesLoading(false));
+
     // Fetch active offers
     apiFetch("/offers/active")
       .then((res) => res.json())
@@ -168,6 +189,10 @@ export function ProductsProvider({ children }) {
         error,
         loadProducts,
         refreshProducts: () => loadProducts(""),
+        scentedSticks,
+        scentedSticksLoading,
+        perfumes,
+        perfumesLoading,
         activeOffers,
         offersLoading,
         catalogueLoading,

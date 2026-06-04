@@ -75,38 +75,33 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
   const getDetailChips = (product) => {
     const chips = [];
-    if (product.waxType) {
-      chips.push({
-        label:
-          product.waxType.charAt(0).toUpperCase() +
-          product.waxType.slice(1) +
-          " Wax",
-        key: "waxType",
-      });
-    }
-    if (product.weightGrams) {
-      chips.push({
-        label: `${product.weightGrams}g`,
-        key: "weight",
-      });
-    }
-    if (product.burnTimeHours) {
-      chips.push({
-        label: `${product.burnTimeHours}h Burn`,
-        key: "burnTime",
-      });
-    }
-    if (product.dimensions) {
-      chips.push({
-        label: product.dimensions,
-        key: "dimensions",
-      });
-    }
-    if (product.quantityPack) {
-      chips.push({
-        label: `Pack of ${product.quantityPack}`,
-        key: "quantityPack",
-      });
+    const type = product.productType || "candle";
+
+    if (type === "scented-stick") {
+      if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
+      if (product.stickCount) chips.push({ label: `${product.stickCount} Sticks`, key: "stickCount" });
+      if (product.burnTimeMinutes) chips.push({ label: `~${product.burnTimeMinutes}min Burn`, key: "burnTime" });
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+    } else if (type === "perfume") {
+      if (product.volumeMl) chips.push({ label: `${product.volumeMl}ml`, key: "volume" });
+      if (product.concentration) chips.push({ label: product.concentration, key: "concentration" });
+      if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+    } else {
+      // Default: Candle
+      if (product.waxType) {
+        chips.push({
+          label:
+            product.waxType.charAt(0).toUpperCase() +
+            product.waxType.slice(1) +
+            " Wax",
+          key: "waxType",
+        });
+      }
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+      if (product.burnTimeHours) chips.push({ label: `${product.burnTimeHours}h Burn`, key: "burnTime" });
+      if (product.dimensions) chips.push({ label: product.dimensions, key: "dimensions" });
+      if (product.quantityPack) chips.push({ label: `Pack of ${product.quantityPack}`, key: "quantityPack" });
     }
     return chips;
   };
@@ -127,6 +122,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
       name: product.name,
       price: product.price,
       category: product.category,
+      productType: product.productType || "candle",
       weightGrams: product.weightGrams || 0,
       dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,

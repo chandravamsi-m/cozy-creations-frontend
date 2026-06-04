@@ -21,13 +21,33 @@ import { Sparkles } from "lucide-react";
 // Cloudinary hero image
 const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307257/image_5_ympux0.webp";
 
-// COLLECTIONS LIST
-const COLLECTIONS = {
+// COLLECTIONS LIST — Candles
+const CANDLE_COLLECTIONS = {
   flower: { label: "Flower", icon: FlowerIcon },
   animal: { label: "Animal", icon: AnimalIcon },
   festive: { label: "Festive", icon: FestiveIcon },
   special: { label: "Special", icon: SpecialIcon },
   glassJar: { label: "Glass Jar", icon: GlassJarIcon },
+};
+
+// Keep legacy alias for existing references below
+const COLLECTIONS = CANDLE_COLLECTIONS;
+
+// COLLECTIONS — Scented Sticks
+const SCENTED_STICK_CATEGORIES = {
+  floral: { label: "Floral" },
+  woody: { label: "Woody" },
+  spiritual: { label: "Spiritual" },
+  fruity: { label: "Fruity" },
+  mixed: { label: "Mixed" },
+};
+
+// COLLECTIONS — Perfumes / Attar
+const PERFUME_CATEGORIES = {
+  attar: { label: "Attar" },
+  "eau-de-parfum": { label: "Eau de Parfum" },
+  "body-mist": { label: "Body Mist" },
+  "roll-on": { label: "Roll-On" },
 };
 
 // SORT OPTIONS
@@ -60,10 +80,15 @@ export default function ProductsPage() {
     error: contextError,
     loadProducts: refreshProducts,
     activeOffers,
+    scentedSticks: contextScentedSticks,
+    scentedSticksLoading,
+    perfumes: contextPerfumes,
+    perfumesLoading,
   } = useProducts();
 
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
+  const [productType, setProductType] = useState("candle"); // "candle" | "scented-stick" | "perfume"
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
   const appliedInitialCategoryRef = useRef(false);
@@ -209,12 +234,27 @@ export default function ProductsPage() {
     }
   }, [filtered, currentPage, contextLoading]);
 
+  // When productType or any of the product lists change, update products
   useEffect(() => {
-    if (contextProducts?.length > 0) {
-      setProducts(contextProducts);
-      setFiltered(contextProducts);
+    if (productType === "candle") {
+      setProducts((contextProducts || []).map(p => ({ ...p, productType: "candle" })));
+    } else if (productType === "scented-stick") {
+      setProducts((contextScentedSticks || []).map(p => ({ ...p, productType: "scented-stick" })));
+    } else if (productType === "perfume") {
+      setProducts((contextPerfumes || []).map(p => ({ ...p, productType: "perfume" })));
     }
-  }, [contextProducts]);
+  }, [productType, contextProducts, contextScentedSticks, contextPerfumes]);
+
+  // Keep a separate effect just to reset fields on actual type tab change
+  const prevProductType = useRef(productType);
+  useEffect(() => {
+    if (prevProductType.current !== productType) {
+      setCategory("");
+      setSearch("");
+      setCurrentPage(1);
+      prevProductType.current = productType;
+    }
+  }, [productType]);
 
   useEffect(() => {
     if (!products || products.length === 0) {
@@ -333,6 +373,32 @@ export default function ProductsPage() {
         </div>
       </section>
 
+      {/* PRODUCT TYPE TABS */}
+      <div className="bg-white border-b border-gray-200 sticky top-[72px] z-40 shadow-sm">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1 sm:gap-2 overflow-x-auto hide-scrollbar py-2">
+            {[
+              { key: "candle", label: "Candles", emoji: "🕯️" },
+              { key: "scented-stick", label: "Agarbatti", emoji: "🌸" },
+              { key: "perfume", label: "Attar & Perfumes", emoji: "✨" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setProductType(tab.key)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+                  productType === tab.key
+                    ? "bg-[#8B7355] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <span>{tab.emoji}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* PRODUCTS SECTION */}
       <section id="products" ref={productsSectionRef} data-section="products" className="min-h-0 bg-[#FBFAF9]">
         <div className="flex flex-col lg:flex-row">
@@ -341,13 +407,15 @@ export default function ProductsPage() {
           <aside
             ref={sidebarRef}
             data-section="sidebar"
-            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[75px] self-start max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
+            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[130px] self-start max-h-[calc(100vh-140px)] overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
           >
-            <h2 className="text-xl font-semibold mb-6">Collections</h2>
+            <h2 className="text-xl font-semibold mb-6">
+              {productType === "scented-stick" ? "Scent Family" : productType === "perfume" ? "Fragrance Type" : "Collections"}
+            </h2>
             <button onClick={() => setCategory("")} className={`w-full p-3 rounded-lg text-left ${!category ? "bg-gray-100" : ""}`}>
-              All Products
+              All {productType === "scented-stick" ? "Agarbatti" : productType === "perfume" ? "Perfumes" : "Products"}
             </button>
-            {Object.entries(COLLECTIONS).map(([key, c]) => (
+            {productType === "candle" && Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
               <button
                 key={key}
                 onClick={() => setCategory(key)}
@@ -357,17 +425,37 @@ export default function ProductsPage() {
                 <span>{c.label}</span>
               </button>
             ))}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-700 leading-relaxed">
-                    <span className="font-semibold text-gray-900">Customize your order</span>{" "}
-                    with fragrance &amp; color options in your cart.
-                  </p>
+            {productType === "scented-stick" && Object.entries(SCENTED_STICK_CATEGORIES).map(([key, c]) => (
+              <button
+                key={key}
+                onClick={() => setCategory(key)}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
+              >
+                <span>{c.label}</span>
+              </button>
+            ))}
+            {productType === "perfume" && Object.entries(PERFUME_CATEGORIES).map(([key, c]) => (
+              <button
+                key={key}
+                onClick={() => setCategory(key)}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
+              >
+                <span>{c.label}</span>
+              </button>
+            ))}
+            {productType === "candle" && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      <span className="font-semibold text-gray-900">Customize your order</span>{" "}
+                      with fragrance &amp; color options in your cart.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </aside>
 
           {/* MAIN CONTENT */}
@@ -393,7 +481,11 @@ export default function ProductsPage() {
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white flex items-center justify-between gap-3 shadow-sm hover:shadow transition z-[100]"
                   >
                     <span className="text-sm font-semibold text-gray-800">
-                      {category ? COLLECTIONS[category]?.label || category : "All Products"}
+                      {productType === "candle"
+                        ? (category ? CANDLE_COLLECTIONS[category]?.label || category : "All Products")
+                        : productType === "scented-stick"
+                        ? (category ? SCENTED_STICK_CATEGORIES[category]?.label || category : "All Agarbatti")
+                        : (category ? PERFUME_CATEGORIES[category]?.label || category : "All Perfumes")}
                     </span>
                     <svg className={`w-4 h-4 text-gray-500 transition-transform ${showCategoryMenu ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
@@ -402,11 +494,21 @@ export default function ProductsPage() {
                   {showCategoryMenu && (
                     <div className="absolute left-0 top-full mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-2xl z-[100] py-1 overflow-hidden max-h-[400px] overflow-y-auto">
                       <button className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${!category ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(""); setShowCategoryMenu(false); }}>
-                        All Products
+                        All {productType === "scented-stick" ? "Agarbatti" : productType === "perfume" ? "Perfumes" : "Products"}
                       </button>
-                      {Object.entries(COLLECTIONS).map(([key, c]) => (
+                      {productType === "candle" && Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
                         <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
                           <img src={c.icon} alt={c.label} className="w-5 h-5" />
+                          {c.label}
+                        </button>
+                      ))}
+                      {productType === "scented-stick" && Object.entries(SCENTED_STICK_CATEGORIES).map(([key, c]) => (
+                        <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
+                          {c.label}
+                        </button>
+                      ))}
+                      {productType === "perfume" && Object.entries(PERFUME_CATEGORIES).map(([key, c]) => (
+                        <button key={key} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${category === key ? "bg-gray-50 font-semibold text-gray-900" : "text-gray-700"}`} onClick={() => { setCategory(key); setShowCategoryMenu(false); }}>
                           {c.label}
                         </button>
                       ))}
@@ -463,8 +565,8 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* LOADING + ERROR */}
-            {contextLoading && (
+            {/* Loading & Error */}
+            {(productType === "candle" ? contextLoading : productType === "scented-stick" ? scentedSticksLoading : perfumesLoading) && (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                 {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>

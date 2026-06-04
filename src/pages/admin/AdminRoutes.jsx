@@ -9,6 +9,8 @@ import AdminDashboard from "./AdminDashboard";
 import AdminProducts from "./AdminProducts";
 import AdminBulkProducts from "./AdminBulkProducts";
 import AdminEditProduct from "./AdminEditProduct";
+import AdminScentedSticks from "./AdminScentedSticks";
+import AdminPerfumes from "./AdminPerfumes";
 import AdminOrders from "./AdminOrders";
 import AdminUsers from "./AdminUsers";
 import AdminOffers from "./AdminOffers";
@@ -22,6 +24,8 @@ export default function AdminRoutes() {
         <Route path="products" element={<AdminProducts />} />
         <Route path="bulk-products" element={<AdminBulkProducts />} />
         <Route path="products/:id/edit" element={<AdminEditProduct />} />
+        <Route path="scented-sticks" element={<AdminScentedSticks />} />
+        <Route path="perfumes" element={<AdminPerfumes />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="offers" element={<AdminOffers />} />
