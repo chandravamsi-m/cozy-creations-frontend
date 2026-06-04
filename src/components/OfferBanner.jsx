@@ -3,12 +3,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Gift, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProducts } from "../contexts/ProductsContext";
+import { useSettings } from "../contexts/SettingsContext";
  
 export default function OfferBanner() {
   const { activeOffers, offersLoading } = useProducts();
+  const { settings } = useSettings();
+  const isStripActive = settings?.announcementStrip?.isActive;
+
   const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(true);
+  const [isStripVisible, setIsStripVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const lastScrollY = useRef(window.scrollY);
   
@@ -89,6 +95,42 @@ export default function OfferBanner() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMinimized]);
  
+  // Handle mobile breakpoint
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const handleMql = (e) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener('change', handleMql);
+    return () => mql.removeEventListener('change', handleMql);
+  }, []);
+
+  // Sync strip visibility based on scroll position
+  useEffect(() => {
+    if (!isStripActive) {
+      setIsStripVisible(false);
+      return;
+    }
+    const handleScroll = () => {
+      const threshold = window.innerHeight - 75;
+      setIsStripVisible(window.scrollY < threshold);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isStripActive]);
+
+  const getBannerStyle = () => {
+    if (isMinimized && isMobile) {
+      return {};
+    }
+    const offset = isStripVisible ? '22px' : '0px';
+    return {
+      top: `calc(50% + ${offset})`,
+      transform: 'translateY(-50%)'
+    };
+  };
+ 
   const handlePrev = (e) => {
     if (e) e.stopPropagation();
     if (!isTransitioning) return;
@@ -139,9 +181,10 @@ export default function OfferBanner() {
         ? 'bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 pr-4 md:pr-0'
         : 'top-1/2 -translate-y-1/2 pr-3 md:pr-4'
       }`}
+      style={getBannerStyle()}
     >
       {!isMinimized ? (
-        <div className="w-48 sm:w-56 md:w-60 h-[360px] sm:h-[400px] md:h-[420px] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col group relative">
+        <div className="w-48 sm:w-52 md:w-56 h-[360px] sm:h-[380px] md:h-[390px] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-yellow-accent/30 pointer-events-auto transform transition-all duration-500 animate-fadeInRight flex flex-col group relative">
           {/* Carousel Viewport Wrapper */}
           <div 
             className="flex-1 overflow-hidden relative w-full h-full rounded-[2rem]"
@@ -268,7 +311,7 @@ export default function OfferBanner() {
         <div className="flex flex-col items-end">
           <button
             onClick={() => setIsMinimized(false)}
-            className="w-12 h-12 bg-yellow-accent rounded-full flex items-center justify-center shadow-2xl pointer-events-auto hover:scale-110 active:scale-95 transition-all duration-300 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white mr-2"
+            className="w-11 h-11 bg-yellow-accent rounded-full flex items-center justify-center shadow-2xl pointer-events-auto hover:scale-110 active:scale-95 transition-all duration-300 animate-fadeInRight ring-2 ring-yellow-accent ring-offset-2 ring-offset-white mr-2"
           >
             <div className="relative">
               <Gift className="w-5 h-5 text-black" />
