@@ -72,7 +72,7 @@ export default function About() {
   }, []);
 
   return (
-    <div className="w-full bg-white font-montserrat">
+    <div className="w-full bg-white font-montserrat overflow-x-hidden">
       {/* Navbar is rendered by MainLayout */}
 
       {/* Add padding top to account for fixed navbar */}
@@ -216,7 +216,7 @@ export default function About() {
         <section
           ref={collectionsSectionRef}
           data-section="collections"
-          className="relative w-full bg-white px-0 mb-0 md:px-0 pt-4 pb-12 lg:pb-0"
+          className="relative w-full bg-white px-0 mb-0 md:px-0 pt-4 pb-12 lg:pb-0 overflow-hidden"
         >
           {/* Intro Text */}
           <p
