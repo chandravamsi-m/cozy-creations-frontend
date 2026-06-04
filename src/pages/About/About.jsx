@@ -131,9 +131,9 @@ export default function About() {
             journeySectionRef.current = el;
           }}
           data-section="journey"
-          className="relative w-full bg-white overflow-hidden"
+          className="relative w-full bg-white overflow-hidden pt-10 md:pt-0"
         >
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-6 md:gap-12 lg:gap-20">
             {/* Text Content */}
             <div
               className={`w-full md:flex-1 flex flex-col justify-center transition-all duration-700 ${isVisible.journey ? "translate-x-0 opacity-100" : "translate-x-[-30px] opacity-0"
