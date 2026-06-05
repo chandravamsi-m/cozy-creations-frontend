@@ -16,7 +16,7 @@ import FestiveIcon from "../../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../../assets/svgs/glass-jar-icon.svg";
 import usePageSEO from "../../hooks/usePageSEO";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Leaf, Flame, Droplets } from "lucide-react";
 
 // Cloudinary hero image
 const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307257/image_5_ympux0.webp";
@@ -368,7 +368,7 @@ export default function ProductsPage() {
       {/* PRODUCT TYPE TABS */}
       <div className="bg-white border-b border-gray-200 sticky top-[72px] z-40 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 sm:gap-2 overflow-x-auto hide-scrollbar py-2">
+          <div className="flex gap-6 sm:gap-8 overflow-x-auto hide-scrollbar pt-2">
             {[
               { key: "candle", label: "Candles", emoji: "🕯️" },
               { key: "scented-stick", label: "Agarbatti", emoji: "🌸" },
@@ -377,13 +377,13 @@ export default function ProductsPage() {
               <button
                 key={tab.key}
                 onClick={() => setProductType(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-1 pb-3 pt-2 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
                   productType === tab.key
-                    ? "bg-[#8B7355] text-white shadow-sm"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "border-gray-900 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
                 }`}
               >
-                <span>{tab.emoji}</span>
+                <span className="text-base">{tab.emoji}</span>
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -399,46 +399,95 @@ export default function ProductsPage() {
           <aside
             ref={sidebarRef}
             data-section="sidebar"
-            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[130px] self-start max-h-[calc(100vh-140px)] overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
+            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[130px] self-start max-h-[calc(100vh-140px)] flex flex-col justify-between overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
           >
-            <h2 className="text-xl font-semibold mb-6">
-              {productType === "candle" ? "Collections" : productType === "scented-stick" ? "Dhoop Sticks" : "Attar"}
-            </h2>
-            {productType === "candle" && (
-              <>
-                <button onClick={() => setCategory("")} className={`w-full p-3 rounded-lg text-left ${!category ? "bg-gray-100" : ""}`}>
-                  All Products
-                </button>
-                {Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
-                  <button
-                    key={key}
-                    onClick={() => setCategory(key)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
-                  >
-                    <img src={c.icon} alt={c.label} className="w-5 h-5" />
-                    <span>{c.label}</span>
+            <div>
+              <h2 className={`text-xl font-semibold ${productType === "candle" ? "mb-6" : "mb-2"}`}>
+                {productType === "candle" ? "Collections" : productType === "scented-stick" ? "Dhoop Sticks" : "Attar"}
+              </h2>
+              {productType !== "candle" && (
+                <p className="text-sm text-gray-500 leading-relaxed mb-2">
+                  {productType === "scented-stick"
+                    ? "Handcrafted Dhoop Sticks & Agarbatti. Available in multiple sizes."
+                    : "Pure Attar & Natural Perfumes. Available in multiple volumes."}
+                </p>
+              )}
+              {productType === "candle" && (
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => setCategory("")} className={`w-full p-3 rounded-lg text-left ${!category ? "bg-gray-100" : ""}`}>
+                    All Products
                   </button>
-                ))}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
+                  {Object.entries(CANDLE_COLLECTIONS).map(([key, c]) => (
+                    <button
+                      key={key}
+                      onClick={() => setCategory(key)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 ${category === key ? "bg-gray-100" : ""}`}
+                    >
+                      <img src={c.icon} alt={c.label} className="w-5 h-5" />
+                      <span>{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              {productType === "candle" && (
+                <div className="bg-yellow-accent/20 border border-yellow-accent/40 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      <span className="font-semibold text-gray-900">Customize your order</span>{" "}
+                      with fragrance &amp; color options in your cart.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {productType === "scented-stick" && (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-green-50 border border-green-100 rounded-lg p-3">
                     <div className="flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
+                      <Leaf className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                       <p className="text-xs text-gray-700 leading-relaxed">
-                        <span className="font-semibold text-gray-900">Customize your order</span>{" "}
-                        with fragrance &amp; color options in your cart.
+                        <span className="font-semibold text-gray-900">Hand-Rolled & Natural.</span>{" "}
+                        Crafted with pure ingredients for a calming atmosphere.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Flame className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        <span className="font-semibold text-gray-900">Long-Lasting Burn.</span>{" "}
+                        Slow-burning natural binders ensure a lasting fragrance in your space.
                       </p>
                     </div>
                   </div>
                 </div>
-              </>
-            )}
-            {productType !== "candle" && (
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {productType === "scented-stick"
-                  ? "Handcrafted Dhoop Sticks & Agarbatti. Available in multiple sizes."
-                  : "Pure Attar & Natural Perfumes. Available in multiple volumes."}
-              </p>
-            )}
+              )}
+              {productType === "perfume" && (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Droplets className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        <span className="font-semibold text-gray-900">100% Alcohol-Free.</span>{" "}
+                        Gentle on the skin and formulated for a rich, lingering scent.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        <span className="font-semibold text-gray-900">Artisan Crafted.</span>{" "}
+                        Created using traditional methods for authentic fragrance profiles.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </aside>
 
           {/* MAIN CONTENT */}
@@ -454,7 +503,9 @@ export default function ProductsPage() {
                     {" "}in <span className="font-medium text-gray-700">{COLLECTIONS[category]?.label || category}</span>
                   </span>
                 )}
-                {/* Mobile Dropdowns Row */}
+              </div>
+
+              {/* Mobile Dropdowns Row */}
               <div className="lg:hidden flex flex-row gap-3 w-full">
                 {/* Category dropdown only for candles */}
                 {productType === "candle" && (
@@ -485,7 +536,6 @@ export default function ProductsPage() {
                     )}
                   </div>
                 )}
-                </div>
 
                 <div className="relative flex-1" data-sort-dropdown>
                   <button

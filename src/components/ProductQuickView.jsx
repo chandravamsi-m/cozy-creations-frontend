@@ -367,11 +367,6 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     }`}
                   >
                     {v.label}
-                    {Number(v.price) > 0 && (
-                      <span className={`ml-1.5 font-medium ${selectedVariantIdx === idx ? "text-gray-300" : "text-gray-400"}`}>
-                        ₹{Number(v.price).toLocaleString()}
-                      </span>
-                    )}
                   </button>
                 ))}
               </div>
