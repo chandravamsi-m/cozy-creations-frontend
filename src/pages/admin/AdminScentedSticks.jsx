@@ -8,7 +8,7 @@ import { apiFetch } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/image";
-import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Flower2 } from "lucide-react";
+import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Flower2, ImagePlus } from "lucide-react";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -220,15 +220,15 @@ export default function AdminScentedSticks() {
   };
 
   const handleDeactivate = (id) => {
-    setConfirmModal({ isOpen: true, title: "Deactivate", message: "Deactivate this product? It will no longer be visible to customers.", type: "danger", confirmText: "Deactivate", onConfirm: async () => { try { await apiFetch(`/admin/scented-sticks/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Deactivated"); fetchItems(); } catch { showToast("Failed", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Deactivate Product", message: "Are you sure you want to deactivate this product? It will no longer be visible to customers.", type: "danger", confirmText: "Deactivate", onConfirm: async () => { try { await apiFetch(`/admin/scented-sticks/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product deactivated successfully"); fetchItems(); } catch { showToast("Failed to deactivate", "error"); } } });
   };
 
   const handleActivate = (id) => {
-    setConfirmModal({ isOpen: true, title: "Activate", message: "Activate this product?", type: "success", confirmText: "Activate", onConfirm: async () => { try { await apiFetch(`/admin/scented-sticks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ product: { isActive: true } }) }); showToast("Activated"); fetchItems(); } catch { showToast("Failed", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Activate Product", message: "This product will become visible to customers again. Proceed?", type: "success", confirmText: "Activate", onConfirm: async () => { try { await apiFetch(`/admin/scented-sticks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ product: { isActive: true } }) }); showToast("Product activated successfully"); fetchItems(); } catch { showToast("Failed to activate", "error"); } } });
   };
 
   const handlePermanentDelete = (id) => {
-    setConfirmModal({ isOpen: true, title: "Permanent Delete", message: "PERMANENTLY delete this product? This cannot be undone.", type: "danger", confirmText: "Delete Permanently", onConfirm: async () => { try { await apiFetch(`/admin/scented-sticks/${id}/permanent`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Deleted permanently"); fetchItems(); } catch { showToast("Failed", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Permanent Delete", message: "WARNING: This will PERMANENTLY delete this product from the database. This action cannot be undone. Proceed?", type: "danger", confirmText: "Delete Permanently", onConfirm: async () => { try { await apiFetch(`/admin/scented-sticks/${id}/permanent`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product deleted permanently"); fetchItems(); } catch { showToast("Failed to delete", "error"); } } });
   };
 
   const f = (field) => formData[field] ?? "";
@@ -337,46 +337,80 @@ export default function AdminScentedSticks() {
       )}
 
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
           {filtered.map(item => {
             const priceRange = getPriceRange(item.variants);
             const variantCount = Array.isArray(item.variants) ? item.variants.filter(v => v.isAvailable !== false).length : 0;
             return (
-              <div key={item.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
-                <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group">
+              <div key={item.id} className={`bg-white rounded-[20px] p-2.5 sm:p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex flex-col hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
+                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-1.5 sm:mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group">
                   {item.imageUrl ? (
                     <img src={optimizeCloudinaryUrl(item.imageUrl, { width: 400 })} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-200 text-5xl">🪔</div>
                   )}
                   {item.isActive === false && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Inactive</div>
+                    <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 bg-[#121212] text-[#fff] text-[8px] sm:text-[10px] font-medium px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 z-10 shadow-sm">
+                      <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red-500 rounded-full" />
+                      Inactive
+                    </div>
                   )}
                   {variantCount > 0 && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Package className="w-2.5 h-2.5" />{variantCount} sizes
+                    <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 bg-black/80 backdrop-blur-sm text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 border border-white/10">
+                      <Package className="w-2 h-2 sm:w-3 sm:h-3" />{variantCount} Sizes
                     </div>
                   )}
                 </div>
-                <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
-                  <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal">{item.name}</h3>
-                  <p className="text-gray-400 text-[10px] sm:text-xs font-medium">{priceRange || "No pricing set"}</p>
+                
+                <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
+                  <h3 className="font-bold text-base sm:text-xl text-[#1a1f36] leading-tight whitespace-normal line-clamp-2">{item.name}</h3>
                 </div>
-                <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
-                  {item.scentFamily && <p className="shrink-0">Family: <span className="text-gray-900 font-medium capitalize">{item.scentFamily}</span></p>}
 
-                </div>
-                <div className="mt-auto pt-1 space-y-1.5">
-                  <div className="flex flex-row gap-1">
-                    <button onClick={() => openEdit(item)} className="flex-1 bg-blue-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-1">
-                      Edit
-                    </button>
-                    <button onClick={() => item.isActive === false ? handleActivate(item.id) : handleDeactivate(item.id)} className={`flex-1 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1 ${item.isActive === false ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700"}`}>
-                      {item.isActive === false ? "Activate" : "Deactivate"}
-                    </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 sm:mb-1.5 gap-1 sm:gap-0">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mb-0.5 whitespace-nowrap">Price range</p>
+                    <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">{priceRange || "No pricing set"}</p>
                   </div>
-                  <button onClick={() => handlePermanentDelete(item.id)} className="w-full bg-red-50 border border-red-100 text-red-600 py-1.5 rounded-lg font-bold text-[10px] tracking-tight hover:bg-red-100 transition-all active:scale-[0.98]">
-                    Delete Permanently
+                  
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 w-full sm:w-auto bg-gray-50/80 sm:bg-transparent px-2 py-1.5 sm:p-0 rounded-md sm:rounded-none border sm:border-0 border-gray-100">
+                    <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium sm:mb-1">Status</p>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className={`text-[9px] sm:text-[11px] font-bold ${item.isActive === false ? 'text-gray-500' : 'text-[#059669]'}`}>
+                        {item.isActive === false ? 'Inactive' : 'Active'}
+                      </span>
+                      <button 
+                        onClick={() => item.isActive === false ? handleActivate(item.id) : handleDeactivate(item.id)}
+                        className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 items-center rounded-full transition-colors shadow-sm ${item.isActive === false ? 'bg-gray-300' : 'bg-[#059669]'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 sm:h-4 sm:w-4 transform rounded-full bg-white shadow-sm transition-transform ${item.isActive === false ? 'translate-x-0.5' : 'translate-x-3.5 sm:translate-x-[18px]'}`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1 sm:mb-1.5">
+                  {item.scentFamily && (
+                    <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+                      Family: <span className="text-gray-900 font-bold capitalize">{item.scentFamily}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-auto pt-1.5 sm:pt-2 border-t border-gray-50 flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={() => openEdit(item)}
+                    className="flex-1 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
+                  >
+                    <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handlePermanentDelete(item.id)}
+                    className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    Delete
                   </button>
                 </div>
               </div>
@@ -481,7 +515,8 @@ export default function AdminScentedSticks() {
                             </>
                           ) : (
                             <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
-                              <span className="text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
+                              <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
+                              <span className="text-[8px] sm:text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
                                 {i === 0 ? "Primary ★" : "Add Extra"}
                               </span>
                               <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(i, e)} />

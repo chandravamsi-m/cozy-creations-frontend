@@ -8,7 +8,7 @@ import { apiFetch } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/image";
-import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles, MoreVertical, Leaf, Droplet, Clock } from "lucide-react";
+import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles, MoreVertical, Leaf, Droplet, Clock, ImagePlus } from "lucide-react";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -234,15 +234,15 @@ export default function AdminPerfumes() {
   };
 
   const handleDeactivate = (id) => {
-    setConfirmModal({ isOpen: true, title: "Deactivate", message: "Deactivate this product? It will no longer be visible to customers.", type: "danger", confirmText: "Deactivate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product deactivated successfully"); fetchItems(); } catch { showToast("Failed to deactivate", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Deactivate Product", message: "Are you sure you want to deactivate this product? It will no longer be visible to customers.", type: "danger", confirmText: "Deactivate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product deactivated successfully"); fetchItems(); } catch { showToast("Failed to deactivate", "error"); } } });
   };
 
   const handleActivate = (id) => {
-    setConfirmModal({ isOpen: true, title: "Activate", message: "Activate this product?", type: "success", confirmText: "Activate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ product: { isActive: true } }) }); showToast("Product activated successfully"); fetchItems(); } catch { showToast("Failed to activate", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Activate Product", message: "This product will become visible to customers again. Proceed?", type: "success", confirmText: "Activate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ product: { isActive: true } }) }); showToast("Product activated successfully"); fetchItems(); } catch { showToast("Failed to activate", "error"); } } });
   };
 
   const handlePermanentDelete = (id) => {
-    setConfirmModal({ isOpen: true, title: "Permanent Delete", message: "PERMANENTLY delete this product? This cannot be undone.", type: "danger", confirmText: "Delete Permanently", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}/permanent`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product permanently deleted"); fetchItems(); } catch { showToast("Failed to delete", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Permanent Delete", message: "WARNING: This will PERMANENTLY delete this product from the database. This action cannot be undone. Proceed?", type: "danger", confirmText: "Delete Permanently", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}/permanent`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product deleted permanently"); fetchItems(); } catch { showToast("Failed to delete", "error"); } } });
   };
 
   const f = (field) => formData[field] ?? "";
@@ -357,7 +357,7 @@ export default function AdminPerfumes() {
             const variantCount = Array.isArray(item.variants) ? item.variants.filter(v => v.isAvailable !== false).length : 0;
             return (
               <div key={item.id} className={`bg-white rounded-[20px] p-2.5 sm:p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex flex-col hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
-                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-2 sm:mb-3 bg-gray-50 relative isolation-isolate cursor-pointer group">
+                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-1.5 sm:mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group">
                   {item.imageUrl ? (
                     <img src={optimizeCloudinaryUrl(item.imageUrl, { width: 400 })} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu" />
                   ) : (
@@ -376,11 +376,11 @@ export default function AdminPerfumes() {
                   )}
                 </div>
                 
-                <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-2.5">
+                <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
                   <h3 className="font-bold text-base sm:text-xl text-[#1a1f36] leading-tight whitespace-normal line-clamp-2">{item.name}</h3>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 sm:mb-2.5 gap-1 sm:gap-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 sm:mb-1.5 gap-1 sm:gap-0">
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mb-0.5 whitespace-nowrap">Price range</p>
                     <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">{priceRange || "No pricing set"}</p>
@@ -402,7 +402,7 @@ export default function AdminPerfumes() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
+                <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1 sm:mb-1.5">
                   <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
                     Family: <span className="text-gray-900 font-bold">{item.scentFamily || "N/A"}</span>
                   </div>
@@ -414,7 +414,7 @@ export default function AdminPerfumes() {
                   </div>
                 </div>
 
-                <div className="mt-auto pt-1.5 sm:pt-2.5 border-t border-gray-50 flex items-center gap-1.5 sm:gap-2">
+                <div className="mt-auto pt-1.5 sm:pt-2 border-t border-gray-50 flex items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={() => openEdit(item)}
                     className="flex-1 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
@@ -557,7 +557,8 @@ export default function AdminPerfumes() {
                                 </>
                               ) : (
                                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
-                                  <span className="text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
+                                  <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
+                                  <span className="text-[8px] sm:text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
                                     {i === 0 ? "Primary ★" : "Add Extra"}
                                   </span>
                                   <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(i, e)} />
