@@ -262,15 +262,15 @@ export default function CartPage() {
                             {itemDiscounts[item.productId]?.hasDiscount ? (
                               <div className="flex flex-col">
                                 <span className="text-[10px] text-gray-400 line-through leading-none">
-                                  ₹{item.price.toLocaleString()}
+                                  ₹{(item.price || 0).toLocaleString()}
                                 </span>
                                 <span className="text-xs sm:text-sm font-bold text-green-600">
-                                  ₹{itemDiscounts[item.productId].discountedPrice.toLocaleString()}
+                                  ₹{(itemDiscounts[item.productId]?.discountedPrice || 0).toLocaleString()}
                                 </span>
                               </div>
                             ) : (
                               <p className="text-[11px] sm:text-xs text-gray-600">
-                                ₹{item.price.toLocaleString()} <span className="text-gray-400 font-medium">each</span>
+                                ₹{(item.price || 0).toLocaleString()} <span className="text-gray-400 font-medium">each</span>
                               </p>
                             )}
                             {item.quantityPack && (
@@ -283,7 +283,7 @@ export default function CartPage() {
                           <div className="text-right shrink-0">
                             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Subtotal</p>
                             <p className="text-base font-black text-gray-900 leading-none">
-                              ₹{((itemDiscounts[item.productId]?.discountedPrice || item.price) * item.quantity).toLocaleString()}
+                              ₹{((itemDiscounts[item.productId]?.discountedPrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -403,17 +403,17 @@ export default function CartPage() {
                     <div className="mt-4 space-y-3 text-sm">
                       <div className="flex justify-between text-gray-700">
                         <span>Subtotal</span>
-                        <span className="font-medium">₹{totalPrice.toLocaleString()}</span>
+                        <span className="font-medium">₹{(totalPrice || 0).toLocaleString()}</span>
                       </div>
                       {totalDiscountAmount > 0 && (
                         <div className="flex justify-between text-green-600 font-medium">
                           <span>Offers Discount</span>
-                          <span>-₹{totalDiscountAmount.toLocaleString()}</span>
+                          <span>-₹{(totalDiscountAmount || 0).toLocaleString()}</span>
                         </div>
                       )}
                       <div className="border-t pt-3 flex justify-between text-base font-semibold text-gray-900">
                         <span>Total</span>
-                        <span>₹{discountedTotal.toLocaleString()}</span>
+                        <span>₹{(discountedTotal || 0).toLocaleString()}</span>
                       </div>
                     </div>
 
