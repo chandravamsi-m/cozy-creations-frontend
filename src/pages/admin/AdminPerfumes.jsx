@@ -3,11 +3,12 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useProducts } from "../../contexts/ProductsContext";
 import { apiFetch } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/image";
-import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles } from "lucide-react";
+import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles, MoreVertical, Leaf, Droplet, Clock } from "lucide-react";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -53,9 +54,8 @@ function getPriceRange(variants) {
 export default function AdminPerfumes() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
+  const { perfumes: items, perfumesLoading: loading, loadPerfumes } = useProducts();
 
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -79,16 +79,14 @@ export default function AdminPerfumes() {
   ];
 
   const fetchItems = async () => {
-    setLoading(true);
     try {
-      const res = await apiFetch("/admin/perfumes", { headers: { Authorization: `Bearer ${idToken}` } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
-    } catch { showToast("Failed to load Attar", "error"); }
-    finally { setLoading(false); }
+      await loadPerfumes(true, true, true);
+    } catch {
+      showToast("Failed to load Attar", "error");
+    }
   };
 
-  useEffect(() => { if (idToken) fetchItems(); }, [idToken]);
+  useEffect(() => { if (idToken) loadPerfumes(false, true); }, [idToken]);
 
   useEffect(() => {
     const handler = (e) => { if (!e.target.closest("[data-sort-menu]")) setShowSortMenu(false); };
@@ -236,15 +234,15 @@ export default function AdminPerfumes() {
   };
 
   const handleDeactivate = (id) => {
-    setConfirmModal({ isOpen: true, title: "Deactivate", message: "Deactivate this product? It will no longer be visible to customers.", type: "danger", confirmText: "Deactivate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Deactivated"); fetchItems(); } catch { showToast("Failed", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Deactivate", message: "Deactivate this product? It will no longer be visible to customers.", type: "danger", confirmText: "Deactivate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product deactivated successfully"); fetchItems(); } catch { showToast("Failed to deactivate", "error"); } } });
   };
 
   const handleActivate = (id) => {
-    setConfirmModal({ isOpen: true, title: "Activate", message: "Activate this product?", type: "success", confirmText: "Activate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ product: { isActive: true } }) }); showToast("Activated"); fetchItems(); } catch { showToast("Failed", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Activate", message: "Activate this product?", type: "success", confirmText: "Activate", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ product: { isActive: true } }) }); showToast("Product activated successfully"); fetchItems(); } catch { showToast("Failed to activate", "error"); } } });
   };
 
   const handlePermanentDelete = (id) => {
-    setConfirmModal({ isOpen: true, title: "Permanent Delete", message: "PERMANENTLY delete this product? This cannot be undone.", type: "danger", confirmText: "Delete Permanently", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}/permanent`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Deleted permanently"); fetchItems(); } catch { showToast("Failed", "error"); } } });
+    setConfirmModal({ isOpen: true, title: "Permanent Delete", message: "PERMANENTLY delete this product? This cannot be undone.", type: "danger", confirmText: "Delete Permanently", onConfirm: async () => { try { await apiFetch(`/admin/perfumes/${id}/permanent`, { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } }); showToast("Product permanently deleted"); fetchItems(); } catch { showToast("Failed to delete", "error"); } } });
   };
 
   const f = (field) => formData[field] ?? "";
@@ -338,7 +336,7 @@ export default function AdminPerfumes() {
       </div>
 
       {loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4 animate-in fade-in duration-500">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6 animate-in fade-in duration-500">
           {[...Array(8)].map((_, i) => <Skeleton key={i} height="280px" borderRadius="16px" className="w-full" />)}
         </div>
       )}
@@ -353,67 +351,85 @@ export default function AdminPerfumes() {
       )}
 
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
           {filtered.map(item => {
             const priceRange = getPriceRange(item.variants);
             const variantCount = Array.isArray(item.variants) ? item.variants.filter(v => v.isAvailable !== false).length : 0;
             return (
-              <div key={item.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
-                <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group">
+              <div key={item.id} className={`bg-white rounded-[20px] p-2.5 sm:p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex flex-col hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
+                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-2 sm:mb-3 bg-gray-50 relative isolation-isolate cursor-pointer group">
                   {item.imageUrl ? (
                     <img src={optimizeCloudinaryUrl(item.imageUrl, { width: 400 })} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-200 text-5xl">🌹</div>
                   )}
                   {item.isActive === false && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Inactive</div>
+                    <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 bg-[#121212] text-[#fff] text-[8px] sm:text-[10px] font-medium px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 z-10 shadow-sm">
+                      <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red-500 rounded-full" />
+                      Inactive
+                    </div>
                   )}
                   {variantCount > 0 && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Package className="w-2.5 h-2.5" />{variantCount} sizes
+                    <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 bg-black/80 backdrop-blur-sm text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 border border-white/10">
+                      <Package className="w-2 h-2 sm:w-3 sm:h-3" />{variantCount} Sizes
                     </div>
                   )}
                 </div>
-                <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
-                  <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal">{item.name}</h3>
-                  <p className="text-gray-400 text-[10px] sm:text-xs font-medium">{priceRange || "No pricing set"}</p>
+                
+                <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-2.5">
+                  <h3 className="font-bold text-base sm:text-xl text-[#1a1f36] leading-tight whitespace-normal line-clamp-2">{item.name}</h3>
                 </div>
-                <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
-                  {item.scentFamily && <p className="shrink-0">Family: <span className="text-gray-900 font-medium capitalize">{item.scentFamily}</span></p>}
-                  {item.isAlcoholFree && <p className="shrink-0">Alcohol Free: <span className="text-gray-900 font-medium capitalize">Yes</span></p>}
-                  {item.longevityHours > 0 && <p className="shrink-0">Longevity: <span className="text-gray-900 font-medium">~{item.longevityHours}H</span></p>}
-                </div>
-                <div className="mt-auto pt-1">
-                  <div className="flex flex-row gap-1.5">
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm h-8 sm:h-9"
-                      title="Edit"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      <span className="hidden md:inline">Edit</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => item.isActive === false ? handleActivate(item.id) : handleDeactivate(item.id)}
-                      className={`flex-[1.5] border py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm h-8 sm:h-9 ${
-                        item.isActive === false
-                          ? "bg-emerald-50 border-emerald-100 hover:bg-emerald-100 text-emerald-700"
-                          : "bg-amber-50 border-amber-100 hover:bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {item.isActive === false ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
-                      <span className="hidden md:inline">{item.isActive === false ? "Activate" : "Deactivate"}</span>
-                    </button>
 
-                    <button
-                      onClick={() => handlePermanentDelete(item.id)}
-                      className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 bg-red-50 border border-red-100 hover:bg-red-100 text-red-600 rounded-lg transition-colors flex items-center justify-center"
-                      title="Delete Permanently"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 sm:mb-2.5 gap-1 sm:gap-0">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mb-0.5 whitespace-nowrap">Price range</p>
+                    <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">{priceRange || "No pricing set"}</p>
                   </div>
+                  
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 w-full sm:w-auto bg-gray-50/80 sm:bg-transparent px-2 py-1.5 sm:p-0 rounded-md sm:rounded-none border sm:border-0 border-gray-100">
+                    <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium sm:mb-1">Status</p>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className={`text-[9px] sm:text-[11px] font-bold ${item.isActive === false ? 'text-gray-500' : 'text-[#059669]'}`}>
+                        {item.isActive === false ? 'Inactive' : 'Active'}
+                      </span>
+                      <button 
+                        onClick={() => item.isActive === false ? handleActivate(item.id) : handleDeactivate(item.id)}
+                        className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 items-center rounded-full transition-colors shadow-sm ${item.isActive === false ? 'bg-gray-300' : 'bg-[#059669]'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 sm:h-4 sm:w-4 transform rounded-full bg-white shadow-sm transition-transform ${item.isActive === false ? 'translate-x-0.5' : 'translate-x-3.5 sm:translate-x-[18px]'}`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
+                  <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+                    Family: <span className="text-gray-900 font-bold">{item.scentFamily || "N/A"}</span>
+                  </div>
+                  <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+                    Alc. Free: <span className="text-gray-900 font-bold">{item.isAlcoholFree ? "Yes" : "No"}</span>
+                  </div>
+                  <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+                    Longevity: <span className="text-gray-900 font-bold">~{item.longevityHours || 0}H</span>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-1.5 sm:pt-2.5 border-t border-gray-50 flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={() => openEdit(item)}
+                    className="flex-1 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
+                  >
+                    <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handlePermanentDelete(item.id)}
+                    className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    Delete
+                  </button>
                 </div>
               </div>
             );

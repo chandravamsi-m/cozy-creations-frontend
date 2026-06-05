@@ -54,3 +54,38 @@ export async function getProductByIdFirestore(id) {
     return null;
   }
 }
+
+async function fetchCollectionFromFirestore(collectionName, includeInactive = false) {
+  try {
+    const constraints = [];
+    if (!includeInactive) {
+      constraints.push(where("isActive", "==", true));
+    }
+    const q = query(collection(db, collectionName), ...constraints);
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data
+      };
+    });
+    return docs.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || a.updatedAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || b.updatedAt?.seconds || 0;
+      return timeB - timeA;
+    });
+  } catch (e) {
+    console.error(`Firestore fetch error for ${collectionName}:`, e);
+    return [];
+  }
+}
+
+export async function fetchFirestoreScentedSticks(includeInactive = false) {
+  return fetchCollectionFromFirestore("scented-sticks", includeInactive);
+}
+
+export async function fetchFirestorePerfumes(includeInactive = false) {
+  return fetchCollectionFromFirestore("perfumes", includeInactive);
+}
+

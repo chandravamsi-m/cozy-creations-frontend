@@ -183,7 +183,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
     if (type === "scented-stick") {
       if (product.scentFamily) chips.push({ label: `${product.scentFamily} Scent`, key: "scentFamily" });
-      if (product.burnTimeMinutes) chips.push({ label: `~${product.burnTimeMinutes}MIN BURN`, key: "burn" });
+
     } else if (type === "perfume") {
       if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
       if (product.longevityHours) chips.push({ label: `~${product.longevityHours}H LONGEVITY`, key: "longevity" });

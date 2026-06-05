@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useProducts } from "../../contexts/ProductsContext";
 import { apiFetch } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
@@ -22,7 +23,7 @@ const DEFAULT_DHOOP_VARIANTS = [
 ];
 
 const EMPTY_FORM = {
-  name: "", scentFamily: "", burnTimeMinutes: "", ingredients: "", altText: "",
+  name: "", scentFamily: "", ingredients: "", altText: "",
 };
 
 async function uploadToCloudinary(file) {
@@ -48,9 +49,8 @@ function getPriceRange(variants) {
 export default function AdminScentedSticks() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
+  const { scentedSticks: items, scentedSticksLoading: loading, loadScentedSticks } = useProducts();
 
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -74,16 +74,14 @@ export default function AdminScentedSticks() {
   ];
 
   const fetchItems = async () => {
-    setLoading(true);
     try {
-      const res = await apiFetch("/admin/scented-sticks", { headers: { Authorization: `Bearer ${idToken}` } });
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
-    } catch { showToast("Failed to load Dhoop Sticks", "error"); }
-    finally { setLoading(false); }
+      await loadScentedSticks(true, true, true);
+    } catch {
+      showToast("Failed to load Dhoop Sticks", "error");
+    }
   };
 
-  useEffect(() => { if (idToken) fetchItems(); }, [idToken]);
+  useEffect(() => { if (idToken) loadScentedSticks(false, true); }, [idToken]);
 
   useEffect(() => {
     const handler = (e) => { if (!e.target.closest("[data-sort-menu]")) setShowSortMenu(false); };
@@ -120,7 +118,7 @@ export default function AdminScentedSticks() {
     setFormData({
       name: item.name || "",
       scentFamily: item.scentFamily || "",
-      burnTimeMinutes: String(item.burnTimeMinutes ?? ""),
+
       ingredients: item.ingredients || "",
       altText: item.altText || "",
     });
@@ -194,7 +192,7 @@ export default function AdminScentedSticks() {
       const payload = {
         name: formData.name,
         scentFamily: formData.scentFamily,
-        burnTimeMinutes: Number(formData.burnTimeMinutes) || 0,
+
         ingredients: formData.ingredients,
         altText: formData.altText || formData.name,
         imageUrl, thumbnailUrl: imageUrl, images: finalImages,
@@ -366,7 +364,7 @@ export default function AdminScentedSticks() {
                 </div>
                 <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
                   {item.scentFamily && <p className="shrink-0">Family: <span className="text-gray-900 font-medium capitalize">{item.scentFamily}</span></p>}
-                  {item.burnTimeMinutes > 0 && <p className="shrink-0">Burn Time: <span className="text-gray-900 font-medium">~{item.burnTimeMinutes}min</span></p>}
+
                 </div>
                 <div className="mt-auto pt-1 space-y-1.5">
                   <div className="flex flex-row gap-1">
@@ -405,15 +403,9 @@ export default function AdminScentedSticks() {
                   <input required type="text" value={f("name")} onChange={e => sf("name", e.target.value)} placeholder="e.g. Sandalwood Dhoop Sticks" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-800">Scent Family</label>
-                    <input type="text" value={f("scentFamily")} onChange={e => sf("scentFamily", e.target.value)} placeholder="e.g. Woody, Floral, Earthy" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-800">Burn Time (min per stick)</label>
-                    <input type="number" min="0" value={f("burnTimeMinutes")} onChange={e => sf("burnTimeMinutes", e.target.value)} placeholder="e.g. 45" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-800">Scent Family</label>
+                  <input type="text" value={f("scentFamily")} onChange={e => sf("scentFamily", e.target.value)} placeholder="e.g. Woody, Floral, Earthy" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
                 </div>
 
                 <div className="space-y-1">

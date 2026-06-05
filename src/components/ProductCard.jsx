@@ -79,7 +79,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
     if (type === "scented-stick") {
       if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
-      if (product.burnTimeMinutes) chips.push({ label: `~${product.burnTimeMinutes}min Burn`, key: "burnTime" });
+
       const availSizes = Array.isArray(product.variants) ? product.variants.filter(v => v.isAvailable !== false).length : 0;
       if (availSizes > 0) chips.push({ label: `${availSizes} Sizes`, key: "sizes" });
     } else if (type === "perfume") {
