@@ -693,7 +693,7 @@ export default function Checkout() {
                         {item.name}
                       </p>
                       <p className="text-sm font-black text-gray-900 mt-2 flex items-center gap-2">
-                        <span>₹{item.price.toLocaleString()}</span>
+                        <span>₹{(item.price || 0).toLocaleString()}</span>
                         <span className="text-base font-black text-yellow-600/70">
                           × {item.quantity}
                         </span>
@@ -706,12 +706,12 @@ export default function Checkout() {
               <div className="pt-4 border-t border-gray-100 space-y-4">
                 <div className="flex justify-between items-center px-1">
                   <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Subtotal</span>
-                  <span className="text-sm font-semibold text-gray-900">₹{totalPrice.toLocaleString()}</span>
+                  <span className="text-sm font-semibold text-gray-900">₹{(totalPrice || 0).toLocaleString()}</span>
                 </div>
                 {totalDiscountAmount > 0 && (
                   <div className="flex justify-between items-center px-1">
                     <span className="text-sm font-bold text-green-600 uppercase tracking-widest leading-none">Discount</span>
-                    <span className="text-sm font-semibold text-green-600">-₹{totalDiscountAmount.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-green-600">-₹{(totalDiscountAmount || 0).toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-start px-1 gap-2">
@@ -743,14 +743,14 @@ export default function Checkout() {
                         <Check className="w-3 h-3" /> FREE
                       </span>
                     ) : (
-                      `₹${deliveryFee.toLocaleString()}`
+                      `₹${(deliveryFee || 0).toLocaleString()}`
                     )}
                   </span>
                 </div>
                 {isPlatformFeeEnabled && (
                   <div className="flex justify-between items-center px-1">
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Platform Fee</span>
-                    <span className="text-sm font-semibold text-gray-900">₹{platformFee.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-gray-900">₹{(platformFee || 0).toLocaleString()}</span>
                   </div>
                 )}
 
@@ -758,7 +758,7 @@ export default function Checkout() {
                   <span className="text-md font-bold text-gray-900 uppercase tracking-tight">Total</span>
                   <div className="text-right">
                     <p className="text-xl font-bold text-gray-900 tracking-tighter leading-none">
-                      ₹{(selectedAddressId ? finalTotal : (discountedTotal + platformFee)).toLocaleString()}
+                      ₹{((selectedAddressId ? finalTotal : (discountedTotal + platformFee)) || 0).toLocaleString()}
                     </p>
                     {checkingServiceability && (
                       <p className="text-[10px] text-gray-400 font-medium mt-0.5">Updating...</p>
