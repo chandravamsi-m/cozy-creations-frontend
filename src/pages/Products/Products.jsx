@@ -18,6 +18,10 @@ import GlassJarIcon from "../../assets/svgs/glass-jar-icon.svg";
 import usePageSEO from "../../hooks/usePageSEO";
 import { Sparkles, Leaf, Flame, Droplets } from "lucide-react";
 
+import candleBg from "../../assets/images/candle_category_bg.png";
+import agarbattiBg from "../../assets/images/agarbatti_category_bg.png";
+import attarBg from "../../assets/images/attar_category_bg.png";
+
 // Cloudinary hero image
 const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307257/image_5_ympux0.webp";
 
@@ -364,42 +368,94 @@ export default function ProductsPage() {
           <ScrollDownIndicator onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })} />
         </div>
       </section>
-
-      {/* PRODUCT TYPE TABS */}
-      <div className="bg-white border-b border-gray-200 sticky top-[72px] z-40 shadow-sm">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-6 sm:gap-8 overflow-x-auto hide-scrollbar pt-2">
-            {[
-              { key: "candle", label: "Candles", emoji: "🕯️" },
-              { key: "scented-stick", label: "Agarbatti", emoji: "🌸" },
-              { key: "perfume", label: "Attar & Perfumes", emoji: "✨" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setProductType(tab.key)}
-                className={`flex items-center gap-2 px-1 pb-3 pt-2 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
-                  productType === tab.key
-                    ? "border-gray-900 text-gray-900"
-                    : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
-                }`}
-              >
-                <span className="text-base">{tab.emoji}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* PRODUCTS SECTION */}
       <section id="products" ref={productsSectionRef} data-section="products" className="min-h-0 bg-[#FBFAF9]">
+        {/* VISUAL CATEGORY CARDS */}
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+          <div className="flex flex-row justify-center gap-4 sm:gap-6">
+            {[
+              {
+                key: "candle",
+                title: "Aromatic Candles",
+                subtitle: "Sensory Light & Warmth",
+                bg: candleBg,
+              },
+              {
+                key: "scented-stick",
+                title: "Handcrafted Dhoop",
+                subtitle: "Natural Sacred Incense",
+                bg: agarbattiBg,
+              },
+              {
+                key: "perfume",
+                title: "Luxury Attars",
+                subtitle: "Pure Alcohol-Free Oils",
+                bg: attarBg,
+              },
+            ].map((card) => {
+              const isActive = productType === card.key;
+              return (
+                <button
+                  key={card.key}
+                  onClick={() => {
+                    setProductType(card.key);
+                    if (card.key !== "candle") {
+                      setCategory("");
+                    }
+                    const el = document.getElementById("products");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                  className={`relative w-[30%] max-w-[120px] sm:max-w-[160px] md:max-w-[192px] aspect-square rounded-2xl overflow-hidden group text-left transition-all duration-500 shadow-md flex-shrink-0 ${
+                    isActive 
+                      ? "ring-4 ring-yellow-accent shadow-xl scale-[1.02]" 
+                      : "hover:scale-[1.01] hover:shadow-lg"
+                  }`}
+                >
+                  {/* Background Image */}
+                  <img
+                    src={card.bg}
+                    alt={card.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
+                  
+                  {/* Dark Overlays */}
+                  <div className={`absolute inset-0 transition-opacity duration-500 bg-gradient-to-t from-black/80 via-black/40 to-transparent ${
+                    isActive ? "opacity-95" : "opacity-80 group-hover:opacity-90"
+                  }`} />
+
+                  {/* Card Border glow / active effect */}
+                  {isActive && (
+                    <div className="absolute inset-0 border-2 border-yellow-accent rounded-2xl pointer-events-none" />
+                  )}
+
+                  {/* Content */}
+                  <div className="absolute inset-0 p-3 sm:p-4 md:p-5 flex flex-col justify-end">
+                    <span className={`text-[8px] md:text-[10px] uppercase tracking-widest font-semibold mb-0.5 sm:mb-1 transition-colors ${
+                      isActive ? "text-yellow-accent" : "text-gray-300 group-hover:text-yellow-accent"
+                    }`}>
+                      {isActive ? "Selected" : "Explore"}
+                    </span>
+                    <h3 className="text-white text-xs sm:text-base md:text-lg font-bold tracking-wide leading-tight">
+                      {card.title}
+                    </h3>
+                    <p className="text-white/80 text-[10px] sm:text-xs mt-0.5 sm:mt-1 font-medium hidden sm:block">
+                      {card.subtitle}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <div className="flex flex-col lg:flex-row">
 
           {/* SIDEBAR */}
           <aside
             ref={sidebarRef}
             data-section="sidebar"
-            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[130px] self-start max-h-[calc(100vh-140px)] flex flex-col justify-between overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
+            className={`hidden lg:block w-1/5 bg-white border-r border-gray-200 p-6 pt-3 sticky top-[72px] self-start max-h-[calc(100vh-90px)] flex flex-col justify-between overflow-y-auto rounded-xl transition-all duration-700 ${isVisible.sidebar ? "translate-x-0 opacity-100" : "translate-x-[-20px] opacity-0"}`}
           >
             <div>
               <h2 className={`text-xl font-semibold ${productType === "candle" ? "mb-6" : "mb-2"}`}>

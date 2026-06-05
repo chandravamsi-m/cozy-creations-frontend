@@ -1,12 +1,13 @@
 // src/pages/admin/AdminScentedSticks.jsx
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { apiFetch } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/image";
-import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package } from "lucide-react";
+import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Flower2 } from "lucide-react";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -241,10 +242,10 @@ export default function AdminScentedSticks() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1 pt-1 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
-            <span className="text-xl">🪔</span>
+            <Flower2 className="w-6 h-6 text-rose-600" />
           </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">Dhoop Sticks & Agarbatti</h2>
+          <div className="flex flex-col">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 leading-tight">Dhoop Sticks & Agarbatti</h2>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
               {loading ? "..." : `${filtered.length} ${filtered.length === 1 ? "Item" : "Items"} found`}
             </p>
@@ -255,25 +256,66 @@ export default function AdminScentedSticks() {
         </button>
       </div>
 
-      {/* Search + Sort */}
+      {/* Search and Sort Row */}
       <div className="flex flex-row gap-2 mb-6">
         <div className="relative flex-1 group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <Search className="h-4 w-4" />
+          <div className="absolute inset-y-0 left-0 pl-3 flex sm:pl-3.5 items-center pointer-events-none transition-colors group-focus-within:text-rose-600 text-gray-400">
+            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <input type="text" placeholder="Search by name, scent family..." className="block w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-rose-500/5 focus:border-rose-400 transition-all shadow-sm h-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          {searchTerm && <button onClick={() => setSearchTerm("")} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-rose-500 transition-colors"><X className="h-4 w-4" /></button>}
+          <input
+            type="text"
+            placeholder="Search scented sticks..."
+            className="block w-full pl-8 sm:pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-[11px] sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-rose-500/5 focus:border-rose-400 transition-all shadow-sm h-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-rose-500 transition-colors active:scale-90"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          )}
         </div>
-        <div className="relative w-[150px]" data-sort-menu>
-          <button onClick={() => setShowSortMenu(!showSortMenu)} className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none transition-all shadow-sm h-10 text-gray-700">
-            <span className="truncate">{SORT_OPTIONS.find(o => o.value === sortBy)?.shortLabel}</span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 ml-1.5 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
+
+        <div className="relative w-[125px] sm:w-[210px]" data-sort-menu>
+          <button
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[11px] sm:text-sm font-medium focus:outline-none focus:ring-4 focus:ring-rose-500/5 focus:border-rose-400 transition-all shadow-sm h-10 text-gray-700"
+          >
+            <div className="flex items-center truncate">
+              <span className="text-gray-400 mr-1 hidden sm:inline font-normal">Sort:</span>
+              <span className="truncate">
+                <span className="hidden sm:inline">
+                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label || "Featured"}
+                </span>
+                <span className="sm:hidden">
+                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.shortLabel || "Featured"}
+                </span>
+              </span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 ml-1.5 transition-transform duration-200 ${showSortMenu ? "rotate-180" : ""}`} />
           </button>
+
           {showSortMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-[100] py-1 overflow-hidden">
-              {SORT_OPTIONS.map(o => (
-                <button key={o.value} onClick={() => { setSortBy(o.value); setShowSortMenu(false); }} className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${sortBy === o.value ? "bg-rose-50 text-rose-600 font-bold" : "text-gray-600 hover:bg-gray-50"}`}>
-                  {o.label}
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-[100] py-1 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
+              {SORT_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => {
+                    setSortBy(o.value);
+                    setShowSortMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-[13px] sm:text-sm transition-colors ${
+                    sortBy === o.value
+                      ? "bg-rose-50 text-rose-600 font-bold"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <span className="hidden sm:inline">{o.label}</span>
+                  <span className="sm:hidden">{o.shortLabel}</span>
                 </button>
               ))}
             </div>
@@ -282,8 +324,8 @@ export default function AdminScentedSticks() {
       </div>
 
       {loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
-          {[...Array(8)].map((_, i) => <Skeleton key={i} height="260px" borderRadius="16px" className="w-full" />)}
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4 animate-in fade-in duration-500">
+          {[...Array(8)].map((_, i) => <Skeleton key={i} height="280px" borderRadius="16px" className="w-full" />)}
         </div>
       )}
 
@@ -302,10 +344,10 @@ export default function AdminScentedSticks() {
             const priceRange = getPriceRange(item.variants);
             const variantCount = Array.isArray(item.variants) ? item.variants.filter(v => v.isAvailable !== false).length : 0;
             return (
-              <div key={item.id} className={`bg-white rounded-2xl border-2 overflow-hidden shadow-sm hover:shadow-md transition-all group ${item.isActive === false ? "border-red-100 opacity-70" : "border-transparent"}`}>
-                <div className="aspect-square bg-gray-50 overflow-hidden relative">
+              <div key={item.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
+                <div className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group">
                   {item.imageUrl ? (
-                    <img src={optimizeCloudinaryUrl(item.imageUrl, { width: 400 })} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img src={optimizeCloudinaryUrl(item.imageUrl, { width: 400 })} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-200 text-5xl">🪔</div>
                   )}
@@ -318,25 +360,26 @@ export default function AdminScentedSticks() {
                     </div>
                   )}
                 </div>
-                <div className="p-3 space-y-1">
-                  <p className="font-bold text-sm text-gray-900 line-clamp-1">{item.name}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {item.scentFamily && <span className="text-[9px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full font-medium">{item.scentFamily}</span>}
-                    {item.burnTimeMinutes > 0 && <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">~{item.burnTimeMinutes}min</span>}
-                  </div>
-                  <p className="font-black text-gray-900 text-sm">{priceRange || "No pricing set"}</p>
-                  <div className="flex gap-1.5 pt-1 border-t border-gray-100">
-                    <button onClick={() => openEdit(item)} className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-[10px] font-bold text-gray-700 transition-colors">
-                      <Pencil className="w-3 h-3" /> Edit
+                <div className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start">
+                  <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal">{item.name}</h3>
+                  <p className="text-gray-400 text-[10px] sm:text-xs font-medium">{priceRange || "No pricing set"}</p>
+                </div>
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
+                  {item.scentFamily && <p className="shrink-0">Family: <span className="text-gray-900 font-medium capitalize">{item.scentFamily}</span></p>}
+                  {item.burnTimeMinutes > 0 && <p className="shrink-0">Burn Time: <span className="text-gray-900 font-medium">~{item.burnTimeMinutes}min</span></p>}
+                </div>
+                <div className="mt-auto pt-1 space-y-1.5">
+                  <div className="flex flex-row gap-1">
+                    <button onClick={() => openEdit(item)} className="flex-1 bg-blue-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-1">
+                      Edit
                     </button>
-                    <button onClick={() => item.isActive === false ? handleActivate(item.id) : handleDeactivate(item.id)} className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${item.isActive === false ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"}`}>
-                      {item.isActive === false ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
+                    <button onClick={() => item.isActive === false ? handleActivate(item.id) : handleDeactivate(item.id)} className={`flex-1 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1 ${item.isActive === false ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700"}`}>
                       {item.isActive === false ? "Activate" : "Deactivate"}
                     </button>
-                    <button onClick={() => handlePermanentDelete(item.id)} className="w-8 flex items-center justify-center py-1.5 bg-red-50 hover:bg-red-100 rounded-lg text-red-500 transition-colors">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
                   </div>
+                  <button onClick={() => handlePermanentDelete(item.id)} className="w-full bg-red-50 border border-red-100 text-red-600 py-1.5 rounded-lg font-bold text-[10px] tracking-tight hover:bg-red-100 transition-all active:scale-[0.98]">
+                    Delete Permanently
+                  </button>
                 </div>
               </div>
             );
@@ -345,7 +388,7 @@ export default function AdminScentedSticks() {
       )}
 
       {/* Add / Edit Modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={closeModal}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden relative animate-in fade-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
@@ -470,7 +513,8 @@ export default function AdminScentedSticks() {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmModal isOpen={confirmModal.isOpen} onClose={closeConfirm} onConfirm={confirmModal.onConfirm} title={confirmModal.title} message={confirmModal.message} type={confirmModal.type} confirmText={confirmModal.confirmText} />
