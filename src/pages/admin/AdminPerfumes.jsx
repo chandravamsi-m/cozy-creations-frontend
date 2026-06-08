@@ -8,6 +8,9 @@ import { apiFetch } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/image";
+import { getEffectiveDiscount } from "../../utils/offerUtils";
+import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
+import { coerceAdminNumberInput } from "../../utils/adminNumberInputs";
 import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles, MoreVertical, Leaf, Droplet, Clock, ImagePlus } from "lucide-react";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -54,7 +57,7 @@ function getPriceRange(variants) {
 export default function AdminPerfumes() {
   const { idToken } = useAuth();
   const { showToast } = useToast();
-  const { perfumes: items, perfumesLoading: loading, loadPerfumes } = useProducts();
+  const { perfumes: items, perfumesLoading: loading, loadPerfumes, activeOffers } = useProducts();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
@@ -62,6 +65,7 @@ export default function AdminPerfumes() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [variants, setVariants] = useState(DEFAULT_ATTAR_VARIANTS.map(v => ({ ...v })));
   const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
@@ -87,6 +91,14 @@ export default function AdminPerfumes() {
   };
 
   useEffect(() => { if (idToken) loadPerfumes(false, true); }, [idToken]);
+
+  // Keep QuickView in sync with master products list
+  useEffect(() => {
+    if (quickViewProduct) {
+      const updated = items.find(p => p.id === quickViewProduct.id);
+      if (updated) setQuickViewProduct(updated);
+    }
+  }, [items]);
 
   useEffect(() => {
     const handler = (e) => { if (!e.target.closest("[data-sort-menu]")) setShowSortMenu(false); };
@@ -149,7 +161,14 @@ export default function AdminPerfumes() {
     setShowModal(true);
   };
 
-  const closeModal = () => { setShowModal(false); setEditingId(null); setFormMsg(""); };
+  const closeModal = () => { 
+    setShowModal(false); 
+    setEditingId(null); 
+    previews.forEach(p => { if (p && p.startsWith("blob:")) URL.revokeObjectURL(p); });
+    setImageFiles([null, null, null, null, null]);
+    setPreviews([null, null, null, null, null]);
+    setFormMsg(""); 
+  };
 
   const handleFileChange = (index, e) => {
     const file = e.target.files[0];
@@ -213,7 +232,7 @@ export default function AdminPerfumes() {
         variants: validVariants.map(v => ({
           label: v.label.trim(),
           price: Number(v.price) || 0,
-          isAvailable: true,
+          isAvailable: v.isAvailable !== false,
         })),
       };
 
@@ -353,15 +372,25 @@ export default function AdminPerfumes() {
       {!loading && filtered.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
           {filtered.map(item => {
-            const priceRange = getPriceRange(item.variants);
+            const variantPrices = Array.isArray(item.variants) ? item.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price)) : [];
+            const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null;
+            const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : null;
+            
+            const minDiscount = minPrice !== null ? getEffectiveDiscount(item, activeOffers, minPrice) : null;
+            const maxDiscount = maxPrice !== null ? getEffectiveDiscount(item, activeOffers, maxPrice) : null;
+            const hasDiscount = minDiscount?.hasDiscount || maxDiscount?.hasDiscount;
+
             const variantCount = Array.isArray(item.variants) ? item.variants.filter(v => v.isAvailable !== false).length : 0;
             return (
               <div key={item.id} className={`bg-white rounded-[20px] p-2.5 sm:p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex flex-col hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 relative group/card ${item.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
-                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-1.5 sm:mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group">
+                <div 
+                  className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-1.5 sm:mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group"
+                  onClick={() => setQuickViewProduct(item)}
+                >
                   {item.imageUrl ? (
                     <img src={optimizeCloudinaryUrl(item.imageUrl, { width: 400 })} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-200 text-5xl">🌹</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-200 text-5xl">💧</div>
                   )}
                   {item.isActive === false && (
                     <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 bg-[#121212] text-[#fff] text-[8px] sm:text-[10px] font-medium px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 z-10 shadow-sm">
@@ -376,14 +405,32 @@ export default function AdminPerfumes() {
                   )}
                 </div>
                 
-                <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
-                  <h3 className="font-bold text-base sm:text-xl text-[#1a1f36] leading-tight whitespace-normal line-clamp-2">{item.name}</h3>
+                <div 
+                  className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 cursor-pointer group/info"
+                  onClick={() => setQuickViewProduct(item)}
+                >
+                  <h3 className="font-bold text-base sm:text-xl text-[#1a1f36] leading-tight whitespace-normal line-clamp-2 group-hover/info:text-blue-600 transition-colors">{item.name}</h3>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 sm:mb-1.5 gap-1 sm:gap-0">
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mb-0.5 whitespace-nowrap">Price range</p>
-                    <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">{priceRange || "No pricing set"}</p>
+                    {minPrice === null ? (
+                      <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">No pricing set</p>
+                    ) : hasDiscount ? (
+                       <div className="flex flex-col -mt-0.5">
+                         <span className="text-gray-400 text-[9px] sm:text-[10px] line-through leading-none mb-0.5">
+                           {minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} - ₹${maxPrice}`}
+                         </span>
+                         <span className="text-green-600 text-xs sm:text-sm font-bold leading-none">
+                           {minPrice === maxPrice ? `₹${minDiscount.discountedPrice}` : `₹${minDiscount.discountedPrice} - ₹${maxDiscount.discountedPrice}`}
+                         </span>
+                       </div>
+                    ) : (
+                      <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">
+                        {minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} - ₹${maxPrice}`}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 w-full sm:w-auto bg-gray-50/80 sm:bg-transparent px-2 py-1.5 sm:p-0 rounded-md sm:rounded-none border sm:border-0 border-gray-100">
@@ -456,8 +503,8 @@ export default function AdminPerfumes() {
                         <input type="text" value={f("scentFamily")} onChange={e => sf("scentFamily", e.target.value)} placeholder="e.g. Floral, Woody, Oud" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-800">Longevity (hours)</label>
-                        <input type="number" min="0" value={f("longevityHours")} onChange={e => sf("longevityHours", e.target.value)} placeholder="e.g. 8" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
+                        <label className="text-sm font-medium text-gray-800 flex items-center gap-1.5 mb-1"><Clock className="w-4 h-4 text-gray-400" />Longevity (Hours)</label>
+                        <input type="number" min="0" value={f("longevityHours")} onChange={e => sf("longevityHours", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="e.g. 8" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
                       </div>
                     </div>
 
@@ -522,7 +569,7 @@ export default function AdminPerfumes() {
                                   </div>
                                   <div>
                                     <label className="text-[10px] text-gray-600 font-medium block mb-1">Price (₹)</label>
-                                    <input type="number" min="0" value={v.price} onChange={e => updateVariant(idx, "price", e.target.value)} placeholder="0" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
+                                    <input type="number" min="0" value={v.price} onChange={e => updateVariant(idx, "price", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="0" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
                                   </div>
                                 </div>
                               </div>
@@ -589,6 +636,31 @@ export default function AdminPerfumes() {
       )}
 
       <ConfirmModal isOpen={confirmModal.isOpen} onClose={closeConfirm} onConfirm={confirmModal.onConfirm} title={confirmModal.title} message={confirmModal.message} type={confirmModal.type} confirmText={confirmModal.confirmText} />
+
+      {quickViewProduct && createPortal(
+        <AdminProductQuickView
+          product={quickViewProduct}
+          activeOffers={activeOffers}
+          onClose={() => setQuickViewProduct(null)}
+          onEdit={(id) => {
+            setQuickViewProduct(null);
+            const p = items.find(i => i.id === id);
+            if (p) openEdit(p);
+          }}
+          onToggleStatus={(id) => {
+            const p = items.find(i => i.id === id);
+            if (p) {
+              if (p.isActive === false) handleActivate(id);
+              else handleDeactivate(id);
+            }
+          }}
+          onPermanentDelete={(id) => {
+            setQuickViewProduct(null);
+            handlePermanentDelete(id);
+          }}
+        />,
+        document.body
+      )}
     </div>
   );
 }

@@ -33,7 +33,9 @@ const CATEGORIES = [
   { id: 'animal', label: 'ANIMAL' },
   { id: 'festive', label: 'FESTIVE' },
   { id: 'glassJar', label: 'GLASS JAR' },
-  { id: 'special', label: 'SPECIAL' }
+  { id: 'special', label: 'SPECIAL' },
+  { id: 'scented-sticks', label: 'SCENTED STICKS' },
+  { id: 'perfumes', label: 'PERFUMES' }
 ];
 
 // Memoized Product Item for the Targeting Grid to ensure smooth selection
@@ -155,8 +157,6 @@ export default function AdminOffers() {
   const [bannerPreview, setBannerPreview] = useState(null);
   const [pendingFile, setPendingFile] = useState(null);
 
-  // Advanced Selection States
-  const [selectedCategories, setSelectedCategories] = useState([]);
   const [activeTab, setActiveTab] = useState('ALL');
 
   // Confirmation state
@@ -212,20 +212,34 @@ export default function AdminOffers() {
 
   const fetchProducts = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      const productList = querySnapshot.docs.map(doc => {
+      const [productsSnap, scentedSticksSnap, perfumesSnap] = await Promise.all([
+        getDocs(collection(db, "products")),
+        getDocs(collection(db, "scented-sticks")),
+        getDocs(collection(db, "perfumes"))
+      ]);
+
+      const mapProduct = (doc, defaultCategory) => {
         const data = doc.data();
         return {
           id: doc.id,
           name: data.name,
-          category: data.category,
-          imageUrl: data.imageUrl,
-          price: data.price,
+          category: defaultCategory || data.category,
+          imageUrl: data.imageUrl || (data.images && data.images[0]) || "",
+          price: data.price || (data.variants && data.variants.length > 0 ? data.variants[0].price : 0),
           isActive: data.isActive
         };
-      }).filter(p => p.isActive !== false);
+      };
+
+      const productList = [
+        ...productsSnap.docs.map(doc => mapProduct(doc, null)),
+        ...scentedSticksSnap.docs.map(doc => mapProduct(doc, "scented-sticks")),
+        ...perfumesSnap.docs.map(doc => mapProduct(doc, "perfumes"))
+      ];
+
       setProducts(productList);
-    } catch (err) {}
+    } catch (err) {
+      console.error("Failed to load products for targeting grid", err);
+    }
   };
 
   const handleOpenAdd = () => {
@@ -233,7 +247,6 @@ export default function AdminOffers() {
     setFormData({ ...initialFormState, isActive: false });
     setBannerPreview(null);
     setPendingFile(null);
-    setSelectedCategories([]);
     setActiveTab('ALL');
     setIsModalOpen(true);
   };
@@ -246,7 +259,6 @@ export default function AdminOffers() {
     });
     setBannerPreview(offer.bannerImageUrl);
     setPendingFile(null);
-    setSelectedCategories([]);
     setActiveTab('ALL');
     setIsModalOpen(true);
   };
@@ -276,6 +288,10 @@ export default function AdminOffers() {
 
       const token = await user.getIdToken();
       const isNew = !editingId;
+      
+      const validProductIds = new Set(products.map(p => p.id));
+      const sanitizedApplicableProducts = (formData.applicableProducts || []).filter(id => validProductIds.has(id));
+
       const res = await apiFetch(isNew ? "/admin/offers" : `/admin/offers/${editingId}`, {
         method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -283,6 +299,8 @@ export default function AdminOffers() {
           ...formData, 
           bannerImageUrl: finalUrl, 
           discountValue: parseAdminNumber(formData.discountValue),
+          applicableProducts: sanitizedApplicableProducts,
+          applicableCategories: [],
           hasBanner: true, 
           hasDiscount: true 
         }),
@@ -347,23 +365,19 @@ export default function AdminOffers() {
   };
 
   const toggleCategoryFilter = useCallback((catId) => {
-    setSelectedCategories(prev => {
-      const isSelected = prev.includes(catId);
-      const next = isSelected ? prev.filter(c => c !== catId) : [...prev, catId];
+    const productsInCat = products.filter(p => p.category === catId).map(p => p.id);
+    if (productsInCat.length === 0) return;
+
+    setFormData(f => {
+      const currentSelected = new Set(f.applicableProducts || []);
+      const isSelected = productsInCat.every(id => currentSelected.has(id));
       
-      const productsInCat = products.filter(p => p.category === catId).map(p => p.id);
-      
-      setFormData(f => {
-        const currentSelected = new Set(f.applicableProducts || []);
-        if (!isSelected) {
-          productsInCat.forEach(id => currentSelected.add(id));
-        } else {
-          productsInCat.forEach(id => currentSelected.delete(id));
-        }
-        return { ...f, applicableProducts: Array.from(currentSelected) };
-      });
-      
-      return next;
+      if (!isSelected) {
+        productsInCat.forEach(id => currentSelected.add(id));
+      } else {
+        productsInCat.forEach(id => currentSelected.delete(id));
+      }
+      return { ...f, applicableProducts: Array.from(currentSelected) };
     });
   }, [products]);
 
@@ -385,6 +399,16 @@ export default function AdminOffers() {
     if (activeTab === 'ALL') return products;
     return products.filter(p => p.category === activeTab);
   }, [products, activeTab]);
+
+  // Dynamically compute which categories are fully selected
+  const selectedCategories = useMemo(() => {
+    const selectedIds = new Set(formData.applicableProducts || []);
+    return CATEGORIES.filter(cat => {
+      const productsInCat = products.filter(p => p.category === cat.id);
+      if (productsInCat.length === 0) return false;
+      return productsInCat.every(p => selectedIds.has(p.id));
+    }).map(c => c.id);
+  }, [formData.applicableProducts, products]);
 
   if (loading) return (
     <div className="animate-in fade-in duration-500">
@@ -740,8 +764,19 @@ export default function AdminOffers() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                         <label className="text-sm font-medium text-gray-800">Select Individual Products</label>
-                        <div className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
-                          {formData.applicableProducts?.length || 0} SELECTED
+                        <div className="flex items-center gap-3">
+                          {(formData.applicableProducts || []).filter(id => products.some(p => p.id === id)).length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData(f => ({ ...f, applicableProducts: [] }))}
+                              className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                          <div className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+                            {(formData.applicableProducts || []).filter(id => products.some(p => p.id === id)).length} SELECTED
+                          </div>
                         </div>
                       </div>
 

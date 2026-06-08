@@ -302,6 +302,7 @@ export default function AdminProducts() {
 
   const handleCloseAddModal = () => {
     setShowAddModal(false);
+    previews.forEach(p => { if (p && p.startsWith("blob:")) URL.revokeObjectURL(p); });
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
     setFormMsg("");
@@ -360,6 +361,7 @@ export default function AdminProducts() {
     setShowEditModal(false);
     setEditingProductId(null);
     setBulkPricingTiers([]);
+    previews.forEach(p => { if (p && p.startsWith("blob:")) URL.revokeObjectURL(p); });
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
     setFormMsg("");

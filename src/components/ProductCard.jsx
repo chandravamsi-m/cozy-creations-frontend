@@ -17,6 +17,14 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
   const { addItem, updateQuantity, removeItem, cart } = useCart();
 
+  const fromPrice = React.useMemo(() => {
+    if ((product.productType === "scented-stick" || product.productType === "perfume") && Array.isArray(product.variants) && product.variants.length > 0) {
+      const availPrices = product.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+      return availPrices.length > 0 ? Math.min(...availPrices) : null;
+    }
+    return null;
+  }, [product]);
+
   // Sync UI quantity with cart quantity
   useEffect(() => {
     const item = cart.find((i) => i.productId === product.id);
@@ -25,15 +33,16 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
   // Fetch or calculate discount for this product
   useEffect(() => {
+    const priceToEvaluate = fromPrice !== null ? fromPrice : product.price;
     if (activeOffer) {
       // Use efficient local calculation if activeOffer is provided
-      const localDiscount = getEffectiveDiscount(product, activeOffer);
-      setDiscount(localDiscount.hasDiscount ? localDiscount : null);
+      const localDiscount = getEffectiveDiscount(product, activeOffer, priceToEvaluate);
+      setDiscount(localDiscount?.hasDiscount ? localDiscount : null);
       setLoadingDiscount(false);
     } else {
       // Fallback to async calculation (individual landing pages, etc.)
       setLoadingDiscount(true);
-      calculateProductDiscount(product)
+      calculateProductDiscount(product, priceToEvaluate)
         .then((discountData) => {
           setDiscount(discountData?.hasDiscount ? discountData : null);
         })
@@ -110,6 +119,8 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
     if (!url || typeof url !== "string") return url;
     if (!url.includes("res.cloudinary.com")) return url;
     if (!url.includes("/image/upload/")) return url;
+    // Guard: don't double-transform if transformations already exist
+    if (url.includes("/image/upload/w_") || url.includes("/image/upload/q_") || url.includes("/image/upload/c_")) return url;
     const parts = url.split("/image/upload/");
     if (parts.length !== 2) return url;
     // Optimized thumbnail for grid performance
@@ -212,6 +223,20 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
             (() => {
               const availPrices = product.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
               const fromPrice = availPrices.length > 0 ? Math.min(...availPrices) : null;
+              
+              if (fromPrice !== null && discount?.hasDiscount) {
+                return (
+                  <div className="flex items-center gap-1 bg-yellow-accent/60 border border-yellow-accent/70 px-1 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
+                    <span className="text-[9px] text-gray-400 diagonal-strike font-medium leading-none">
+                      From ₹{fromPrice.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] sm:text-sm font-bold text-green-700 leading-none">
+                      ₹{discount.discountedPrice.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              }
+
               return (
                 <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
                   <span className="text-[10px] sm:text-sm md:text-base lg:text-sm font-bold text-[#6F573D] leading-none">

@@ -3,9 +3,11 @@ import {
   X, ChevronLeft, ChevronRight, Pencil, Trash2
 } from "lucide-react";
 import { optimizeCloudinaryUrl } from "../../utils/image";
+import { getEffectiveDiscount } from "../../utils/offerUtils";
 
 export default function AdminProductQuickView({ 
   product, 
+  activeOffers,
   onClose, 
   onEdit, 
   onToggleStatus, 
@@ -125,9 +127,59 @@ export default function AdminProductQuickView({
             </div>
 
             {/* Premium Price Row (Label on left, Heavy Value on right) */}
-            <div className="py-3 border-y border-gray-50 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Unit Price</span>
-              <span className="text-2xl font-black text-gray-900 italic tracking-tight">₹{product.price.toLocaleString()}</span>
+            <div className="py-3 border-y border-gray-50 flex items-center justify-between gap-4">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
+                {product.price != null ? "Unit Price" : "Price Range"}
+              </span>
+              <div className="text-xl sm:text-2xl font-black text-gray-900 italic tracking-tight text-right flex flex-col items-end justify-center min-w-0">
+                {product.price != null ? (
+                  (() => {
+                    const d = activeOffers ? getEffectiveDiscount(product, activeOffers, product.price) : null;
+                    if (d?.hasDiscount) {
+                      return (
+                        <div className="flex flex-col items-end">
+                          <span className="text-xs sm:text-sm text-gray-400 line-through leading-none mb-1">₹{Number(product.price).toLocaleString()}</span>
+                          <span className="text-green-600 leading-none">₹{d.discountedPrice.toLocaleString()}</span>
+                        </div>
+                      );
+                    }
+                    return `₹${Number(product.price).toLocaleString()}`;
+                  })()
+                ) : (
+                  (() => {
+                    const variants = product.variants || product.sizes;
+                    if (!Array.isArray(variants) || variants.length === 0) return "N/A";
+                    const prices = variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+                    if (prices.length === 0) return "N/A";
+                    const min = Math.min(...prices);
+                    const max = Math.max(...prices);
+                    
+                    const minD = activeOffers ? getEffectiveDiscount(product, activeOffers, min) : null;
+                    const maxD = activeOffers ? getEffectiveDiscount(product, activeOffers, max) : null;
+                    
+                    if (minD?.hasDiscount || maxD?.hasDiscount) {
+                      const finalMin = minD?.hasDiscount ? minD.discountedPrice : min;
+                      const finalMax = maxD?.hasDiscount ? maxD.discountedPrice : max;
+                      return (
+                        <div className="flex flex-col items-end">
+                          <span className="text-[11px] sm:text-sm text-gray-400 line-through leading-none mb-1 truncate max-w-full">
+                            {min === max ? `₹${min.toLocaleString()}` : `₹${min.toLocaleString()} – ₹${max.toLocaleString()}`}
+                          </span>
+                          <span className="text-green-600 leading-none truncate max-w-full">
+                            {min === max ? `₹${finalMin.toLocaleString()}` : `₹${finalMin.toLocaleString()} – ₹${finalMax.toLocaleString()}`}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <span className="truncate max-w-full">
+                        {min === max ? `₹${min.toLocaleString()}` : `₹${min.toLocaleString()} – ₹${max.toLocaleString()}`}
+                      </span>
+                    );
+                  })()
+                )}
+              </div>
             </div>
 
             {/* Specifications */}
@@ -142,13 +194,19 @@ export default function AdminProductQuickView({
                 
                 {/* Perfumes */}
                 {product.family && <DataRow label="Family" value={product.family} />}
+                {product.scentFamily && <DataRow label="Scent Family" value={product.scentFamily} />}
                 {product.topNotes && <DataRow label="Top Notes" value={product.topNotes} />}
                 {product.middleNotes && <DataRow label="Middle Notes" value={product.middleNotes} />}
                 {product.baseNotes && <DataRow label="Base Notes" value={product.baseNotes} />}
+                {product.scentNotes?.top && <DataRow label="Top Notes" value={product.scentNotes.top} />}
+                {product.scentNotes?.middle && <DataRow label="Middle Notes" value={product.scentNotes.middle} />}
+                {product.scentNotes?.base && <DataRow label="Base Notes" value={product.scentNotes.base} />}
                 {product.longevity && <DataRow label="Longevity" value={product.longevity} />}
+                {product.longevityHours && <DataRow label="Longevity" value={`~${product.longevityHours}h`} />}
                 {product.volumeMl && <DataRow label="Volume" value={`${product.volumeMl}ml`} />}
                 {product.gender && <DataRow label="Gender" value={product.gender} />}
                 {product.alcoholFree !== undefined && <DataRow label="Alcohol Free" value={product.alcoholFree ? "Yes" : "No"} />}
+                {product.isAlcoholFree !== undefined && <DataRow label="Alcohol Free" value={product.isAlcoholFree ? "Yes" : "No"} />}
 
                 {/* Scented Sticks */}
                 {product.fragranceType && <DataRow label="Fragrance Type" value={product.fragranceType} />}
@@ -156,20 +214,36 @@ export default function AdminProductQuickView({
                 {product.burningTime && <DataRow label="Burning Time" value={`${product.burningTime} mins`} />}
                 {product.sticksPerBox && <DataRow label="Sticks / Box" value={product.sticksPerBox} />}
                 {product.handRolled !== undefined && <DataRow label="Hand Rolled" value={product.handRolled ? "Yes" : "No"} />}
+
               </div>
             </section>
 
             {/* Variants / Sizes */}
-            {product.sizes && product.sizes.length > 0 && (
+            {(product.sizes?.length > 0 || product.variants?.length > 0) && (
               <section className="mt-4">
-                <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2">Available Sizes</h4>
+                <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2">Available Variants</h4>
                 <div className="flex flex-col gap-1.5">
-                  {product.sizes.map((size, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
-                      <span className="text-[9px] font-bold text-gray-500">{size.weight || size.volume}</span>
-                      <span className="text-[10px] font-black text-emerald-700">₹{size.price}</span>
-                    </div>
-                  ))}
+                  {(product.sizes || product.variants).map((variant, idx) => {
+                    const vd = variant.price && activeOffers ? getEffectiveDiscount(product, activeOffers, variant.price) : null;
+                    return (
+                      <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+                        <span className="text-[9px] font-bold text-gray-500">
+                          {variant.weight || variant.volume || variant.label}
+                          {variant.isAvailable === false && " (Out of Stock)"}
+                        </span>
+                        <span className={`text-[10px] font-black ${variant.isAvailable === false ? 'text-gray-400 line-through' : 'text-emerald-700'}`}>
+                          {vd?.hasDiscount ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-gray-400 line-through">₹{variant.price}</span>
+                              <span className="text-green-600">₹{vd.discountedPrice}</span>
+                            </span>
+                          ) : (
+                            `₹${variant.price}`
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -181,7 +255,7 @@ export default function AdminProductQuickView({
                 <div className="flex flex-col gap-1.5">
                   {product.bulkPricingTiers.map((tier, idx) => (
                     <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
-                      <span className="text-[9px] font-bold text-gray-500">{tier.minQty}+ UNITS</span>
+                      <span className="text-[9px] font-bold text-gray-500">{tier.minQty}</span>
                       <span className="text-[10px] font-black text-emerald-700">₹{tier.pricePerPc}/pc</span>
                     </div>
                   ))}

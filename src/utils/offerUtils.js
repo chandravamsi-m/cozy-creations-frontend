@@ -10,17 +10,19 @@ import { apiFetch } from "../lib/api";
  * @param {Object|Array} offersOrOffer - Active offer settings (array or single object)
  * @returns {Object} Discount details
  */
-export function getEffectiveDiscount(product, offersOrOffer) {
+export function getEffectiveDiscount(product, offersOrOffer, customPrice = null) {
   const offers = Array.isArray(offersOrOffer)
     ? offersOrOffer
     : offersOrOffer
     ? [offersOrOffer]
     : [];
 
+  const basePrice = customPrice !== null ? customPrice : (product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 0) || 0);
+
   const noDiscount = {
     hasDiscount: false,
-    originalPrice: product.price,
-    discountedPrice: product.price,
+    originalPrice: basePrice,
+    discountedPrice: basePrice,
     savedAmount: 0,
     discountPercent: 0,
     offerName: ""
@@ -31,7 +33,7 @@ export function getEffectiveDiscount(product, offersOrOffer) {
   let bestResult = noDiscount;
 
   for (const offer of offers) {
-    const result = computeOfferForProduct(product, offer);
+    const result = computeOfferForProduct(product, offer, customPrice);
     if (result.hasDiscount && result.savedAmount > bestResult.savedAmount) {
       bestResult = result;
     }
@@ -44,12 +46,14 @@ export function getEffectiveDiscount(product, offersOrOffer) {
  * Compute discount for a single offer applied to a single product.
  * @private
  */
-function computeOfferForProduct(product, offer) {
+function computeOfferForProduct(product, offer, customPrice) {
+  const basePrice = customPrice !== null ? customPrice : (product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 0) || 0);
+
   if (!offer || !offer.isActive || !offer.hasDiscount) {
     return {
       hasDiscount: false,
-      originalPrice: product.price,
-      discountedPrice: product.price,
+      originalPrice: basePrice,
+      discountedPrice: basePrice,
       savedAmount: 0,
       discountPercent: 0,
     };
@@ -66,14 +70,14 @@ function computeOfferForProduct(product, offer) {
   if (!applies) {
     return {
       hasDiscount: false,
-      originalPrice: product.price,
-      discountedPrice: product.price,
+      originalPrice: basePrice,
+      discountedPrice: basePrice,
       savedAmount: 0,
       discountPercent: 0,
     };
   }
 
-  const originalPrice = product.price || 0;
+  const originalPrice = basePrice;
   let discountedPrice = originalPrice;
 
   if (offer.discountType === "percentage") {
@@ -104,14 +108,14 @@ function computeOfferForProduct(product, offer) {
  * @param {Object} product - Product object with id, price, category
  * @returns {Promise<Object>} Discount details
  */
-export async function calculateProductDiscount(product) {
+export async function calculateProductDiscount(product, customPrice = null) {
   try {
     const res = await apiFetch("/offers/calculate-discount", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         productId: product.id,
-        productPrice: product.price,
+        productPrice: customPrice !== null ? customPrice : (product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 0) || 0),
         category: product.category,
       }),
     });
@@ -120,10 +124,11 @@ export async function calculateProductDiscount(product) {
     return await res.json();
   } catch (err) {
     console.error("Error calculating discount:", err);
+    const basePrice = customPrice !== null ? customPrice : (product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 0) || 0);
     return {
       hasDiscount: false,
-      originalPrice: product.price,
-      discountedPrice: product.price,
+      originalPrice: basePrice,
+      discountedPrice: basePrice,
       savedAmount: 0,
       discountPercent: 0,
     };

@@ -114,20 +114,23 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   useEffect(() => {
     if (product) {
-      if (activeOffer && !isVariantProduct) {
-        setDiscount(getEffectiveDiscount(product, activeOffer));
-      } else if (!isVariantProduct) {
-        calculateProductDiscount(product).then(setDiscount);
+      const currentPrice = selectedVariant ? selectedVariant.price : product.price;
+
+      if (activeOffer) {
+        setDiscount(getEffectiveDiscount(product, activeOffer, currentPrice));
       } else {
-        setDiscount(null); // variant products don't use offer discounts
+        calculateProductDiscount(product, currentPrice).then(setDiscount);
       }
+      
       // Reset local selector whenever a new product is shown
-      setLocalQty(1);
-      setAdded(false);
-      setActiveIndex(0);
-      setSelectedVariantIdx(0);
+      if (!selectedVariant) {
+        setLocalQty(1);
+        setAdded(false);
+        setActiveIndex(0);
+        setSelectedVariantIdx(0);
+      }
     }
-  }, [product?.id, activeOffer, isVariantProduct]);
+  }, [product?.id, selectedVariant?.price, activeOffer]);
 
   if (!product) return null;
 
@@ -326,21 +329,17 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             {/* Price Row */}
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center gap-4">
-                {isVariantProduct && selectedVariant ? (
-                  <span className="text-2xl md:text-3xl font-black text-gray-900">
-                    ₹{selectedVariant.price.toLocaleString()}
-                  </span>
-                ) : discount?.hasDiscount ? (
+                {discount?.hasDiscount ? (
                   <div className="flex items-center gap-3">
                     <span className="text-2xl md:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
-                    <span className="text-base text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
+                    <span className="text-base text-gray-300 line-through font-medium">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
                   </div>
                 ) : (
-                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{(product.price || 0).toLocaleString()}</span>
+                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
                 )}
               </div>
 
-              {!isVariantProduct && discount?.hasDiscount && (
+              {discount?.hasDiscount && (
                 <div className="inline-flex items-center gap-2 bg-yellow-accent/20 border border-yellow-accent/30 text-yellow-800 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-fit">
                   {discount.offerName || "Offer"} Applied
                 </div>

@@ -82,10 +82,12 @@ async function fetchCollectionFromFirestore(collectionName, includeInactive = fa
 }
 
 export async function fetchFirestoreScentedSticks(includeInactive = false) {
-  return fetchCollectionFromFirestore("scented-sticks", includeInactive);
+  const docs = await fetchCollectionFromFirestore("scented-sticks", includeInactive);
+  return docs.map(d => ({ ...d, category: 'scented-sticks' }));
 }
 
 export async function fetchFirestorePerfumes(includeInactive = false) {
-  return fetchCollectionFromFirestore("perfumes", includeInactive);
+  const docs = await fetchCollectionFromFirestore("perfumes", includeInactive);
+  return docs.map(d => ({ ...d, category: 'perfumes' }));
 }
 
