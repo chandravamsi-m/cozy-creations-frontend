@@ -33,7 +33,7 @@ const MAX_ADDRESSES = 10;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, clearCart, deliveryFee, platformFee, isPlatformFeeEnabled, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride } = useCart();
+  const { cart, clearCart, deliveryFee, platformFee, isPlatformFeeEnabled, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride, itemDiscounts } = useCart();
   const { user, idToken } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -692,8 +692,31 @@ export default function Checkout() {
                       <p className="font-bold text-gray-900 text-sm line-clamp-1 uppercase tracking-tight">
                         {item.name}
                       </p>
-                      <p className="text-sm font-black text-gray-900 mt-2 flex items-center gap-2">
-                        <span>₹{(item.price || 0).toLocaleString()}</span>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        {item.variantLabel && (
+                          <span className="text-[9px] font-medium text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded shadow-sm">
+                            Size: <span className="font-bold text-gray-900">{item.variantLabel}</span>
+                          </span>
+                        )}
+                        {item.quantityPack && (!item.productType || item.productType === "candle") && (
+                          <span className="text-[9px] font-medium text-gray-500">
+                            Pack of {item.quantityPack}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-black text-gray-900 mt-1.5 flex items-center gap-2">
+                        {(() => {
+                          const key = item.variantLabel ? `${item.productId}_${item.variantLabel}` : item.productId;
+                          const hasDiscount = itemDiscounts[key]?.hasDiscount;
+                          return hasDiscount ? (
+                            <>
+                              <span className="text-[11px] text-gray-400 line-through font-medium">₹{(item.price || 0).toLocaleString()}</span>
+                              <span>₹{(itemDiscounts[key].discountedPrice || 0).toLocaleString()}</span>
+                            </>
+                          ) : (
+                            <span>₹{(item.price || 0).toLocaleString()}</span>
+                          );
+                        })()}
                         <span className="text-base font-black text-yellow-600/70">
                           × {item.quantity}
                         </span>

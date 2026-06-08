@@ -137,8 +137,8 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   const handleAddToCart = () => {
     if (inCart) {
       // Already in cart — navigate to cart then close modal
-      navigate("/cart");
       onClose();
+      setTimeout(() => navigate("/cart"), 10);
       return;
     }
     if (isVariantProduct && !selectedVariant) {
@@ -460,9 +460,10 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             {/* Add / In Cart Button */}
             {inCart ? (
               <button
-                onClick={() => {
-                  navigate("/cart");
+                onClick={(e) => {
+                  e.stopPropagation();
                   onClose();
+                  setTimeout(() => navigate("/cart"), 10);
                 }}
                 className="flex-1 h-[44px] sm:h-[48px] bg-green-500 hover:bg-green-600 text-white font-black uppercase tracking-wider sm:tracking-[0.15em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
               >

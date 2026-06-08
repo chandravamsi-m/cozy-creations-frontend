@@ -128,6 +128,11 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
   };
 
   const handleAddToCart = () => {
+    if ((product.productType === "scented-stick" || product.productType === "perfume") && Array.isArray(product.variants) && product.variants.length > 0) {
+      onOpenQuickView();
+      return;
+    }
+
     addItem({
       productId: product.id,
       name: product.name,
@@ -291,7 +296,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
             </div>
 
             {/* CART BUTTONS */}
-            {quantity > 0 ? (
+            {quantity > 0 && !(product.productType === "scented-stick" || product.productType === "perfume") ? (
               <div
                 className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1"
                 onClick={(e) => e.stopPropagation()}

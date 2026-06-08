@@ -74,7 +74,8 @@ export function CartProvider({ children }) {
               category: item.category
             });
             if (result.hasDiscount) {
-              discounts[item.productId] = result;
+              const key = item.variantLabel ? `${item.productId}_${item.variantLabel}` : item.productId;
+              discounts[key] = result;
             }
           })
         );
@@ -99,7 +100,8 @@ export function CartProvider({ children }) {
 
   const totalDiscountAmount = useMemo(() => {
     return cart.reduce((sum, item) => {
-      const discount = itemDiscounts[item.productId];
+      const key = item.variantLabel ? `${item.productId}_${item.variantLabel}` : item.productId;
+      const discount = itemDiscounts[key];
       if (discount && discount.hasDiscount) {
         return sum + (discount.savedAmount * item.quantity);
       }
