@@ -141,7 +141,7 @@ export default function Checkout() {
 
       if (!selectedPartner) {
         setServiceabilityInfo({ available: false, rate: null, courierName: null });
-        setShippingOverride(null);
+        setShippingOverride(0);
         return;
       }
 
@@ -160,8 +160,8 @@ export default function Checkout() {
       setShippingOverride(finalRate);
     } catch (err) {
       console.error("Serviceability error:", err.message);
-      setServiceabilityError("Could not fetch real-time rates. Using standard fee.");
-      setShippingOverride(null); // graceful fallback
+      setServiceabilityError("Could not fetch real-time rates.");
+      setShippingOverride(0); // Prevent adding fallback fee
     } finally {
       setCheckingServiceability(false);
     }
@@ -310,6 +310,12 @@ export default function Checkout() {
       return;
     }
 
+    const isUnserviceable = serviceabilityInfo?.available === false || !!serviceabilityError;
+    if (isUnserviceable) {
+      showToast("Delivery is not available to this location. Please select a different address.", "error");
+      return;
+    }
+
     if (!idToken) {
       showToast("Your session has expired. Please login again.", "error");
       return;
@@ -333,6 +339,7 @@ export default function Checkout() {
           quantity: item.quantity,
           productType: item.productType || "candle",
           customization: customizations[item.productId] || null,
+          variantLabel: item.variantLabel || null,
         })),
         shippingAddress: finalAddress,
         customerName: finalAddress.fullName,
@@ -746,11 +753,13 @@ export default function Checkout() {
                     )}
                     {selectedAddressId && serviceabilityInfo?.available === false && (
                       <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Limited delivery options
+                        <AlertTriangle className="w-3 h-3" /> Delivery not available to this location
                       </p>
                     )}
                     {selectedAddressId && serviceabilityError && !checkingServiceability && (
-                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">Using standard rate</p>
+                      <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Delivery not available to this location
+                      </p>
                     )}
                   </div>
                   <span className="text-sm font-semibold text-gray-900 shrink-0">
@@ -761,6 +770,8 @@ export default function Checkout() {
                       </span>
                     ) : !selectedAddressId ? (
                       <span className="text-gray-400">—</span>
+                    ) : (serviceabilityInfo?.available === false || !!serviceabilityError) ? (
+                      <span className="text-red-500 font-bold">Unavailable</span>
                     ) : deliveryFee === 0 ? (
                       <span className="text-green-600 flex items-center gap-1.5">
                         <Check className="w-3 h-3" /> FREE
@@ -792,19 +803,31 @@ export default function Checkout() {
 
               <button
                 onClick={handlePlaceOrder}
-                disabled={loading || checkingServiceability}
-                className="group relative w-full h-12 bg-yellow-accent hover:brightness-105 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                disabled={loading || checkingServiceability || (selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError))}
+                className={`group relative w-full h-12 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl active:scale-[0.98] disabled:pointer-events-none ${
+                  (selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError))
+                    ? "bg-gray-200 text-gray-500 shadow-none cursor-not-allowed"
+                    : "bg-yellow-accent hover:brightness-105 shadow-yellow-400/20 disabled:opacity-50"
+                }`}
               >
                 <div className="absolute inset-0 flex items-center justify-center gap-2 transition-transform">
-                  <span className="text-md font-bold text-black uppercase tracking-wider">
+                  <span className={`text-md font-bold uppercase tracking-wider ${(selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError)) ? "text-gray-500" : "text-black"}`}>
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
                         <span>Processing...</span>
                       </div>
-                    ) : checkingServiceability ? "Calculating Shipping..." : "Complete Purchase"}
+                    ) : checkingServiceability ? (
+                      "Calculating Shipping..."
+                    ) : (selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError)) ? (
+                      "Unserviceable Location"
+                    ) : (
+                      "Complete Purchase"
+                    )}
                   </span>
-                  {!loading && !checkingServiceability && <ArrowRight className="w-5 h-5 text-black transition-transform group-hover:translate-x-1" />}
+                  {!loading && !checkingServiceability && !(selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError)) && (
+                    <ArrowRight className="w-5 h-5 text-black transition-transform group-hover:translate-x-1" />
+                  )}
                 </div>
               </button>
 

@@ -563,10 +563,15 @@ export default function AdminPerfumes() {
                                   <button type="button" onClick={() => removeVariant(idx)} className="text-xs text-red-600 hover:text-red-800 font-medium">Remove</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="text-[10px] text-gray-600 font-medium block mb-1">Volume/Size</label>
-                                    <input type="text" value={v.label} onChange={e => updateVariant(idx, "label", e.target.value)} placeholder="e.g. 12ml" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
-                                  </div>
+                                    <div>
+                                      <label className="text-[10px] text-gray-600 font-medium block mb-1">Volume/Size</label>
+                                      <select value={v.label} onChange={e => updateVariant(idx, "label", e.target.value)} className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm bg-white">
+                                        <option value="" disabled>Select Size</option>
+                                        {DEFAULT_ATTAR_VARIANTS.map((opt) => (
+                                          <option key={opt.label} value={opt.label}>{opt.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
                                   <div>
                                     <label className="text-[10px] text-gray-600 font-medium block mb-1">Price (₹)</label>
                                     <input type="number" min="0" value={v.price} onChange={e => updateVariant(idx, "price", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="0" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
