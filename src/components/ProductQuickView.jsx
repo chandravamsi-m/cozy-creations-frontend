@@ -10,6 +10,8 @@ import AnimalIcon from "../assets/svgs/animal-icon.svg";
 import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
+import ScentedStickIcon from "../assets/svgs/scented-stick-icon.svg";
+import PerfumeIcon from "../assets/svgs/perfume-icon.svg";
 
 export default function ProductQuickView({ product, onClose, activeOffer }) {
   const navigate = useNavigate();
@@ -92,6 +94,8 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
     festive: FestiveIcon,
     special: SpecialIcon,
     glassJar: GlassJarIcon,
+    "scented-sticks": ScentedStickIcon,
+    perfumes: PerfumeIcon,
   };
 
   // Derived: is this product already in cart? For variant products, match by productId + variantLabel
@@ -308,7 +312,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                 )}
               </div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                {product.category} Collection
+                {product.category} {(!product.productType || product.productType === "candle") ? "Collection" : ""}
               </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif flex items-start gap-2">

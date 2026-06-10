@@ -9,6 +9,8 @@ import AnimalIcon from "../assets/svgs/animal-icon.svg";
 import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
+import ScentedStickIcon from "../assets/svgs/scented-stick-icon.svg";
+import PerfumeIcon from "../assets/svgs/perfume-icon.svg";
 
 export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
   const [quantity, setQuantity] = useState(0);
@@ -63,6 +65,8 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
     festive: FestiveIcon,
     special: SpecialIcon,
     glassJar: GlassJarIcon,
+    "scented-sticks": ScentedStickIcon,
+    perfumes: PerfumeIcon,
   };
 
   const getCategoryIcon = (category) => {
