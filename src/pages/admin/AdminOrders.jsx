@@ -793,7 +793,14 @@ function OrderSidePanel({ order, onClose, actions, loadingStates, onImageClick }
                            )}
                         </div>
                         <div className="flex-1 min-w-0">
-                           <p className="text-[12px] font-bold text-gray-900 truncate tracking-tight">{item.name}</p>
+                           <p className="text-[12px] font-bold text-gray-900 truncate tracking-tight">
+                              {item.name}
+                              {item.variantLabel && (
+                                <span className="ml-1.5 text-[10px] font-black text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md border border-violet-100">
+                                  {item.variantLabel}
+                                </span>
+                              )}
+                           </p>
                            <p className="text-[11px] font-semibold text-gray-500 tracking-[0.1em]">{item.quantity} × ₹{item.price}</p>
                         </div>
                         <div className="text-right text-[12px] font-bold text-gray-900">₹{item.price * item.quantity}</div>

@@ -360,7 +360,7 @@ export default function Checkout() {
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.message || "Failed to place COD order");
+          throw new Error(errData.error || errData.message || "Failed to place COD order");
         }
 
         const { orderId } = await response.json();
@@ -393,7 +393,7 @@ export default function Checkout() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || "Failed to initiate payment");
+        throw new Error(errData.error || errData.message || "Failed to initiate payment");
       }
 
       const { orderId, amount, currency, key } = await response.json();
