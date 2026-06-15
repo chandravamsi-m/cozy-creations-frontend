@@ -112,7 +112,6 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
         });
       }
       if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
-      if (product.burnTimeHours) chips.push({ label: `${product.burnTimeHours}h Burn`, key: "burnTime" });
       if (product.dimensions) chips.push({ label: product.dimensions, key: "dimensions" });
       if (product.quantityPack) chips.push({ label: `Pack of ${product.quantityPack}`, key: "quantityPack" });
     }

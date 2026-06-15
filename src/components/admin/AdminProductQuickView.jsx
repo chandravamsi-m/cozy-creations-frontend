@@ -188,7 +188,6 @@ export default function AdminProductQuickView({
               <div className="bg-white border border-gray-100 rounded-lg px-3 py-0.5 divide-y divide-gray-50">
                 {product.waxType && <DataRow label="Wax Type" value={product.waxType} />}
                 {product.weightGrams && <DataRow label="Weight" value={`${product.weightGrams}g`} />}
-                {product.burnTimeHours && <DataRow label="Burn Time" value={`${product.burnTimeHours}h`} />}
                 {product.dimensions && <DataRow label="Dimensions" value={product.dimensions} />}
                 {product.quantityPack && <DataRow label="Pack Size" value={product.quantityPack} />}
                 

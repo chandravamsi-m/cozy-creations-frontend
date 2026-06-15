@@ -64,7 +64,6 @@ export default function AdminEditProduct() {
         waxType: isKnownWaxType ? initialWaxType : "other",
         waxTypeOther: isKnownWaxType ? "" : initialWaxType,
         quantityPack: getStableAdminNumberValue(data.quantityPack ?? ""),
-        burnTimeHours: data.burnTimeHours || "",
         dimensions: data.dimensions ? data.dimensions.replace(/\s*(cm|mm)$/i, "") : "",
         dimensionUnit: data.dimensions && /mm$/i.test(data.dimensions) ? "mm" : "cm",
         customizableFragrance: data.customizableFragrance ?? true,
@@ -364,23 +363,6 @@ export default function AdminEditProduct() {
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium pr-10"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">g</span>
-              </div>
-            </div>
-
-            {/* BURN TIME */}
-            <div className="space-y-1.5">
-              <label htmlFor="edit-product-burn-time" className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                Burn Time <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="edit-product-burn-time"
-                  type="text"
-                  value={product.burnTimeHours}
-                  onChange={(e) => updateField("burnTimeHours", e.target.value)}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 transition-all text-sm font-medium pr-10"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">hr</span>
               </div>
             </div>
 

@@ -16,8 +16,8 @@ export default function Footer() {
 
 
             <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-8 relative z-10">
-                <div className="flex flex-col md:flex-row gap-5 md:gap-10 lg:gap-12 xl:gap-20 items-start md:items-start justify-start">
-                    <div className="flex flex-col gap-1 items-center flex-shrink-0 w-full sm:w-auto max-w-[280px]">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-12 xl:gap-20 items-start md:items-start justify-start">
+                    <div className="flex flex-col gap-1 items-center flex-shrink-0 w-full sm:w-auto max-w-[280px] self-center md:self-start">
                         <div className="w-full h-auto rounded-2xl overflow-hidden relative">
                             <img
                                 src={whatsapp3}
@@ -63,7 +63,7 @@ export default function Footer() {
                     </div>
 
 
-                    <div className="flex flex-col sm:flex-row gap-5 sm:gap-10 lg:gap-12 xl:gap-16 w-full sm:w-auto items-start pt-2 md:pt-4">
+                    <div className="flex flex-col sm:flex-row gap-8 sm:gap-10 lg:gap-12 xl:gap-16 w-full sm:w-auto items-start pt-2 md:pt-4">
                         <div className="flex flex-col gap-3 text-base capitalize items-start">
                             <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Company</h4>
                             <Link to="/" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Home</Link>

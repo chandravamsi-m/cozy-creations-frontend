@@ -131,7 +131,6 @@ export default function AdminProducts() {
     waxType: "soy",
     waxTypeOther: "",
     weightGrams: "",
-    burnTimeHours: "",
     dimensions: "",
     dimensionUnit: "cm",
     price: "",
@@ -285,7 +284,6 @@ export default function AdminProducts() {
       waxType: "soy",
       waxTypeOther: "",
       weightGrams: "",
-      burnTimeHours: "",
       dimensions: "",
       dimensionUnit: "cm",
       price: "",
@@ -328,7 +326,6 @@ export default function AdminProducts() {
         weightGrams: String(data.weightGrams ?? ""),
         waxType: isKnownWaxType ? data.waxType : "other",
         waxTypeOther: isKnownWaxType ? "" : data.waxType,
-        burnTimeHours: data.burnTimeHours || "",
         dimensions: data.dimensions ? data.dimensions.replace(/cm|mm/gi, "") : "",
         dimensionUnit: data.dimensionUnit || "cm",
         quantityPack: String(data.quantityPack ?? ""),
@@ -435,11 +432,6 @@ export default function AdminProducts() {
         setFormLoading(false);
         return;
       }
-      if (!product.burnTimeHours || Number(product.burnTimeHours) <= 0) {
-        setFormMsg("Burn Time is required and must be greater than 0.");
-        setFormLoading(false);
-        return;
-      }
       if (!product.quantityPack || Number(product.quantityPack) <= 0) {
         setFormMsg("Quantity per Pack is required and must be at least 1.");
         setFormLoading(false);
@@ -485,7 +477,6 @@ export default function AdminProducts() {
         price: parseAdminNumber(product.price),
         weightGrams: parseAdminNumber(product.weightGrams),
         quantityPack: parseAdminNumber(product.quantityPack),
-        burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
@@ -517,11 +508,6 @@ export default function AdminProducts() {
     try {
       if (!product.weightGrams || Number(product.weightGrams) <= 0) {
         setFormMsg("Weight is required and must be greater than 0.");
-        setFormLoading(false);
-        return;
-      }
-      if (!product.burnTimeHours || Number(product.burnTimeHours) <= 0) {
-        showToast("Burn Time is required and must be greater than 0.", "error");
         setFormLoading(false);
         return;
       }
@@ -565,7 +551,6 @@ export default function AdminProducts() {
         price: parseAdminNumber(product.price),
         weightGrams: parseAdminNumber(product.weightGrams),
         quantityPack: parseAdminNumber(product.quantityPack),
-        burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,

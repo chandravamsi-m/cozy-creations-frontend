@@ -199,7 +199,6 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       // Default: Candle
       if (product.waxType) chips.push({ label: `${product.waxType.toUpperCase()} WAX`, key: "wax" });
       if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
-      if (product.burnTimeHours) chips.push({ label: `${product.burnTimeHours}h BURN`, key: "burn" });
       if (product.dimensions) chips.push({ label: product.dimensions, key: "dims" });
     }
     return chips;
