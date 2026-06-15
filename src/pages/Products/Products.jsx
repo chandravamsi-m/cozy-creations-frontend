@@ -551,7 +551,7 @@ export default function ProductsPage() {
 
             {/* SORT ROW */}
             <div className={`relative flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 transition-all duration-700 delay-200 z-[100] ${isVisible.products ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}>
-              <div className="text-sm text-gray-600 hidden sm:block">
+              <div className="text-sm text-gray-600 hidden sm:block whitespace-nowrap shrink-0">
                 <span className="font-medium text-gray-900">{filtered.length}</span>{" "}
                 {filtered.length === 1 ? "product" : "products"} found
                 {category && (
@@ -562,7 +562,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Mobile Dropdowns Row */}
-              <div className="lg:hidden flex flex-row gap-3 w-full">
+              <div className="lg:hidden flex flex-row gap-3 w-full sm:w-auto sm:min-w-[320px] sm:max-w-[400px]">
                 {/* Category dropdown only for candles */}
                 {productType === "candle" && (
                   <div className="relative flex-1" data-category-dropdown>
@@ -685,7 +685,7 @@ export default function ProductsPage() {
                     )}
                   </div>
                 ) : (
-                  <div ref={productsGridRef} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+                  <div ref={productsGridRef} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                     {filtered
                       .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
                       .map((p) => (

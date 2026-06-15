@@ -213,13 +213,13 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
+      <div className="relative bg-white w-[95vw] md:w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
         {/* Close Button - Now truly fixed relative to the modal frame */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 md:top-6 md:right-6 z-50 w-8 h-8 md:w-10 md:h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
+          className="absolute top-3 right-3 md:top-4 md:right-4 lg:top-6 lg:right-6 z-50 w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
         >
-          <X className="w-4 h-4 md:w-5 md:h-5 text-gray-900" />
+          <X className="w-4 h-4 md:w-4.5 md:h-4.5 lg:w-5 lg:h-5 text-gray-900" />
         </button>
 
         {/* Scrollable Area */}
@@ -227,7 +227,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
 
         {/* Left: Image Section (Gallery) */}
-        <div className="w-full md:w-1/2 bg-[#F8F8F5] relative group flex flex-col">
+        <div className="w-full md:w-[45%] lg:w-1/2 bg-[#F8F8F5] relative group flex flex-col shrink-0">
           {/* Main Large Image */}
           <div 
             className="relative w-full aspect-square md:aspect-auto md:flex-1 overflow-hidden cursor-zoom-in md:min-h-[400px] group"
@@ -265,18 +265,18 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     e.stopPropagation();
                     handlePrevImage();
                   }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-11 md:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 lg:w-11 lg:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronLeft className="w-4.5 h-4.5 md:w-6 md:h-6" />
+                  <ChevronLeft className="w-4.5 h-4.5 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleNextImage();
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-11 md:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 lg:w-11 lg:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronRight className="w-4.5 h-4.5 md:w-6 md:h-6" />
+                  <ChevronRight className="w-4.5 h-4.5 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                 </button>
               </>
             )}
@@ -301,7 +301,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
         </div>
 
         {/* Right: Content Section */}
-        <div className="w-full md:w-1/2 p-5 md:p-8 md:overflow-y-auto bg-white flex flex-col">
+        <div className="w-full md:w-[55%] lg:w-1/2 p-5 md:p-6 lg:p-8 md:overflow-y-auto bg-white flex flex-col">
           {/* Header */}
           <div className="mb-4">
             <div className="flex items-center gap-3 mb-2">
@@ -314,7 +314,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                 {product.category} {(!product.productType || product.productType === "candle") ? "Collection" : ""}
               </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif flex items-start gap-2">
+            <h2 className="text-2xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif flex items-start gap-2 pr-4 md:pr-0">
               <span className="flex-1">{product.name}</span>
               <button
                 onClick={handleShare}
@@ -333,12 +333,12 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center gap-4">
                 {discount?.hasDiscount ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl md:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
-                    <span className="text-base text-gray-300 line-through font-medium">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <span className="text-2xl md:text-2xl lg:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
+                    <span className="text-sm md:text-base text-gray-300 line-through font-medium">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
                   </div>
                 ) : (
-                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
+                  <span className="text-2xl md:text-2xl lg:text-3xl font-black text-gray-900">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
                 )}
               </div>
 
@@ -442,9 +442,9 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
           )}
 
           {/* Cart Interaction */}
-          <div className="mt-auto pt-4 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4">
+          <div className="mt-auto pt-4 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4 md:gap-3 lg:gap-4">
             {/* Quantity Controls */}
-            <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[105px] sm:w-auto h-[44px] sm:h-[48px] sm:min-w-[130px]">
+            <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[105px] sm:w-auto h-[44px] sm:h-[48px] md:h-[44px] lg:h-[48px] sm:min-w-[130px] md:min-w-[110px] lg:min-w-[130px]">
               <button
                 onClick={() => handleQuantityChange(-1)}
                 className="w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
@@ -533,18 +533,18 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     e.stopPropagation();
                     setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
                   }}
-                  className="absolute left-0 sm:-left-12 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl z-[3010]"
+                  className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all text-gray-900 shadow-2xl z-[3010]"
                 >
-                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
                   }}
-                  className="absolute right-0 sm:-right-12 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl z-[3010]"
+                  className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all text-gray-900 shadow-2xl z-[3010]"
                 >
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
               </>
             )}

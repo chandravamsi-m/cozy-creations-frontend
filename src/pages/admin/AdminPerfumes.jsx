@@ -481,163 +481,165 @@ export default function AdminPerfumes() {
               </div>
             );
           })}
-          {showModal && createPortal(
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={closeModal}>
-              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden relative animate-in fade-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
-                  <h2 className="text-xl font-black text-gray-900">{editingId ? "Edit Attar" : "Add New Attar"}</h2>
-                  <button onClick={closeModal} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all">
-                    <X className="w-5 h-5" />
-                  </button>
+        </div>
+      )}
+      
+      {/* Add / Edit Modal */}
+      {showModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden relative animate-in fade-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+              <h2 className="text-xl font-black text-gray-900">{editingId ? "Edit Attar" : "Add New Attar"}</h2>
+              <button onClick={closeModal} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-800">Product Name <span className="text-red-500">*</span></label>
+                  <input required type="text" value={f("name")} onChange={e => sf("name", e.target.value)} placeholder="e.g. Rose Attar" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
                 </div>
-                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                  <form onSubmit={handleSubmit} className="space-y-4">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-800">Scent Family</label>
+                    <input type="text" value={f("scentFamily")} onChange={e => sf("scentFamily", e.target.value)} placeholder="e.g. Floral, Woody, Oud" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-800 flex items-center gap-1.5 mb-1"><Clock className="w-4 h-4 text-gray-400" />Longevity (Hours)</label>
+                    <input type="number" min="0" value={f("longevityHours")} onChange={e => sf("longevityHours", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="e.g. 8" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
+                  </div>
+                </div>
+
+                <div className="flex items-center pt-2 pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.isAlcoholFree} onChange={e => sf("isAlcoholFree", e.target.checked)} className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black" />
+                    <span className="text-sm font-medium text-gray-800">Alcohol Free (Pure Attar)</span>
+                  </label>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-gray-100">
+                  <label className="text-sm font-medium text-gray-800">Fragrance Notes (Optional)</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-800">Product Name <span className="text-red-500">*</span></label>
-                      <input required type="text" value={f("name")} onChange={e => sf("name", e.target.value)} placeholder="e.g. Rose Attar" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
+                      <label className="text-[10px] text-gray-600 font-medium block">Top Note</label>
+                      <input type="text" value={f("scentNotesTop")} onChange={e => sf("scentNotesTop", e.target.value)} placeholder="e.g. Saffron, Jasmine" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
                     </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-600 font-medium block">Middle Note</label>
+                      <input type="text" value={f("scentNotesMiddle")} onChange={e => sf("scentNotesMiddle", e.target.value)} placeholder="e.g. Rose, Amber" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-600 font-medium block">Base Note</label>
+                      <input type="text" value={f("scentNotesBase")} onChange={e => sf("scentNotesBase", e.target.value)} placeholder="e.g. Sandalwood, Musk" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-800">Scent Family</label>
-                        <input type="text" value={f("scentFamily")} onChange={e => sf("scentFamily", e.target.value)} placeholder="e.g. Floral, Woody, Oud" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
+                <div className="space-y-1 pt-2 border-t border-gray-100">
+                  <label className="text-sm font-medium text-gray-800">Ingredients (Optional)</label>
+                  <textarea value={f("ingredients")} onChange={e => sf("ingredients", e.target.value)} placeholder="Concentrated perfume oil, essential oils..." rows={2} className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none min-h-[60px] resize-none" />
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-bold text-gray-900">Volume Variants & Pricing</label>
+                      <p className="text-[10px] text-gray-500 mt-0.5">Set price for each size. Leave price empty to disable.</p>
+                    </div>
+                    <button type="button" onClick={addCustomVariant} className="px-3 py-1.5 bg-gray-950 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-all shrink-0">
+                      + Add Size
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {variants.length === 0 ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                        <p className="text-xs text-gray-400 font-medium">No sizes added yet.</p>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-800 flex items-center gap-1.5 mb-1"><Clock className="w-4 h-4 text-gray-400" />Longevity (Hours)</label>
-                        <input type="number" min="0" value={f("longevityHours")} onChange={e => sf("longevityHours", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="e.g. 8" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-10" />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center pt-2 pb-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={formData.isAlcoholFree} onChange={e => sf("isAlcoholFree", e.target.checked)} className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black" />
-                        <span className="text-sm font-medium text-gray-800">Alcohol Free (Pure Attar)</span>
-                      </label>
-                    </div>
-
-                    <div className="space-y-2 pt-2 border-t border-gray-100">
-                      <label className="text-sm font-medium text-gray-800">Fragrance Notes (Optional)</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-gray-600 font-medium block">Top Note</label>
-                          <input type="text" value={f("scentNotesTop")} onChange={e => sf("scentNotesTop", e.target.value)} placeholder="e.g. Saffron, Jasmine" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-gray-600 font-medium block">Middle Note</label>
-                          <input type="text" value={f("scentNotesMiddle")} onChange={e => sf("scentNotesMiddle", e.target.value)} placeholder="e.g. Rose, Amber" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-gray-600 font-medium block">Base Note</label>
-                          <input type="text" value={f("scentNotesBase")} onChange={e => sf("scentNotesBase", e.target.value)} placeholder="e.g. Sandalwood, Musk" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1 pt-2 border-t border-gray-100">
-                      <label className="text-sm font-medium text-gray-800">Ingredients (Optional)</label>
-                      <textarea value={f("ingredients")} onChange={e => sf("ingredients", e.target.value)} placeholder="Concentrated perfume oil, essential oils..." rows={2} className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none min-h-[60px] resize-none" />
-                    </div>
-
-                    <div className="space-y-3 pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <label className="text-sm font-bold text-gray-900">Volume Variants & Pricing</label>
-                          <p className="text-[10px] text-gray-500 mt-0.5">Set price for each size. Leave price empty to disable.</p>
-                        </div>
-                        <button type="button" onClick={addCustomVariant} className="px-3 py-1.5 bg-gray-950 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-black transition-all shrink-0">
-                          + Add Size
-                        </button>
-                      </div>
-
+                    ) : (
                       <div className="space-y-2">
-                        {variants.length === 0 ? (
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                            <p className="text-xs text-gray-400 font-medium">No sizes added yet.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {variants.map((v, idx) => (
-                              <div key={idx} className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-bold text-gray-700">Size {idx + 1}</span>
-                                  <button type="button" onClick={() => removeVariant(idx)} className="text-xs text-red-600 hover:text-red-800 font-medium">Remove</button>
+                        {variants.map((v, idx) => (
+                          <div key={idx} className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-gray-700">Size {idx + 1}</span>
+                              <button type="button" onClick={() => removeVariant(idx)} className="text-xs text-red-600 hover:text-red-800 font-medium">Remove</button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[10px] text-gray-600 font-medium block mb-1">Volume/Size</label>
+                                  <select value={v.label} onChange={e => updateVariant(idx, "label", e.target.value)} className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm bg-white">
+                                    <option value="" disabled>Select Size</option>
+                                    {DEFAULT_ATTAR_VARIANTS.map((opt) => (
+                                      <option key={opt.label} value={opt.label}>{opt.label}</option>
+                                    ))}
+                                  </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="text-[10px] text-gray-600 font-medium block mb-1">Volume/Size</label>
-                                      <select value={v.label} onChange={e => updateVariant(idx, "label", e.target.value)} className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm bg-white">
-                                        <option value="" disabled>Select Size</option>
-                                        {DEFAULT_ATTAR_VARIANTS.map((opt) => (
-                                          <option key={opt.label} value={opt.label}>{opt.label}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  <div>
-                                    <label className="text-[10px] text-gray-600 font-medium block mb-1">Price (₹)</label>
-                                    <input type="number" min="0" value={v.price} onChange={e => updateVariant(idx, "price", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="0" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
-                                  </div>
-                                </div>
+                              <div>
+                                <label className="text-[10px] text-gray-600 font-medium block mb-1">Price (₹)</label>
+                                <input type="number" min="0" value={v.price} onChange={e => updateVariant(idx, "price", e.target.value)} onKeyDown={coerceAdminNumberInput} onWheel={(e) => e.target.blur()} placeholder="0" className="border border-gray-300 p-2 w-full rounded focus:ring-1 focus:ring-black outline-none h-9 text-sm" />
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {formMsg && (
-                      <div className="p-3 bg-red-50 border border-red-100 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300 mb-2">
-                        <p className="text-xs font-bold text-red-600 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
-                          {formMsg}
-                        </p>
+                        ))}
                       </div>
                     )}
-
-                    <div className="space-y-3 pt-2">
-                      <label className="text-sm font-medium text-gray-800 block">Product Images (Up to 5) {!editingId && <span className="text-red-500">*</span>}</label>
-                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
-                        {[0, 1, 2, 3, 4].map(i => {
-                          const hasPreview = previews && previews[i];
-                          const isNextAvailableSlot = !hasPreview && (i === 0 || (previews && previews[i - 1]));
-                          if (!hasPreview && !isNextAvailableSlot) return null;
-                          return (
-                            <div key={i} className={`relative aspect-square sm:w-24 sm:h-24 md:w-28 md:h-28 border-2 ${hasPreview ? 'border-transparent' : 'border-dashed border-gray-200'} rounded-xl sm:rounded-2xl flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 group hover:border-black/20 transition-all duration-300`}>
-                              {hasPreview ? (
-                                <>
-                                  <img src={previews[i]} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                  <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm shadow opacity-0 group-hover:opacity-100 transition-opacity">×</button>
-                                </>
-                              ) : (
-                                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
-                                  <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
-                                  <span className="text-[8px] sm:text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
-                                    {i === 0 ? "Primary ★" : "Add Extra"}
-                                  </span>
-                                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(i, e)} />
-                                </label>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                      <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PNG, JPG up to 5MB per image.</p>
-                    </div>
-
-                    <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">
-                      <button type="submit" disabled={formLoading} className="flex-1 bg-black text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]">
-                        {formLoading ? (editingId ? "Saving..." : "Creating...") : (editingId ? "Update Product" : "Create Product")}
-                      </button>
-                      <button type="button" onClick={closeModal} className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95 flex items-center justify-center">
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
+                  </div>
                 </div>
-              </div>
-            </div>,
-            document.body
-          )}
-        </div>
+
+                {formMsg && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300 mb-2">
+                    <p className="text-xs font-bold text-red-600 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
+                      {formMsg}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-2">
+                  <label className="text-sm font-medium text-gray-800 block">Product Images (Up to 5) {!editingId && <span className="text-red-500">*</span>}</label>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+                    {[0, 1, 2, 3, 4].map(i => {
+                      const hasPreview = previews && previews[i];
+                      const isNextAvailableSlot = !hasPreview && (i === 0 || (previews && previews[i - 1]));
+                      if (!hasPreview && !isNextAvailableSlot) return null;
+                      return (
+                        <div key={i} className={`relative aspect-square sm:w-24 sm:h-24 md:w-28 md:h-28 border-2 ${hasPreview ? 'border-transparent' : 'border-dashed border-gray-200'} rounded-xl sm:rounded-2xl flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 group hover:border-black/20 transition-all duration-300`}>
+                          {hasPreview ? (
+                            <>
+                              <img src={previews[i]} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                              <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm shadow opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                            </>
+                          ) : (
+                            <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors">
+                              <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-black transition-colors mb-1" />
+                              <span className="text-[8px] sm:text-[10px] text-gray-400 font-medium tracking-wide text-center px-1">
+                                {i === 0 ? "Primary ★" : "Add Extra"}
+                              </span>
+                              <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(i, e)} />
+                            </label>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PNG, JPG up to 5MB per image.</p>
+                </div>
+
+                <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">
+                  <button type="submit" disabled={formLoading} className="flex-1 bg-black text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]">
+                    {formLoading ? (editingId ? "Saving..." : "Creating...") : (editingId ? "Update Product" : "Create Product")}
+                  </button>
+                  <button type="button" onClick={closeModal} className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95 flex items-center justify-center">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmModal isOpen={confirmModal.isOpen} onClose={closeConfirm} onConfirm={confirmModal.onConfirm} title={confirmModal.title} message={confirmModal.message} type={confirmModal.type} confirmText={confirmModal.confirmText} />

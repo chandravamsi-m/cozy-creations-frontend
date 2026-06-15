@@ -10,14 +10,14 @@ import { MapPin, Instagram } from 'lucide-react';
 export default function Footer() {
     return (
         <div className="relative w-full bg-[#191816] text-white pt-4 md:pt-10 pb-8 md:pb-12 overflow-visible z-10">
-            <div className="hidden lg:block overflow-visible absolute bottom-[52px] right-0 w-[280px] h-[400px] opacity-100 pointer-events-none">
+            <div className="hidden xl:block overflow-visible absolute bottom-[52px] right-0 w-[280px] h-[400px] opacity-100 pointer-events-none">
                 <img src={whatsapp2} alt="Decor" className="w-full h-[100%] object-contain object-right" />
             </div>
 
 
             <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-8 relative z-10">
-                <div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-12 xl:gap-20 items-start md:items-start justify-start">
-                    <div className="flex flex-col gap-1 items-center flex-shrink-0 w-full sm:w-auto max-w-[280px] self-center md:self-start">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-4 lg:gap-10 xl:gap-16 items-center md:items-start justify-start w-full">
+                    <div className="flex flex-col gap-1 items-center flex-shrink-0 w-full sm:w-[280px] md:w-[200px] lg:w-[280px]">
                         <div className="w-full h-auto rounded-2xl overflow-hidden relative">
                             <img
                                 src={whatsapp3}
@@ -26,7 +26,7 @@ export default function Footer() {
                             />
                         </div>
                         {/* Social & Contact Icons */}
-                        <div className="flex items-center justify-center gap-4 px-2 w-full mt-2">
+                        <div className="flex items-center justify-center gap-4 px-2 w-full mt-0">
                             <a
                                 href="https://www.instagram.com/cozycreationscandle"
                                 target="_blank"
@@ -63,34 +63,34 @@ export default function Footer() {
                     </div>
 
 
-                    <div className="flex flex-col sm:flex-row gap-8 sm:gap-10 lg:gap-12 xl:gap-16 w-full sm:w-auto items-start pt-2 md:pt-4">
-                        <div className="flex flex-col gap-3 text-base capitalize items-start">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Company</h4>
+                    <div className="flex flex-col sm:flex-row flex-wrap md:flex-nowrap gap-8 sm:gap-10 md:gap-6 lg:gap-8 xl:gap-12 w-full items-start pt-2 lg:pt-4 flex-1 justify-between">
+                        <div className="flex flex-col gap-3 text-sm md:text-[13px] lg:text-base capitalize items-start flex-shrink-0">
+                            <h4 className="text-sm md:text-[13px] lg:text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Company</h4>
                             <Link to="/" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Home</Link>
                             <Link to="/about" className="hover:text-yellow-accent transition-colors whitespace-nowrap">About Us</Link>
                             <Link to="/products" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Products</Link>
                             <Link to="/contact" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Contact Us</Link>
                         </div>
 
-                        <div className="flex flex-col gap-3 text-base capitalize items-start">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Policies</h4>
+                        <div className="flex flex-col gap-3 text-sm md:text-[13px] lg:text-base capitalize items-start flex-shrink-0">
+                            <h4 className="text-sm md:text-[13px] lg:text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Policies</h4>
                             <Link to="/privacy-policy" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Privacy Policy</Link>
                             <Link to="/terms-and-conditions" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Terms & Conditions</Link>
                             <Link to="/refund-policy" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Refund & Cancellation</Link>
                             <Link to="/shipping-policy" className="hover:text-yellow-accent transition-colors whitespace-nowrap">Shipping & Delivery</Link>
                         </div>
 
-                        <div className="flex flex-col gap-2.5 text-base items-start w-full sm:w-[280px] lg:w-[320px] flex-shrink-0">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Locations</h4>
+                        <div className="flex flex-col gap-2.5 text-sm lg:text-base items-start w-full sm:w-[280px] md:w-[240px] lg:flex-1 lg:max-w-[320px] flex-shrink-0 relative z-20">
+                            <h4 className="text-sm md:text-[13px] lg:text-sm font-bold uppercase tracking-wider text-gray-400 mb-[-4px]">Locations</h4>
                             <div>
-                                <span className="font-semibold text-yellow-accent/90 text-xs uppercase tracking-wider">Main Address</span>
-                                <p className="text-gray-300 leading-snug text-[13px] mt-0.5">
+                                <span className="font-semibold text-yellow-accent/90 text-xs md:text-[11px] lg:text-xs uppercase tracking-wider">Main Address</span>
+                                <p className="text-gray-300 leading-snug text-[13px] md:text-[12px] lg:text-[13px] mt-0.5">
                                     Main Market, Sabji Mandi road, kannauj, Uttar pradesh, 209725
                                 </p>
                             </div>
                             <div>
-                                <span className="font-semibold text-yellow-accent/90 text-xs uppercase tracking-wider">Corporate office</span>
-                                <p className="text-gray-300 leading-snug text-[13px] mt-0.5">
+                                <span className="font-semibold text-yellow-accent/90 text-xs md:text-[11px] lg:text-xs uppercase tracking-wider">Corporate office</span>
+                                <p className="text-gray-300 leading-snug text-[13px] md:text-[12px] lg:text-[13px] mt-0.5">
                                     VSR Celestial Towers, HAL Colony, Gajularamaram Main Road, Jeedimetla, Hyderabad, Telangana 500055
                                 </p>
                             </div>
@@ -98,7 +98,7 @@ export default function Footer() {
                     </div>
 
                     {/* Invisible Spacer for Lamp Alignment */}
-                    <div className="hidden lg:block lg:w-[140px] xl:w-[240px] h-[1px] flex-shrink-0"></div>
+                    <div className="hidden xl:block w-[240px] h-[1px] flex-shrink-0"></div>
                 </div>
 
                 <div className="w-full h-[1px] bg-white mt-6 mb-4 opacity-20"></div>
