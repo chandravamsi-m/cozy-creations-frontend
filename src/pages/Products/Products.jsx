@@ -654,7 +654,36 @@ export default function ProductsPage() {
             {!contextLoading && !contextError && (
               <>
                 {filtered.length === 0 ? (
-                  <div className="py-12 text-center text-gray-700">No products found.</div>
+                  <div className="py-16 sm:py-24 px-4 flex flex-col items-center justify-center text-center w-full">
+                    {(productType === "scented-stick" || productType === "perfume") ? (
+                      <div className="max-w-md mx-auto">
+                        <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-yellow-50 flex items-center justify-center">
+                          {productType === "scented-stick" ? (
+                            <Leaf className="w-8 h-8 text-yellow-600" strokeWidth={1.5} />
+                          ) : (
+                            <Sparkles className="w-8 h-8 text-yellow-600" strokeWidth={1.5} />
+                          )}
+                        </div>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Coming Soon</h3>
+                        <p className="text-sm sm:text-base text-gray-500">
+                          We are crafting the perfect {productType === "scented-stick" ? "natural dhoop sticks" : "luxury attars"} for you. Stay tuned for our official launch!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="max-w-md mx-auto">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+                          <Sparkles className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 mb-4">No products found matching your criteria.</p>
+                        <button 
+                          onClick={() => { setCategory(""); setSearch(""); setSortBy("featured"); }} 
+                          className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div ref={productsGridRef} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                     {filtered
