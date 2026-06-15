@@ -146,31 +146,35 @@ export default function AdminDelivery() {
   return (
     <div className="space-y-4 font-sans">
       <div className="flex flex-row items-center justify-between gap-2 px-1 pt-1 mb-6">
-        <div className="flex items-center gap-3">
-          <Truck className="w-6 h-6 text-blue-600" />
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 leading-none">Delivery & Store Settings</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 shrink-0" />
+          <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-gray-900 leading-none">Delivery & Store Settings</h2>
         </div>
         
         <button
           onClick={handleSave}
           disabled={saving || !hasChanges}
-          className="bg-black hover:bg-gray-800 text-white flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold tracking-widest text-xs disabled:bg-gray-300 shadow-sm active:scale-95 disabled:active:scale-100"
+          className="bg-black hover:bg-gray-800 text-white flex justify-center items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl transition-all font-bold tracking-widest text-xs disabled:bg-gray-300 shadow-sm active:scale-95 disabled:active:scale-100 whitespace-nowrap shrink-0"
         >
           {saving ? (
             <>
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Saving...
+              <span className="sm:hidden">Saving</span>
+              <span className="hidden sm:inline">Saving...</span>
             </>
           ) : (
-            "Save Settings"
+            <>
+              <span className="sm:hidden">Save</span>
+              <span className="hidden sm:inline">Save Settings</span>
+            </>
           )}
         </button>
       </div>
-      <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-sm">
+      <div className="sm:bg-white sm:border sm:border-gray-100 sm:rounded-2xl sm:p-6 sm:shadow-sm">
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* ── Payment Section ── */}
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+          <div className="bg-white sm:bg-gray-50 rounded-2xl sm:rounded-xl p-5 sm:p-6 border border-gray-100 shadow-sm sm:shadow-none">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Payment Methods</p>
             
             <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all hover:border-blue-200">
@@ -194,7 +198,7 @@ export default function AdminDelivery() {
           </div>
 
           {/* ── Platform Fee Section ── */}
-          <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+          <div className="bg-white sm:bg-blue-50 rounded-2xl sm:rounded-xl p-5 sm:p-6 border border-gray-100 sm:border-blue-100 shadow-sm sm:shadow-none">
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Platform Fee Settings</p>
             
             <div className="space-y-4">
@@ -243,13 +247,13 @@ export default function AdminDelivery() {
         </div>
 
         {/* ── Default Shipping Weights Section ── */}
-        <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mt-6">
-          <div className="bg-gray-50/50 p-6 border-b border-gray-100">
+        <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-xl shadow-sm sm:shadow-none overflow-hidden mt-4 sm:mt-6">
+          <div className="bg-gray-50/50 p-5 sm:p-6 border-b border-gray-100">
             <h3 className="font-bold text-gray-900 text-sm tracking-wide uppercase mb-1">Attar Shipping Weights (Grams)</h3>
             <p className="text-[11px] text-gray-500 font-medium">Configure exact package weight (including box, glass bottle, etc.) for each size to calculate accurate Shiprocket shipping.</p>
           </div>
           
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
               <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
                 Attar Volumes

@@ -762,19 +762,19 @@ export default function AdminOffers() {
 
                     {/* Individual Products Selection */}
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                        <label className="text-sm font-medium text-gray-800">Select Individual Products</label>
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 border-b border-gray-100 pb-3 sm:pb-2">
+                        <label className="text-sm font-medium text-gray-800 leading-tight">Select Individual Products</label>
+                        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
                           {(formData.applicableProducts || []).filter(id => products.some(p => p.id === id)).length > 0 && (
                             <button
                               type="button"
                               onClick={() => setFormData(f => ({ ...f, applicableProducts: [] }))}
-                              className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+                              className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors whitespace-nowrap"
                             >
                               Clear All
                             </button>
                           )}
-                          <div className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+                          <div className="bg-blue-50 text-blue-600 px-2.5 py-1 sm:px-2 sm:py-0.5 rounded text-[10px] sm:text-xs font-bold uppercase tracking-wider whitespace-nowrap">
                             {(formData.applicableProducts || []).filter(id => products.some(p => p.id === id)).length} SELECTED
                           </div>
                         </div>
