@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "cozy-creations-32109"
-  }
+  },
+  "targets": {
+    "cozy-creations-32109": {
+      "hosting": {
+        "testing": [
+          "test-cozycreations"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

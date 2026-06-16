@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { fetchFirestoreProducts } from "../hooks/useProductsFirestore";
+import { fetchFirestoreProducts, fetchFirestoreScentedSticks, fetchFirestorePerfumes } from "../hooks/useProductsFirestore";
 import { generateCatalogue, generateBulkCatalogue, getCatalogueStatus } from "../api/adminProducts";
 import { apiFetch } from "../lib/api";
 
@@ -14,8 +14,18 @@ export function ProductsProvider({ children }) {
   const cacheRef = React.useRef({
     all: null,
     categories: {},
-    adminAll: null // New: Cache for admin view (includeInactive=true)
+    adminAll: null, // New: Cache for admin view (includeInactive=true)
+    scentedSticks: null,
+    adminScentedSticks: null,
+    perfumes: null,
+    adminPerfumes: null
   });
+
+  // Scented Sticks & Perfumes state
+  const [scentedSticks, setScentedSticks] = useState([]);
+  const [scentedSticksLoading, setScentedSticksLoading] = useState(true);
+  const [perfumes, setPerfumes] = useState([]);
+  const [perfumesLoading, setPerfumesLoading] = useState(true);
 
   // Global Active Offers State
   const [activeOffers, setActiveOffers] = useState([]);
@@ -89,6 +99,82 @@ export function ProductsProvider({ children }) {
     []
   );
 
+  const loadScentedSticks = useCallback(
+    async (silent = false, includeInactive = false, force = false) => {
+      try {
+        const cache = cacheRef.current;
+        if (!force && !silent) {
+          if (includeInactive && cache.adminScentedSticks) {
+            setScentedSticks(cache.adminScentedSticks);
+            return cache.adminScentedSticks;
+          }
+          if (!includeInactive && cache.scentedSticks) {
+            setScentedSticks(cache.scentedSticks);
+            return cache.scentedSticks;
+          }
+        }
+
+        const hasData = includeInactive ? !!cache.adminScentedSticks : !!cache.scentedSticks;
+        if (!silent && !hasData) setScentedSticksLoading(true);
+
+        const result = await fetchFirestoreScentedSticks(includeInactive);
+
+        if (includeInactive) {
+          setScentedSticks(result);
+          cacheRef.current.adminScentedSticks = result;
+        } else {
+          setScentedSticks(result);
+          cacheRef.current.scentedSticks = result;
+        }
+        return result;
+      } catch (err) {
+        console.error("Scented Sticks Load Error:", err);
+        setScentedSticks([]);
+      } finally {
+        setScentedSticksLoading(false);
+      }
+    },
+    []
+  );
+
+  const loadPerfumes = useCallback(
+    async (silent = false, includeInactive = false, force = false) => {
+      try {
+        const cache = cacheRef.current;
+        if (!force && !silent) {
+          if (includeInactive && cache.adminPerfumes) {
+            setPerfumes(cache.adminPerfumes);
+            return cache.adminPerfumes;
+          }
+          if (!includeInactive && cache.perfumes) {
+            setPerfumes(cache.perfumes);
+            return cache.perfumes;
+          }
+        }
+
+        const hasData = includeInactive ? !!cache.adminPerfumes : !!cache.perfumes;
+        if (!silent && !hasData) setPerfumesLoading(true);
+
+        const result = await fetchFirestorePerfumes(includeInactive);
+
+        if (includeInactive) {
+          setPerfumes(result);
+          cacheRef.current.adminPerfumes = result;
+        } else {
+          setPerfumes(result);
+          cacheRef.current.perfumes = result;
+        }
+        return result;
+      } catch (err) {
+        console.error("Perfumes Load Error:", err);
+        setPerfumes([]);
+      } finally {
+        setPerfumesLoading(false);
+      }
+    },
+    []
+  );
+
   const startCatalogueGeneration = useCallback(async (type, idToken, showToast) => {
     if (catalogueLoading) return;
     
@@ -149,9 +235,12 @@ export function ProductsProvider({ children }) {
     }
   }, [catalogueLoading]);
 
-  // Load all products and active offers at first mount
+  // Load all products, scented sticks, perfumes, and active offers at first mount
   useEffect(() => {
     loadProducts("");
+    loadScentedSticks(false, false);
+    loadPerfumes(false, false);
+
     // Fetch active offers
     apiFetch("/offers/active")
       .then((res) => res.json())
@@ -168,6 +257,12 @@ export function ProductsProvider({ children }) {
         error,
         loadProducts,
         refreshProducts: () => loadProducts(""),
+        scentedSticks,
+        scentedSticksLoading,
+        loadScentedSticks,
+        perfumes,
+        perfumesLoading,
+        loadPerfumes,
         activeOffers,
         offersLoading,
         catalogueLoading,

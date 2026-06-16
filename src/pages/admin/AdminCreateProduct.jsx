@@ -25,7 +25,6 @@ export default function AdminCreateProduct() {
     waxType: "soy",
     waxTypeOther: "",
     weightGrams: "",
-    burnTimeHours: "",
     dimensions: "",
     dimensionUnit: "cm",
     price: "",
@@ -189,7 +188,6 @@ export default function AdminCreateProduct() {
         price: parseAdminNumber(product.price),
         weightGrams: parseAdminNumber(product.weightGrams),
         quantityPack: parseAdminNumber(product.quantityPack),
-        burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
@@ -212,7 +210,6 @@ export default function AdminCreateProduct() {
         waxType: "soy",
         waxTypeOther: "",
         weightGrams: "",
-        burnTimeHours: "",
         dimensions: "",
         dimensionUnit: "cm",
         price: "",
@@ -324,25 +321,6 @@ export default function AdminCreateProduct() {
 
         {/* ROW 2 */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="space-y-1 w-full">
-            <label htmlFor="product-burn-time" className="text-sm font-medium text-gray-800">
-              Burn Time <span className="text-red-600">*</span>
-            </label>
-            <div className="relative w-full">
-              <input
-                id="product-burn-time"
-                type="text"
-                value={product.burnTimeHours}
-                onChange={(e) => updateField("burnTimeHours", e.target.value)}
-                placeholder="Burn Time"
-                className="border p-2 pr-14 w-full rounded"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                hr
-              </span>
-            </div>
-          </div>
-
           <div className="space-y-1 w-full">
             <label htmlFor="product-dimensions" className="text-sm font-medium text-gray-800">
               Dimensions (Optional)

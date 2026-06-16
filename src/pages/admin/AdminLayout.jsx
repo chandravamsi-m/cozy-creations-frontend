@@ -13,7 +13,11 @@ import {
   Users,
   Gift,
   Truck,
-  LayoutDashboard
+  LayoutDashboard,
+  Sparkles,
+  Flower2,
+  Flame,
+  Boxes
 } from "lucide-react";
 
 export default function AdminLayout() {
@@ -107,8 +111,10 @@ export default function AdminLayout() {
           <nav className="flex flex-col gap-1">
             {[
               { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-              { to: "/admin/products", icon: Package, label: "Products" },
-              { to: "/admin/bulk-products", icon: Layers, label: "Bulk Products" },
+              { to: "/admin/products", icon: Flame, label: "Candles" },
+              { to: "/admin/bulk-products", icon: Boxes, label: "Bulk Candles" },
+              { to: "/admin/scented-sticks", icon: Flower2, label: "Scented Sticks" },
+              { to: "/admin/perfumes", icon: Sparkles, label: "Perfumes" },
               { to: "/admin/orders", icon: FileText, label: "Orders" },
               { to: "/admin/users", icon: Users, label: "Users" },
               { to: "/admin/offers", icon: Gift, label: "Offers" },

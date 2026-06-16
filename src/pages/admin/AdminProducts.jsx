@@ -12,7 +12,7 @@ import ProductForm from "../../components/admin/ProductForm";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
-import { Loader2, FileText, Plus, X, Search, Package, ChevronDown } from "lucide-react";
+import { Loader2, FileText, Plus, X, Search, Package, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import {
   parseAdminNumber,
 } from "../../utils/adminNumberInputs";
@@ -131,7 +131,6 @@ export default function AdminProducts() {
     waxType: "soy",
     waxTypeOther: "",
     weightGrams: "",
-    burnTimeHours: "",
     dimensions: "",
     dimensionUnit: "cm",
     price: "",
@@ -285,7 +284,6 @@ export default function AdminProducts() {
       waxType: "soy",
       waxTypeOther: "",
       weightGrams: "",
-      burnTimeHours: "",
       dimensions: "",
       dimensionUnit: "cm",
       price: "",
@@ -302,6 +300,7 @@ export default function AdminProducts() {
 
   const handleCloseAddModal = () => {
     setShowAddModal(false);
+    previews.forEach(p => { if (p && p.startsWith("blob:")) URL.revokeObjectURL(p); });
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
     setFormMsg("");
@@ -327,7 +326,6 @@ export default function AdminProducts() {
         weightGrams: String(data.weightGrams ?? ""),
         waxType: isKnownWaxType ? data.waxType : "other",
         waxTypeOther: isKnownWaxType ? "" : data.waxType,
-        burnTimeHours: data.burnTimeHours || "",
         dimensions: data.dimensions ? data.dimensions.replace(/cm|mm/gi, "") : "",
         dimensionUnit: data.dimensionUnit || "cm",
         quantityPack: String(data.quantityPack ?? ""),
@@ -360,6 +358,7 @@ export default function AdminProducts() {
     setShowEditModal(false);
     setEditingProductId(null);
     setBulkPricingTiers([]);
+    previews.forEach(p => { if (p && p.startsWith("blob:")) URL.revokeObjectURL(p); });
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
     setFormMsg("");
@@ -433,11 +432,6 @@ export default function AdminProducts() {
         setFormLoading(false);
         return;
       }
-      if (!product.burnTimeHours || Number(product.burnTimeHours) <= 0) {
-        setFormMsg("Burn Time is required and must be greater than 0.");
-        setFormLoading(false);
-        return;
-      }
       if (!product.quantityPack || Number(product.quantityPack) <= 0) {
         setFormMsg("Quantity per Pack is required and must be at least 1.");
         setFormLoading(false);
@@ -483,7 +477,6 @@ export default function AdminProducts() {
         price: parseAdminNumber(product.price),
         weightGrams: parseAdminNumber(product.weightGrams),
         quantityPack: parseAdminNumber(product.quantityPack),
-        burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
@@ -515,11 +508,6 @@ export default function AdminProducts() {
     try {
       if (!product.weightGrams || Number(product.weightGrams) <= 0) {
         setFormMsg("Weight is required and must be greater than 0.");
-        setFormLoading(false);
-        return;
-      }
-      if (!product.burnTimeHours || Number(product.burnTimeHours) <= 0) {
-        showToast("Burn Time is required and must be greater than 0.", "error");
         setFormLoading(false);
         return;
       }
@@ -563,7 +551,6 @@ export default function AdminProducts() {
         price: parseAdminNumber(product.price),
         weightGrams: parseAdminNumber(product.weightGrams),
         quantityPack: parseAdminNumber(product.quantityPack),
-        burnTimeHours: product.burnTimeHours || "",
         dimensions: product.dimensions ? `${product.dimensions.replace(/\s*(cm|mm)$/i, "")}${product.dimensionUnit || "cm"}` : "",
         waxType: product.waxType === "other" ? (waxTypeOther || "other") : product.waxType,
         customizableFragrance: product.customizableFragrance === "true" || product.customizableFragrance === true,
@@ -880,12 +867,14 @@ const AdminProductCard = ({
     }
   }, [p, activeOffers]);
 
+  const hasBulk = ((p.bulkPricingTiers && p.bulkPricingTiers.length > 0) || (p.bulkPricing && p.bulkPricing.length > 0));
+
   return (
-    <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative group/card ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
+    <div key={p.id} className={`bg-white rounded-[20px] p-2.5 sm:p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex flex-col hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 relative group/card ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
       {/* Product Image - Clickable for Quick View */}
       <div 
         onClick={onQuickView}
-        className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group"
+        className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-1.5 sm:mb-2 bg-gray-50 relative isolation-isolate cursor-pointer group"
       >
         <img
           src={toCloudinaryThumb(p.imageUrl)}
@@ -900,70 +889,88 @@ const AdminProductCard = ({
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 transform-gpu"
         />
 
-        {/* Bulk Pricing Badge */}
-        <div className="absolute top-1 left-1 z-10 flex flex-col gap-1">
-          {((p.bulkPricingTiers && p.bulkPricingTiers.length > 0) || (p.bulkPricing && p.bulkPricing.length > 0)) && (
-            <span className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm border border-emerald-400/50">
-              Bulk
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Product Info - Clickable for Quick View */}
-      <div 
-        onClick={onQuickView}
-        className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start cursor-pointer group/info"
-      >
-        <h3 className="font-semibold text-[clamp(13px,3.8vw,15px)] text-gray-900 leading-[1.2] whitespace-normal group-hover/info:text-blue-600 transition-colors">{p.name}</h3>
-        {discount && discount.hasDiscount ? (
-          <div className="flex items-center gap-1.5">
-            <span className="text-gray-400 text-[10px] diagonal-strike">₹{p.price}</span>
-            <span className="text-green-600 text-[10px] sm:text-xs font-bold">₹{discount.discountedPrice}</span>
+        {p.isActive === false && (
+          <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 bg-[#121212] text-[#fff] text-[8px] sm:text-[10px] font-medium px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 z-10 shadow-sm">
+            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red-500 rounded-full" />
+            Inactive
           </div>
-        ) : (
-          <p className="text-gray-400 text-[10px] sm:text-xs font-medium">₹{p.price}</p>
+        )}
+
+        {hasBulk && (
+          <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 bg-black/80 backdrop-blur-sm text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 border border-white/10">
+            <Package className="w-2 h-2 sm:w-3 sm:h-3" /> Bulk
+          </div>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
-        <p className="shrink-0">Cat: <span className="text-gray-900 font-medium uppercase">{p.category}</span></p>
-        <p className="shrink-0">Wax: <span className="text-gray-900 font-medium capitalize">{p.waxType}</span></p>
-        {p.dimensions && <p className="shrink-0">Size: <span className="text-gray-900 font-medium">{p.dimensions}</span></p>}
-        <p className="shrink-0">Pack: <span className="text-gray-900 font-medium">{p.quantityPack || 1}</span></p>
+      <div 
+        onClick={onQuickView}
+        className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 cursor-pointer group/info"
+      >
+        <h3 className="font-bold text-base sm:text-xl text-[#1a1f36] leading-tight whitespace-normal line-clamp-2 group-hover/info:text-blue-600 transition-colors">{p.name}</h3>
       </div>
 
-      <div className="mt-auto pt-1 space-y-1.5">
-        <div className="flex flex-row gap-1">
-          <button
-            onClick={() => handleOpenEditModal(p.id)}
-            className="flex-1 bg-blue-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-1"
-          >
-            Edit
-          </button>
-
-          {p.isActive !== false ? (
-            <button
-              onClick={() => handleDelete(p.id)}
-              className="flex-1 bg-orange-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-orange-700 transition-all active:scale-95 flex items-center justify-center gap-1"
-            >
-              Deactivate
-            </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 sm:mb-1.5 gap-1 sm:gap-0">
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium mb-0.5 whitespace-nowrap">Price</p>
+          {discount && discount.hasDiscount ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-400 text-sm sm:text-base diagonal-strike">₹{p.price}</span>
+              <span className="text-green-600 text-sm sm:text-base font-bold truncate">₹{discount.discountedPrice}</span>
+            </div>
           ) : (
-            <button
-              onClick={() => handleActivate(p.id)}
-              className="flex-1 bg-green-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-1"
-            >
-              Activate
-            </button>
+            <p className="text-sm sm:text-base font-bold text-[#1a1f36] truncate">₹{p.price}</p>
           )}
         </div>
+        
+        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 w-full sm:w-auto bg-gray-50/80 sm:bg-transparent px-2 py-1.5 sm:p-0 rounded-md sm:rounded-none border sm:border-0 border-gray-100">
+          <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium sm:mb-1">Status</p>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className={`text-[9px] sm:text-[11px] font-bold ${p.isActive === false ? 'text-gray-500' : 'text-[#059669]'}`}>
+              {p.isActive === false ? 'Inactive' : 'Active'}
+            </span>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                p.isActive === false ? handleActivate(p.id) : handleDelete(p.id);
+              }}
+              className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 items-center rounded-full transition-colors shadow-sm ${p.isActive === false ? 'bg-gray-300' : 'bg-[#059669]'}`}
+            >
+              <span className={`inline-block h-3 w-3 sm:h-4 sm:w-4 transform rounded-full bg-white shadow-sm transition-transform ${p.isActive === false ? 'translate-x-0.5' : 'translate-x-3.5 sm:translate-x-[18px]'}`} />
+            </button>
+          </div>
+        </div>
+      </div>
 
+      <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1 sm:mb-1.5">
+        <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+          Cat: <span className="text-gray-900 font-bold uppercase">{p.category}</span>
+        </div>
+        <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+          Wax: <span className="text-gray-900 font-bold capitalize">{p.waxType}</span>
+        </div>
+        {p.dimensions && (
+          <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[8px] sm:text-[10px] text-gray-600 font-medium whitespace-nowrap">
+            Size: <span className="text-gray-900 font-bold">{p.dimensions}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto pt-1.5 sm:pt-2 border-t border-gray-50 flex items-center gap-1.5 sm:gap-2">
+        <button
+          onClick={() => handleOpenEditModal(p.id)}
+          className="flex-1 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
+        >
+          <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          Edit
+        </button>
         <button
           onClick={() => handlePermanentDelete(p.id)}
-          className="w-full bg-red-50 border border-red-100 text-red-600 py-1.5 rounded-lg font-bold text-[10px] tracking-tight hover:bg-red-100 transition-all active:scale-[0.98]"
+          className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 py-1.5 sm:py-2 rounded sm:rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm"
+          title="Delete Product"
         >
-          Delete Permanently
+          <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          Delete
         </button>
       </div>
     </div>

@@ -123,7 +123,7 @@ const ProductForm = ({
       </div>
     </div>
 
-    {/* Row: Weight & Burn Time */}
+    {/* Row: Weight & Qty Pack */}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {/* Weight */}
       <div className="space-y-1">
@@ -147,28 +147,7 @@ const ProductForm = ({
         </div>
       </div>
 
-      {/* Burn Time */}
-      <div className="space-y-1">
-        <label htmlFor="product-burn-time" className="text-sm font-medium text-gray-800">
-          Burn Time <span className="text-red-500">*</span>
-        </label>
-        <div className="relative">
-          <input
-            id="product-burn-time"
-            type="text"
-            value={product.burnTimeHours}
-            onChange={(e) => updateField("burnTimeHours", e.target.value)}
-            placeholder="Burn Time"
-            className="border border-gray-300 p-2 pr-12 w-full rounded focus:ring-1 focus:ring-black outline-none h-10"
-            required
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">hr</span>
-        </div>
-      </div>
-    </div>
-
-    {/* Row: Quantity Pack & Price */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Qty Pack */}
       <div className="space-y-1">
         <label htmlFor="product-quantity-pack" className="text-sm font-medium text-gray-800">
           Qty Pack <span className="text-red-500">*</span>
@@ -186,6 +165,10 @@ const ProductForm = ({
           required
         />
       </div>
+    </div>
+
+    {/* Row: Price */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
       <div className="space-y-1">
         <label htmlFor="product-price" className="text-sm font-medium text-gray-800">

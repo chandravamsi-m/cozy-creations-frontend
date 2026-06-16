@@ -176,7 +176,7 @@ export default function AnnouncementStrip({ heroRef }) {
         }}
       >
         {/* Left Side (Email on Desktop, Left Arrow on Mobile) */}
-        <div className="flex items-center w-[24px] sm:w-[220px] shrink-0 font-normal">
+        <div className="flex items-center w-[24px] xl:w-[220px] shrink-0 font-normal">
           {isMobile && messages.length > 1 ? (
             <button
               onClick={handlePrev}
@@ -188,7 +188,7 @@ export default function AnnouncementStrip({ heroRef }) {
             </button>
           ) : (
             !isMobile && (
-              <div className="flex items-center gap-2 text-white/95 font-normal">
+              <div className="hidden xl:flex items-center gap-2 text-white/95 font-normal">
                 <Mail className="w-[18px] h-[18px] text-white/80 shrink-0" />
                 <a href="mailto:cozycandlecorner13@gmail.com" className="hover:underline transition-all">
                   cozycandlecorner13@gmail.com
@@ -242,7 +242,7 @@ export default function AnnouncementStrip({ heroRef }) {
         </div>
 
         {/* Right Side (Phone on Desktop, Right Arrow on Mobile) */}
-        <div className="flex items-center w-[24px] sm:w-[220px] justify-end shrink-0 font-normal">
+        <div className="flex items-center w-[24px] xl:w-[220px] justify-end shrink-0 font-normal">
           {isMobile && messages.length > 1 ? (
             <button
               onClick={handleNext}
@@ -254,7 +254,7 @@ export default function AnnouncementStrip({ heroRef }) {
             </button>
           ) : (
             !isMobile && (
-              <div className="flex items-center gap-2 text-white/95 font-normal justify-end">
+              <div className="hidden xl:flex items-center gap-2 text-white/95 font-normal justify-end">
                 <Phone className="w-[18px] h-[18px] text-white/80 shrink-0" />
                 <a href="tel:+918019401322" className="hover:underline transition-all">
                   +91 80194 01322

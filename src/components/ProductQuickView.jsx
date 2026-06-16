@@ -10,6 +10,8 @@ import AnimalIcon from "../assets/svgs/animal-icon.svg";
 import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
+import ScentedStickIcon from "../assets/svgs/scented-stick-icon.svg";
+import PerfumeIcon from "../assets/svgs/perfume-icon.svg";
 
 export default function ProductQuickView({ product, onClose, activeOffer }) {
   const navigate = useNavigate();
@@ -19,6 +21,11 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   const [discount, setDiscount] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Variant selection for Attar / Dhoop Sticks
+  const isVariantProduct = ["scented-stick", "perfume"].includes(product?.productType) && Array.isArray(product?.variants) && product.variants.length > 0;
+  const availableVariants = isVariantProduct ? product.variants.filter(v => v.isAvailable !== false) : [];
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
+  const selectedVariant = isVariantProduct && availableVariants.length > 0 ? availableVariants[Math.min(selectedVariantIdx, availableVariants.length - 1)] : null;
   const { addItem, updateQuantity, removeItem, cart } = useCart();
 
   // Mobile swipe refs and handlers
@@ -87,10 +94,16 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
     festive: FestiveIcon,
     special: SpecialIcon,
     glassJar: GlassJarIcon,
+    "scented-sticks": ScentedStickIcon,
+    perfumes: PerfumeIcon,
   };
 
-  // Derived: is this product already in cart?
-  const cartItem = cart.find((i) => i.productId === product?.id);
+  // Derived: is this product already in cart? For variant products, match by productId + variantLabel
+  const cartItem = cart.find((i) => {
+    if (i.productId !== product?.id) return false;
+    if (selectedVariant) return i.variantLabel === selectedVariant.label;
+    return true;
+  });
   const inCart = !!cartItem;
   const displayQty = inCart ? cartItem.quantity : localQty;
 
@@ -105,33 +118,46 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   useEffect(() => {
     if (product) {
+      const currentPrice = selectedVariant ? selectedVariant.price : product.price;
+
       if (activeOffer) {
-        setDiscount(getEffectiveDiscount(product, activeOffer));
+        setDiscount(getEffectiveDiscount(product, activeOffer, currentPrice));
       } else {
-        calculateProductDiscount(product).then(setDiscount);
+        calculateProductDiscount(product, currentPrice).then(setDiscount);
       }
+      
       // Reset local selector whenever a new product is shown
-      setLocalQty(1);
-      setAdded(false);
-      setActiveIndex(0);
+      if (!selectedVariant) {
+        setLocalQty(1);
+        setAdded(false);
+        setActiveIndex(0);
+        setSelectedVariantIdx(0);
+      }
     }
-  }, [product?.id, activeOffer]);
+  }, [product?.id, selectedVariant?.price, activeOffer]);
 
   if (!product) return null;
 
   const handleAddToCart = () => {
     if (inCart) {
       // Already in cart — navigate to cart then close modal
-      navigate("/cart");
       onClose();
+      setTimeout(() => navigate("/cart"), 10);
+      return;
+    }
+    if (isVariantProduct && !selectedVariant) {
+      // Shouldn't happen if UI is correct, but guard anyway
       return;
     }
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
-      category: product.category,
-      weightGrams: product.weightGrams || 0,
+      price: selectedVariant ? selectedVariant.price : product.price,
+      category: product.category || null,
+      productType: product.productType || "candle",
+      variantLabel: selectedVariant ? selectedVariant.label : null,
+      variantPrice: selectedVariant ? selectedVariant.price : null,
+      weightGrams: selectedVariant ? (selectedVariant.weightGrams || 0) : (product.weightGrams || 0),
       dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,
       thumbnailUrl: product.thumbnailUrl || product.imageUrl,
@@ -144,12 +170,13 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   const handleQuantityChange = (delta) => {
     if (inCart) {
-      // Directly update the cart quantity
+      // Directly update the cart quantity — match by productId + variantLabel
       const newQty = cartItem.quantity + delta;
       if (newQty <= 0) {
-        removeItem(product.id);
+        // Remove by productId + variantLabel composite key
+        removeItem(product.id, selectedVariant?.label || null);
       } else {
-        updateQuantity(product.id, newQty);
+        updateQuantity(product.id, newQty, selectedVariant?.label || null);
       }
     } else {
       // Just move the local selector (min 1)
@@ -159,10 +186,21 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
   const getDetailChips = (product) => {
     const chips = [];
-    if (product.waxType) chips.push({ label: `${product.waxType.toUpperCase()} WAX`, key: "wax" });
-    if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
-    if (product.burnTimeHours) chips.push({ label: `${product.burnTimeHours}h BURN`, key: "burn" });
-    if (product.dimensions) chips.push({ label: product.dimensions, key: "dims" });
+    const type = product.productType || "candle";
+
+    if (type === "scented-stick") {
+      if (product.scentFamily) chips.push({ label: `${product.scentFamily} Scent`, key: "scentFamily" });
+
+    } else if (type === "perfume") {
+      if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
+      if (product.longevityHours) chips.push({ label: `~${product.longevityHours}H LONGEVITY`, key: "longevity" });
+      if (product.isAlcoholFree) chips.push({ label: "ALCOHOL FREE", key: "alcoholFree" });
+    } else {
+      // Default: Candle
+      if (product.waxType) chips.push({ label: `${product.waxType.toUpperCase()} WAX`, key: "wax" });
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+      if (product.dimensions) chips.push({ label: product.dimensions, key: "dims" });
+    }
     return chips;
   };
 
@@ -175,13 +213,13 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
+      <div className="relative bg-white w-[95vw] md:w-full max-w-5xl md:h-[600px] max-h-[90vh] rounded-[32px] shadow-2xl animate-scaleUp flex flex-col overflow-hidden">
         {/* Close Button - Now truly fixed relative to the modal frame */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 md:top-6 md:right-6 z-50 w-8 h-8 md:w-10 md:h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
+          className="absolute top-3 right-3 md:top-4 md:right-4 lg:top-6 lg:right-6 z-50 w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-95 border border-gray-100"
         >
-          <X className="w-4 h-4 md:w-5 md:h-5 text-gray-900" />
+          <X className="w-4 h-4 md:w-4.5 md:h-4.5 lg:w-5 lg:h-5 text-gray-900" />
         </button>
 
         {/* Scrollable Area */}
@@ -189,7 +227,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
 
         {/* Left: Image Section (Gallery) */}
-        <div className="w-full md:w-1/2 bg-[#F8F8F5] relative group flex flex-col">
+        <div className="w-full md:w-[45%] lg:w-1/2 bg-[#F8F8F5] relative group flex flex-col shrink-0">
           {/* Main Large Image */}
           <div 
             className="relative w-full aspect-square md:aspect-auto md:flex-1 overflow-hidden cursor-zoom-in md:min-h-[400px] group"
@@ -227,18 +265,18 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     e.stopPropagation();
                     handlePrevImage();
                   }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-11 md:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 lg:w-11 lg:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronLeft className="w-4.5 h-4.5 md:w-6 md:h-6" />
+                  <ChevronLeft className="w-4.5 h-4.5 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleNextImage();
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-11 md:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 md:w-9 md:h-9 lg:w-11 lg:h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:bg-white transition-all z-20 active:scale-90"
                 >
-                  <ChevronRight className="w-4.5 h-4.5 md:w-6 md:h-6" />
+                  <ChevronRight className="w-4.5 h-4.5 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                 </button>
               </>
             )}
@@ -263,7 +301,7 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
         </div>
 
         {/* Right: Content Section */}
-        <div className="w-full md:w-1/2 p-5 md:p-8 md:overflow-y-auto bg-white flex flex-col">
+        <div className="w-full md:w-[55%] lg:w-1/2 p-5 md:p-6 lg:p-8 md:overflow-y-auto bg-white flex flex-col">
           {/* Header */}
           <div className="mb-4">
             <div className="flex items-center gap-3 mb-2">
@@ -273,10 +311,10 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                 )}
               </div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                {product.category} Collection
+                {product.category} {(!product.productType || product.productType === "candle") ? "Collection" : ""}
               </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif flex items-start gap-2">
+            <h2 className="text-2xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-1 font-serif flex items-start gap-2 pr-4 md:pr-0">
               <span className="flex-1">{product.name}</span>
               <button
                 onClick={handleShare}
@@ -295,12 +333,12 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center gap-4">
                 {discount?.hasDiscount ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl md:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
-                    <span className="text-base text-gray-300 line-through font-medium">₹{product.price.toLocaleString()}</span>
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <span className="text-2xl md:text-2xl lg:text-3xl font-black text-gray-900">₹{discount.discountedPrice.toLocaleString()}</span>
+                    <span className="text-sm md:text-base text-gray-300 line-through font-medium">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
                   </div>
                 ) : (
-                  <span className="text-2xl md:text-3xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
+                  <span className="text-2xl md:text-2xl lg:text-3xl font-black text-gray-900">₹{(isVariantProduct && selectedVariant ? selectedVariant.price : product.price || 0).toLocaleString()}</span>
                 )}
               </div>
 
@@ -312,8 +350,32 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             </div>
           </div>
 
+          {/* Variant Size Picker — Attar / Dhoop Sticks */}
+          {isVariantProduct && availableVariants.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                {product.productType === "perfume" ? "Select Volume" : "Select Size"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {availableVariants.map((v, idx) => (
+                  <button
+                    key={v.label}
+                    type="button"
+                    onClick={() => setSelectedVariantIdx(idx)}
+                    className={`px-3 py-1.5 rounded-xl border-2 text-xs font-black transition-all ${
+                      selectedVariantIdx === idx
+                        ? "border-gray-900 bg-gray-900 text-white shadow-lg"
+                        : "border-gray-200 text-gray-700 hover:border-gray-400 bg-white"
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Specs Chips */}
+          {/* Specs Chips — only show for candles or non-variant products */}
           <div className="flex flex-wrap gap-2 mb-4">
             {getDetailChips(product).map(chip => (
               <div key={chip.key} className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-full text-[9px] font-bold text-gray-500 tracking-wider">
@@ -321,6 +383,41 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
               </div>
             ))}
           </div>
+
+          {/* Fragrance Notes (Perfume/Attar specific) */}
+          {product.productType === "perfume" && product.scentNotes && (
+            <div className="mb-4 p-4 bg-purple-50/50 border border-purple-100 rounded-2xl">
+              <h4 className="text-[10px] font-black text-purple-900 uppercase tracking-widest mb-3">Fragrance Notes</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {product.scentNotes.top && (
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-100/50 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-0.5">Top</p>
+                    <p className="text-xs font-bold text-gray-700">{product.scentNotes.top}</p>
+                  </div>
+                )}
+                {product.scentNotes.middle && (
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-100/50 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-0.5">Middle</p>
+                    <p className="text-xs font-bold text-gray-700">{product.scentNotes.middle}</p>
+                  </div>
+                )}
+                {product.scentNotes.base && (
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-100/50 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-0.5">Base</p>
+                    <p className="text-xs font-bold text-gray-700">{product.scentNotes.base}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Ingredients */}
+          {product.ingredients && (
+            <div className="mb-4 text-xs text-gray-500">
+              <span className="font-bold text-gray-700">Ingredients: </span>
+              {product.ingredients}
+            </div>
+          )}
 
           {/* Bulk Pricing Tiers */}
           {isBulk && product.bulkPricingTiers?.length > 0 && (
@@ -345,9 +442,9 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
           )}
 
           {/* Cart Interaction */}
-          <div className="mt-auto pt-4 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4">
+          <div className="mt-auto pt-4 border-t border-gray-100 flex flex-row items-center gap-2 sm:gap-4 md:gap-3 lg:gap-4">
             {/* Quantity Controls */}
-            <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[105px] sm:w-auto h-[44px] sm:h-[48px] sm:min-w-[130px]">
+            <div className="flex items-center bg-gray-50 rounded-2xl p-0.5 sm:p-1 w-[105px] sm:w-auto h-[44px] sm:h-[48px] md:h-[44px] lg:h-[48px] sm:min-w-[130px] md:min-w-[110px] lg:min-w-[130px]">
               <button
                 onClick={() => handleQuantityChange(-1)}
                 className="w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-gray-900 active:scale-90"
@@ -366,9 +463,10 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
             {/* Add / In Cart Button */}
             {inCart ? (
               <button
-                onClick={() => {
-                  navigate("/cart");
+                onClick={(e) => {
+                  e.stopPropagation();
                   onClose();
+                  setTimeout(() => navigate("/cart"), 10);
                 }}
                 className="flex-1 h-[44px] sm:h-[48px] bg-green-500 hover:bg-green-600 text-white font-black uppercase tracking-wider sm:tracking-[0.15em] text-[10px] sm:text-xs rounded-2xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
               >
@@ -435,18 +533,18 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     e.stopPropagation();
                     setActiveIndex((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1));
                   }}
-                  className="absolute left-0 sm:-left-12 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl z-[3010]"
+                  className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all text-gray-900 shadow-2xl z-[3010]"
                 >
-                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveIndex((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1));
                   }}
-                  className="absolute right-0 sm:-right-12 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center transition-all text-gray-900 shadow-xl z-[3010]"
+                  className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all text-gray-900 shadow-2xl z-[3010]"
                 >
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
                 </button>
               </>
             )}
