@@ -58,11 +58,16 @@ export default function CartPage() {
 
   const handleOpenQuickView = async (item) => {
     try {
+      const type = item.productType || "candle";
+      let colName = "products";
+      if (type === "scented-stick") colName = "scented-sticks";
+      else if (type === "perfume") colName = "perfumes";
+
       // Fetch full product document directly from Firestore
       // (same data source used by the Products page)
-      const snap = await getDoc(doc(db, "products", item.productId));
+      const snap = await getDoc(doc(db, colName, item.productId));
       if (snap.exists()) {
-        setQuickViewProduct({ id: snap.id, ...snap.data() });
+        setQuickViewProduct({ id: snap.id, ...snap.data(), productType: type });
         return;
       }
     } catch (e) {
@@ -76,6 +81,7 @@ export default function CartPage() {
       category: item.category,
       weightGrams: item.weightGrams,
       imageUrl: item.thumbnailUrl || item.imageUrl,
+      productType: item.productType || "candle",
     });
   };
 
@@ -131,23 +137,23 @@ export default function CartPage() {
       // ignore storage write failures
     }
   }, [customizations]);
-  const decreaseQuantity = (id) => {
-    const item = cart.find((i) => i.productId === id);
+  const decreaseQuantity = (id, variantLabel = null) => {
+    const item = cart.find((i) => i.productId === id && (variantLabel ? i.variantLabel === variantLabel : true));
     if (!item) return;
 
     const newQty = item.quantity - 1;
-    if (newQty <= 0) removeItem(id);
-    else updateQuantity(id, newQty);
+    if (newQty <= 0) removeItem(id, variantLabel);
+    else updateQuantity(id, newQty, variantLabel);
   };
 
-  const increaseQuantity = (id) => {
-    const item = cart.find((i) => i.productId === id);
+  const increaseQuantity = (id, variantLabel = null) => {
+    const item = cart.find((i) => i.productId === id && (variantLabel ? i.variantLabel === variantLabel : true));
     if (!item) return;
 
-    updateQuantity(id, item.quantity + 1);
+    updateQuantity(id, item.quantity + 1, variantLabel);
   };
 
-  const removeFromCart = (id) => removeItem(id);
+  const removeFromCart = (id, variantLabel = null) => removeItem(id, variantLabel);
 
   // Handle checkout - navigate to checkout page
   const handleCheckout = () => {
@@ -247,34 +253,49 @@ export default function CartPage() {
                             >
                               {item.name}
                             </h2>
-                            {itemDiscounts[item.productId]?.hasDiscount ? (
-                              <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-400 line-through leading-none">
-                                  ₹{item.price.toLocaleString()}
+                            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                              {item.variantLabel && (
+                                <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded shadow-sm">
+                                  Size: <span className="font-bold text-gray-900">{item.variantLabel}</span>
                                 </span>
-                                <span className="text-xs sm:text-sm font-bold text-green-600">
-                                  ₹{itemDiscounts[item.productId].discountedPrice.toLocaleString()}
+                              )}
+                              {item.quantityPack && (!item.productType || item.productType === "candle") && (
+                                <span className="text-[10px] sm:text-[11px] font-medium text-gray-500">
+                                  Pack of {item.quantityPack}
                                 </span>
-                              </div>
-                            ) : (
-                              <p className="text-[11px] sm:text-xs text-gray-600">
-                                ₹{item.price.toLocaleString()} <span className="text-gray-400 font-medium">each</span>
-                              </p>
-                            )}
-                            {item.quantityPack && (
-                              <p className="text-[10px] text-gray-500 mt-0.5">
-                                Pack of {item.quantityPack}
-                              </p>
-                            )}
+                              )}
+                            </div>
+                            {(() => {
+                              const key = item.variantLabel ? `${item.productId}_${item.variantLabel}` : item.productId;
+                              return itemDiscounts[key]?.hasDiscount ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-xs sm:text-sm font-bold text-green-600">
+                                    ₹{(itemDiscounts[key]?.discountedPrice || 0).toLocaleString()}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 line-through">
+                                    ₹{(item.price || 0).toLocaleString()}
+                                  </span>
+                                </div>
+                              ) : (
+                                <p className="text-[11px] sm:text-xs text-gray-900 font-bold mt-0.5">
+                                  ₹{(item.price || 0).toLocaleString()} <span className="text-gray-400 font-medium text-[10px]">each</span>
+                                </p>
+                              );
+                            })()}
                           </div>
 
                           <div className="text-right shrink-0">
                             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Subtotal</p>
                             <p className="text-base font-black text-gray-900 leading-none">
-                              ₹{((itemDiscounts[item.productId]?.discountedPrice || item.price) * item.quantity).toLocaleString()}
+                              {(() => {
+                                const key = item.variantLabel ? `${item.productId}_${item.variantLabel}` : item.productId;
+                                return `₹${((itemDiscounts[key]?.discountedPrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}`;
+                              })()}
                             </p>
                           </div>
                         </div>
+
+
 
                         {/* Customization Display */}
                         {customizations[item.productId]?.fragrance ||
@@ -322,12 +343,14 @@ export default function CartPage() {
                         {/* Desktop Actions Row */}
                         <div className="hidden md:flex flex-nowrap items-center gap-1.5 pt-2 border-t border-gray-100 mt-2">
                           <div className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
-                            <button onClick={() => decreaseQuantity(item.productId)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">−</button>
+                            <button onClick={() => decreaseQuantity(item.productId, item.variantLabel)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">−</button>
                             <span className="min-w-[24px] text-center font-bold text-gray-900 text-sm">{item.quantity}</span>
-                            <button onClick={() => increaseQuantity(item.productId)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">+</button>
+                            <button onClick={() => increaseQuantity(item.productId, item.variantLabel)} className="w-7 h-7 rounded-md hover:bg-white text-gray-700 grid place-items-center font-semibold text-sm transition-all">+</button>
                           </div>
-                          <button onClick={() => openCustomize(item)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 transition-all hover:border-gray-400">{customizations[item.productId] ? "Edit" : "Customize"}</button>
-                          <button onClick={() => removeFromCart(item.productId)} className="px-4 py-2 rounded-lg border border-red-200 bg-white text-xs font-semibold text-red-600 transition-all hover:border-red-300">Remove</button>
+                          {(!item.productType || item.productType === "candle") && (
+                            <button onClick={() => openCustomize(item)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-800 transition-all hover:border-gray-400">{customizations[item.productId] ? "Edit" : "Customize"}</button>
+                          )}
+                          <button onClick={() => removeFromCart(item.productId, item.variantLabel)} className="px-4 py-2 rounded-lg border border-red-200 bg-white text-xs font-semibold text-red-600 transition-all hover:border-red-300">Remove</button>
                         </div>
 
                         </div>
@@ -338,7 +361,7 @@ export default function CartPage() {
                           {/* Quantity Controls */}
                           <div className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-0.5 sm:px-2 sm:py-1">
                             <button
-                              onClick={() => decreaseQuantity(item.productId)}
+                              onClick={() => decreaseQuantity(item.productId, item.variantLabel)}
                               className="w-6 h-6 sm:w-7 sm:h-7 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs sm:text-sm transition-all shadow-sm sm:shadow-none"
                               aria-label="Decrease quantity"
                             >
@@ -350,7 +373,7 @@ export default function CartPage() {
                             </span>
 
                             <button
-                              onClick={() => increaseQuantity(item.productId)}
+                              onClick={() => increaseQuantity(item.productId, item.variantLabel)}
                               className="w-6 h-6 sm:w-7 sm:h-7 rounded-md hover:bg-white active:bg-gray-100 text-gray-700 hover:text-gray-900 grid place-items-center font-semibold text-xs sm:text-sm transition-all shadow-sm sm:shadow-none"
                               aria-label="Increase quantity"
                             >
@@ -358,15 +381,17 @@ export default function CartPage() {
                             </button>
                           </div>
 
-                          <button
-                            onClick={() => openCustomize(item)}
-                            className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] sm:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400"
-                          >
-                            {customizations[item.productId] ? "Edit" : "Customize"}
-                          </button>
+                          {(!item.productType || item.productType === "candle") && (
+                            <button
+                              onClick={() => openCustomize(item)}
+                              className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 text-[10px] sm:text-xs font-semibold text-gray-800 transition-all hover:border-gray-400"
+                            >
+                              {customizations[item.productId] ? "Edit" : "Customize"}
+                            </button>
+                          )}
 
                           <button
-                            onClick={() => removeFromCart(item.productId)}
+                            onClick={() => removeFromCart(item.productId, item.variantLabel)}
                             className="px-2 py-1.5 xs:px-3 sm:px-4 sm:py-2 rounded-lg border border-red-200 bg-white hover:bg-red-50 active:bg-red-100 text-[10px] sm:text-xs font-semibold text-red-600 hover:text-red-700 transition-all hover:border-red-300"
                           >
                             Remove
@@ -387,17 +412,17 @@ export default function CartPage() {
                     <div className="mt-4 space-y-3 text-sm">
                       <div className="flex justify-between text-gray-700">
                         <span>Subtotal</span>
-                        <span className="font-medium">₹{totalPrice.toLocaleString()}</span>
+                        <span className="font-medium">₹{(totalPrice || 0).toLocaleString()}</span>
                       </div>
                       {totalDiscountAmount > 0 && (
                         <div className="flex justify-between text-green-600 font-medium">
                           <span>Offers Discount</span>
-                          <span>-₹{totalDiscountAmount.toLocaleString()}</span>
+                          <span>-₹{(totalDiscountAmount || 0).toLocaleString()}</span>
                         </div>
                       )}
                       <div className="border-t pt-3 flex justify-between text-base font-semibold text-gray-900">
                         <span>Total</span>
-                        <span>₹{discountedTotal.toLocaleString()}</span>
+                        <span>₹{(discountedTotal || 0).toLocaleString()}</span>
                       </div>
                     </div>
 

@@ -45,10 +45,10 @@ export function optimizeCloudinaryUrl(url, options = {}) {
 
   const { width = 1000, height, crop = "fill" } = options;
   
-  // We use c_fill with g_auto for better centering by default
-  let transformations = `c_${crop},w_${width},q_auto,f_auto`;
+  const actualCrop = crop === "fill" && !height ? "scale" : crop;
+  let transformations = `c_${actualCrop},w_${width},q_auto,f_auto`;
   if (height) transformations += `,h_${height}`;
-  if (crop === "fill") transformations += ",g_auto";
+  if (actualCrop === "fill") transformations += ",g_auto";
 
   const optimizedUrl = url.replace(
     /\/(upload|private|authenticated)\/(v[0-9]+\/)?/, 

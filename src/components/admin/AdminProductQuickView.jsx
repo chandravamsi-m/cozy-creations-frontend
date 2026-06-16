@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import {
-  X, ChevronLeft, ChevronRight
+  X, ChevronLeft, ChevronRight, Pencil, Trash2
 } from "lucide-react";
 import { optimizeCloudinaryUrl } from "../../utils/image";
+import { getEffectiveDiscount } from "../../utils/offerUtils";
 
 export default function AdminProductQuickView({ 
   product, 
+  activeOffers,
   onClose, 
   onEdit, 
   onToggleStatus, 
@@ -125,22 +127,125 @@ export default function AdminProductQuickView({
             </div>
 
             {/* Premium Price Row (Label on left, Heavy Value on right) */}
-            <div className="py-3 border-y border-gray-50 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Unit Price</span>
-              <span className="text-2xl font-black text-gray-900 italic tracking-tight">₹{product.price.toLocaleString()}</span>
+            <div className="py-3 border-y border-gray-50 flex items-center justify-between gap-4">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
+                {product.price != null ? "Unit Price" : "Price Range"}
+              </span>
+              <div className="text-xl sm:text-2xl font-black text-gray-900 italic tracking-tight text-right flex flex-col items-end justify-center min-w-0">
+                {product.price != null ? (
+                  (() => {
+                    const d = activeOffers ? getEffectiveDiscount(product, activeOffers, product.price) : null;
+                    if (d?.hasDiscount) {
+                      return (
+                        <div className="flex flex-col items-end">
+                          <span className="text-xs sm:text-sm text-gray-400 line-through leading-none mb-1">₹{Number(product.price).toLocaleString()}</span>
+                          <span className="text-green-600 leading-none">₹{d.discountedPrice.toLocaleString()}</span>
+                        </div>
+                      );
+                    }
+                    return `₹${Number(product.price).toLocaleString()}`;
+                  })()
+                ) : (
+                  (() => {
+                    const variants = product.variants || product.sizes;
+                    if (!Array.isArray(variants) || variants.length === 0) return "N/A";
+                    const prices = variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+                    if (prices.length === 0) return "N/A";
+                    const min = Math.min(...prices);
+                    const max = Math.max(...prices);
+                    
+                    const minD = activeOffers ? getEffectiveDiscount(product, activeOffers, min) : null;
+                    const maxD = activeOffers ? getEffectiveDiscount(product, activeOffers, max) : null;
+                    
+                    if (minD?.hasDiscount || maxD?.hasDiscount) {
+                      const finalMin = minD?.hasDiscount ? minD.discountedPrice : min;
+                      const finalMax = maxD?.hasDiscount ? maxD.discountedPrice : max;
+                      return (
+                        <div className="flex flex-col items-end">
+                          <span className="text-[11px] sm:text-sm text-gray-400 line-through leading-none mb-1 truncate max-w-full">
+                            {min === max ? `₹${min.toLocaleString()}` : `₹${min.toLocaleString()} – ₹${max.toLocaleString()}`}
+                          </span>
+                          <span className="text-green-600 leading-none truncate max-w-full">
+                            {min === max ? `₹${finalMin.toLocaleString()}` : `₹${finalMin.toLocaleString()} – ₹${finalMax.toLocaleString()}`}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <span className="truncate max-w-full">
+                        {min === max ? `₹${min.toLocaleString()}` : `₹${min.toLocaleString()} – ₹${max.toLocaleString()}`}
+                      </span>
+                    );
+                  })()
+                )}
+              </div>
             </div>
 
             {/* Specifications */}
             <section>
               <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2">Product Details</h4>
               <div className="bg-white border border-gray-100 rounded-lg px-3 py-0.5 divide-y divide-gray-50">
-                <DataRow label="Wax Type" value={product.waxType} />
-                <DataRow label="Weight" value={`${product.weightGrams}g`} />
-                <DataRow label="Burn Time" value={`${product.burnTimeHours}h`} />
-                <DataRow label="Dimensions" value={product.dimensions} />
-                <DataRow label="Pack Size" value={product.quantityPack} />
+                {product.waxType && <DataRow label="Wax Type" value={product.waxType} />}
+                {product.weightGrams && <DataRow label="Weight" value={`${product.weightGrams}g`} />}
+                {product.dimensions && <DataRow label="Dimensions" value={product.dimensions} />}
+                {product.quantityPack && <DataRow label="Pack Size" value={product.quantityPack} />}
+                
+                {/* Perfumes */}
+                {product.family && <DataRow label="Family" value={product.family} />}
+                {product.scentFamily && <DataRow label="Scent Family" value={product.scentFamily} />}
+                {product.topNotes && <DataRow label="Top Notes" value={product.topNotes} />}
+                {product.middleNotes && <DataRow label="Middle Notes" value={product.middleNotes} />}
+                {product.baseNotes && <DataRow label="Base Notes" value={product.baseNotes} />}
+                {product.scentNotes?.top && <DataRow label="Top Notes" value={product.scentNotes.top} />}
+                {product.scentNotes?.middle && <DataRow label="Middle Notes" value={product.scentNotes.middle} />}
+                {product.scentNotes?.base && <DataRow label="Base Notes" value={product.scentNotes.base} />}
+                {product.longevity && <DataRow label="Longevity" value={product.longevity} />}
+                {product.longevityHours && <DataRow label="Longevity" value={`~${product.longevityHours}h`} />}
+                {product.volumeMl && <DataRow label="Volume" value={`${product.volumeMl}ml`} />}
+                {product.gender && <DataRow label="Gender" value={product.gender} />}
+                {product.alcoholFree !== undefined && <DataRow label="Alcohol Free" value={product.alcoholFree ? "Yes" : "No"} />}
+                {product.isAlcoholFree !== undefined && <DataRow label="Alcohol Free" value={product.isAlcoholFree ? "Yes" : "No"} />}
+
+                {/* Scented Sticks */}
+                {product.fragranceType && <DataRow label="Fragrance Type" value={product.fragranceType} />}
+                {product.stickLength && <DataRow label="Stick Length" value={`${product.stickLength} inch`} />}
+                {product.burningTime && <DataRow label="Burning Time" value={`${product.burningTime} mins`} />}
+                {product.sticksPerBox && <DataRow label="Sticks / Box" value={product.sticksPerBox} />}
+                {product.handRolled !== undefined && <DataRow label="Hand Rolled" value={product.handRolled ? "Yes" : "No"} />}
+
               </div>
             </section>
+
+            {/* Variants / Sizes */}
+            {(product.sizes?.length > 0 || product.variants?.length > 0) && (
+              <section className="mt-4">
+                <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2">Available Variants</h4>
+                <div className="flex flex-col gap-1.5">
+                  {(product.sizes || product.variants).map((variant, idx) => {
+                    const vd = variant.price && activeOffers ? getEffectiveDiscount(product, activeOffers, variant.price) : null;
+                    return (
+                      <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
+                        <span className="text-[9px] font-bold text-gray-500">
+                          {variant.weight || variant.volume || variant.label}
+                          {variant.isAvailable === false && " (Out of Stock)"}
+                        </span>
+                        <span className={`text-[10px] font-black ${variant.isAvailable === false ? 'text-gray-400 line-through' : 'text-emerald-700'}`}>
+                          {vd?.hasDiscount ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-gray-400 line-through">₹{variant.price}</span>
+                              <span className="text-green-600">₹{vd.discountedPrice}</span>
+                            </span>
+                          ) : (
+                            `₹${variant.price}`
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* Bulk Pricing */}
             {isBulk && (
@@ -149,7 +254,7 @@ export default function AdminProductQuickView({
                 <div className="flex flex-col gap-1.5">
                   {product.bulkPricingTiers.map((tier, idx) => (
                     <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-gray-50 border border-gray-100">
-                      <span className="text-[9px] font-bold text-gray-500">{tier.minQty}+ UNITS</span>
+                      <span className="text-[9px] font-bold text-gray-500">{tier.minQty}</span>
                       <span className="text-[10px] font-black text-emerald-700">₹{tier.pricePerPc}/pc</span>
                     </div>
                   ))}
@@ -158,25 +263,30 @@ export default function AdminProductQuickView({
             )}
 
             {/* Action Buttons */}
-            <div className="pt-3 flex flex-col xs:flex-row gap-2">
-              <button 
+            <div className="pt-3 mt-auto border-t border-gray-50 flex items-center gap-2">
+              <button
                 onClick={() => { onEdit(product.id); onClose(); }}
-                className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold uppercase tracking-widest text-[9px] transition-all active:scale-95 shadow-sm"
+                className="flex-1 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
               >
+                <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 Edit
               </button>
-              <button 
+
+              <button
                 onClick={() => onToggleStatus(product.id)}
-                className={`flex-1 h-9 rounded-lg font-bold uppercase tracking-widest text-[9px] transition-all active:scale-95 text-white shadow-sm ${
-                  product.isActive !== false ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                className={`flex-1 border py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
+                  product.isActive !== false ? "bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200" : "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200"
                 }`}
               >
                 {product.isActive !== false ? "Deactivate" : "Activate"}
               </button>
-              <button 
+
+              <button
                 onClick={() => { onPermanentDelete(product.id); onClose(); }}
-                className="flex-1 h-9 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-lg font-bold uppercase tracking-widest text-[9px] transition-all active:scale-95"
+                className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                title="Delete Product"
               >
+                <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 Delete
               </button>
             </div>

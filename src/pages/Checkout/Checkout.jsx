@@ -33,7 +33,7 @@ const MAX_ADDRESSES = 10;
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, clearCart, deliveryFee, platformFee, isPlatformFeeEnabled, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride } = useCart();
+  const { cart, clearCart, deliveryFee, platformFee, isPlatformFeeEnabled, finalTotal, totalPrice, totalDiscountAmount, discountedTotal, setShippingOverride, itemDiscounts } = useCart();
   const { user, idToken } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -141,7 +141,7 @@ export default function Checkout() {
 
       if (!selectedPartner) {
         setServiceabilityInfo({ available: false, rate: null, courierName: null });
-        setShippingOverride(null);
+        setShippingOverride(0);
         return;
       }
 
@@ -160,8 +160,8 @@ export default function Checkout() {
       setShippingOverride(finalRate);
     } catch (err) {
       console.error("Serviceability error:", err.message);
-      setServiceabilityError("Could not fetch real-time rates. Using standard fee.");
-      setShippingOverride(null); // graceful fallback
+      setServiceabilityError("Could not fetch real-time rates.");
+      setShippingOverride(0); // Prevent adding fallback fee
     } finally {
       setCheckingServiceability(false);
     }
@@ -310,6 +310,12 @@ export default function Checkout() {
       return;
     }
 
+    const isUnserviceable = serviceabilityInfo?.available === false || !!serviceabilityError;
+    if (isUnserviceable) {
+      showToast("Delivery is not available to this location. Please select a different address.", "error");
+      return;
+    }
+
     if (!idToken) {
       showToast("Your session has expired. Please login again.", "error");
       return;
@@ -331,7 +337,9 @@ export default function Checkout() {
         items: cart.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          productType: item.productType || "candle",
           customization: customizations[item.productId] || null,
+          variantLabel: item.variantLabel || null,
         })),
         shippingAddress: finalAddress,
         customerName: finalAddress.fullName,
@@ -352,7 +360,7 @@ export default function Checkout() {
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.message || "Failed to place COD order");
+          throw new Error(errData.error || errData.message || "Failed to place COD order");
         }
 
         const { orderId } = await response.json();
@@ -385,7 +393,7 @@ export default function Checkout() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || "Failed to initiate payment");
+        throw new Error(errData.error || errData.message || "Failed to initiate payment");
       }
 
       const { orderId, amount, currency, key } = await response.json();
@@ -691,8 +699,31 @@ export default function Checkout() {
                       <p className="font-bold text-gray-900 text-sm line-clamp-1 uppercase tracking-tight">
                         {item.name}
                       </p>
-                      <p className="text-sm font-black text-gray-900 mt-2 flex items-center gap-2">
-                        <span>₹{item.price.toLocaleString()}</span>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        {item.variantLabel && (
+                          <span className="text-[9px] font-medium text-gray-600 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded shadow-sm">
+                            Size: <span className="font-bold text-gray-900">{item.variantLabel}</span>
+                          </span>
+                        )}
+                        {item.quantityPack && (!item.productType || item.productType === "candle") && (
+                          <span className="text-[9px] font-medium text-gray-500">
+                            Pack of {item.quantityPack}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-black text-gray-900 mt-1.5 flex items-center gap-2">
+                        {(() => {
+                          const key = item.variantLabel ? `${item.productId}_${item.variantLabel}` : item.productId;
+                          const hasDiscount = itemDiscounts[key]?.hasDiscount;
+                          return hasDiscount ? (
+                            <>
+                              <span className="text-[11px] text-gray-400 line-through font-medium">₹{(item.price || 0).toLocaleString()}</span>
+                              <span>₹{(itemDiscounts[key].discountedPrice || 0).toLocaleString()}</span>
+                            </>
+                          ) : (
+                            <span>₹{(item.price || 0).toLocaleString()}</span>
+                          );
+                        })()}
                         <span className="text-base font-black text-yellow-600/70">
                           × {item.quantity}
                         </span>
@@ -705,12 +736,12 @@ export default function Checkout() {
               <div className="pt-4 border-t border-gray-100 space-y-4">
                 <div className="flex justify-between items-center px-1">
                   <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Subtotal</span>
-                  <span className="text-sm font-semibold text-gray-900">₹{totalPrice.toLocaleString()}</span>
+                  <span className="text-sm font-semibold text-gray-900">₹{(totalPrice || 0).toLocaleString()}</span>
                 </div>
                 {totalDiscountAmount > 0 && (
                   <div className="flex justify-between items-center px-1">
                     <span className="text-sm font-bold text-green-600 uppercase tracking-widest leading-none">Discount</span>
-                    <span className="text-sm font-semibold text-green-600">-₹{totalDiscountAmount.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-green-600">-₹{(totalDiscountAmount || 0).toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-start px-1 gap-2">
@@ -722,11 +753,13 @@ export default function Checkout() {
                     )}
                     {selectedAddressId && serviceabilityInfo?.available === false && (
                       <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Limited delivery options
+                        <AlertTriangle className="w-3 h-3" /> Delivery not available to this location
                       </p>
                     )}
                     {selectedAddressId && serviceabilityError && !checkingServiceability && (
-                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">Using standard rate</p>
+                      <p className="text-[10px] text-red-500 font-bold mt-0.5 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Delivery not available to this location
+                      </p>
                     )}
                   </div>
                   <span className="text-sm font-semibold text-gray-900 shrink-0">
@@ -737,19 +770,21 @@ export default function Checkout() {
                       </span>
                     ) : !selectedAddressId ? (
                       <span className="text-gray-400">—</span>
+                    ) : (serviceabilityInfo?.available === false || !!serviceabilityError) ? (
+                      <span className="text-red-500 font-bold">Unavailable</span>
                     ) : deliveryFee === 0 ? (
                       <span className="text-green-600 flex items-center gap-1.5">
                         <Check className="w-3 h-3" /> FREE
                       </span>
                     ) : (
-                      `₹${deliveryFee.toLocaleString()}`
+                      `₹${(deliveryFee || 0).toLocaleString()}`
                     )}
                   </span>
                 </div>
                 {isPlatformFeeEnabled && (
                   <div className="flex justify-between items-center px-1">
                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none pt-0.5">Platform Fee</span>
-                    <span className="text-sm font-semibold text-gray-900">₹{platformFee.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-gray-900">₹{(platformFee || 0).toLocaleString()}</span>
                   </div>
                 )}
 
@@ -757,7 +792,7 @@ export default function Checkout() {
                   <span className="text-md font-bold text-gray-900 uppercase tracking-tight">Total</span>
                   <div className="text-right">
                     <p className="text-xl font-bold text-gray-900 tracking-tighter leading-none">
-                      ₹{(selectedAddressId ? finalTotal : (discountedTotal + platformFee)).toLocaleString()}
+                      ₹{((selectedAddressId ? finalTotal : (discountedTotal + platformFee)) || 0).toLocaleString()}
                     </p>
                     {checkingServiceability && (
                       <p className="text-[10px] text-gray-400 font-medium mt-0.5">Updating...</p>
@@ -768,19 +803,31 @@ export default function Checkout() {
 
               <button
                 onClick={handlePlaceOrder}
-                disabled={loading || checkingServiceability}
-                className="group relative w-full h-12 bg-yellow-accent hover:brightness-105 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl shadow-yellow-400/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                disabled={loading || checkingServiceability || (selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError))}
+                className={`group relative w-full h-12 transition-all duration-300 rounded-[1rem] overflow-hidden shadow-xl active:scale-[0.98] disabled:pointer-events-none ${
+                  (selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError))
+                    ? "bg-gray-200 text-gray-500 shadow-none cursor-not-allowed"
+                    : "bg-yellow-accent hover:brightness-105 shadow-yellow-400/20 disabled:opacity-50"
+                }`}
               >
                 <div className="absolute inset-0 flex items-center justify-center gap-2 transition-transform">
-                  <span className="text-md font-bold text-black uppercase tracking-wider">
+                  <span className={`text-md font-bold uppercase tracking-wider ${(selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError)) ? "text-gray-500" : "text-black"}`}>
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
                         <span>Processing...</span>
                       </div>
-                    ) : checkingServiceability ? "Calculating Shipping..." : "Complete Purchase"}
+                    ) : checkingServiceability ? (
+                      "Calculating Shipping..."
+                    ) : (selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError)) ? (
+                      "Unserviceable Location"
+                    ) : (
+                      "Complete Purchase"
+                    )}
                   </span>
-                  {!loading && !checkingServiceability && <ArrowRight className="w-5 h-5 text-black transition-transform group-hover:translate-x-1" />}
+                  {!loading && !checkingServiceability && !(selectedAddressId && (serviceabilityInfo?.available === false || !!serviceabilityError)) && (
+                    <ArrowRight className="w-5 h-5 text-black transition-transform group-hover:translate-x-1" />
+                  )}
                 </div>
               </button>
 

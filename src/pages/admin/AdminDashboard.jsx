@@ -127,7 +127,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Active Products",
-      value: stats.activeProducts.toLocaleString(),
+      value: (stats.activeProducts + (stats.activeScentedSticks || 0) + (stats.activePerfumes || 0)).toLocaleString(),
       subtitle: "Live in store",
       icon: <Package className="w-6 h-6 text-purple-600" />,
       bg: "bg-purple-50"
@@ -224,9 +224,9 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="h-80 sm:h-96 w-full">
+        <div className="h-80 sm:h-96 w-full min-w-0 min-h-0">
           {stats.salesTrend && stats.salesTrend[timeRange] && stats.salesTrend[timeRange].length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={stats.salesTrend[timeRange]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
@@ -285,34 +285,34 @@ export default function AdminDashboard() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold tracking-wider border-b">
                 <tr>
-                  <th className="px-4 py-3 sm:px-6 sm:py-4">Order ID</th>
-                  <th className="px-4 py-3 sm:px-6 sm:py-4 hidden md:table-cell">Date</th>
-                  <th className="px-4 py-3 sm:px-6 sm:py-4">Customer</th>
-                  <th className="px-4 py-3 sm:px-6 sm:py-4 hidden sm:table-cell">Status</th>
-                  <th className="px-4 py-3 sm:px-6 sm:py-4 text-right">Total</th>
+                  <th className="px-3 py-3 sm:px-4 md:px-6 sm:py-4">Order ID</th>
+                  <th className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 hidden md:table-cell">Date</th>
+                  <th className="px-3 py-3 sm:px-4 md:px-6 sm:py-4">Customer</th>
+                  <th className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 hidden sm:table-cell">Status</th>
+                  <th className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 text-right">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {recentOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-4 py-6 sm:px-6 sm:py-8 text-center text-gray-500">No recent orders found.</td>
+                    <td colSpan="5" className="px-3 py-6 sm:px-4 md:px-6 sm:py-8 text-center text-gray-500">No recent orders found.</td>
                   </tr>
                 ) : (
                   recentOrders.map(order => (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors group text-[11px] sm:text-sm">
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 font-mono font-bold text-gray-900">
+                      <td className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 font-mono font-bold text-gray-900">
                         #{order.id.slice(-6).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-gray-600 hidden md:table-cell">
+                      <td className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 text-gray-600 hidden md:table-cell">
                         {order.createdAtIso
                           ? new Date(order.createdAtIso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
                           : "Unknown"}
                       </td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 max-w-[100px] truncate">
-                        <p className="font-bold text-gray-900">{order.shippingAddress?.fullName || 'N/A'}</p>
+                      <td className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 max-w-[90px] sm:max-w-[120px] md:max-w-[150px]">
+                        <p className="font-bold text-gray-900 truncate">{order.shippingAddress?.fullName || 'N/A'}</p>
                       </td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 hidden sm:table-cell">
-                        <span className={`px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border
+                      <td className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 hidden sm:table-cell">
+                        <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border
                           ${order.status === 'delivered' ? 'bg-green-50 text-green-700 border-green-100' :
                             order.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
                               order.status === 'shipped' ? 'bg-blue-50 text-blue-700 border-blue-100' :
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
                           {order.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-right font-black text-gray-900">
+                      <td className="px-3 py-3 sm:px-4 md:px-6 sm:py-4 text-right font-black text-gray-900">
                         ₹{order.total}
                       </td>
                     </tr>
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
             {!stats.ordersByStatus || stats.ordersByStatus.length === 0 ?
               <p className="text-center text-gray-500 text-sm py-4">No order data available.</p>
               : (
-                <ResponsiveContainer width="100%" height={320} className="outline-none">
+                <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={0} className="outline-none">
                   <PieChart className="outline-none">
                     <Pie
                       data={stats.ordersByStatus}

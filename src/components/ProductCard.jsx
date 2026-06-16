@@ -9,6 +9,8 @@ import AnimalIcon from "../assets/svgs/animal-icon.svg";
 import FestiveIcon from "../assets/svgs/festive-icon.svg";
 import SpecialIcon from "../assets/svgs/spl-icon.svg";
 import GlassJarIcon from "../assets/svgs/glass-jar-icon.svg";
+import ScentedStickIcon from "../assets/svgs/scented-stick-icon.svg";
+import PerfumeIcon from "../assets/svgs/perfume-icon.svg";
 
 export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
   const [quantity, setQuantity] = useState(0);
@@ -16,6 +18,14 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
   const [loadingDiscount, setLoadingDiscount] = useState(true);
 
   const { addItem, updateQuantity, removeItem, cart } = useCart();
+
+  const fromPrice = React.useMemo(() => {
+    if ((product.productType === "scented-stick" || product.productType === "perfume") && Array.isArray(product.variants) && product.variants.length > 0) {
+      const availPrices = product.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+      return availPrices.length > 0 ? Math.min(...availPrices) : null;
+    }
+    return null;
+  }, [product]);
 
   // Sync UI quantity with cart quantity
   useEffect(() => {
@@ -25,15 +35,16 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
   // Fetch or calculate discount for this product
   useEffect(() => {
+    const priceToEvaluate = fromPrice !== null ? fromPrice : product.price;
     if (activeOffer) {
       // Use efficient local calculation if activeOffer is provided
-      const localDiscount = getEffectiveDiscount(product, activeOffer);
-      setDiscount(localDiscount.hasDiscount ? localDiscount : null);
+      const localDiscount = getEffectiveDiscount(product, activeOffer, priceToEvaluate);
+      setDiscount(localDiscount?.hasDiscount ? localDiscount : null);
       setLoadingDiscount(false);
     } else {
       // Fallback to async calculation (individual landing pages, etc.)
       setLoadingDiscount(true);
-      calculateProductDiscount(product)
+      calculateProductDiscount(product, priceToEvaluate)
         .then((discountData) => {
           setDiscount(discountData?.hasDiscount ? discountData : null);
         })
@@ -54,6 +65,8 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
     festive: FestiveIcon,
     special: SpecialIcon,
     glassJar: GlassJarIcon,
+    "scented-sticks": ScentedStickIcon,
+    perfumes: PerfumeIcon,
   };
 
   const getCategoryIcon = (category) => {
@@ -75,38 +88,32 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
 
   const getDetailChips = (product) => {
     const chips = [];
-    if (product.waxType) {
-      chips.push({
-        label:
-          product.waxType.charAt(0).toUpperCase() +
-          product.waxType.slice(1) +
-          " Wax",
-        key: "waxType",
-      });
-    }
-    if (product.weightGrams) {
-      chips.push({
-        label: `${product.weightGrams}g`,
-        key: "weight",
-      });
-    }
-    if (product.burnTimeHours) {
-      chips.push({
-        label: `${product.burnTimeHours}h Burn`,
-        key: "burnTime",
-      });
-    }
-    if (product.dimensions) {
-      chips.push({
-        label: product.dimensions,
-        key: "dimensions",
-      });
-    }
-    if (product.quantityPack) {
-      chips.push({
-        label: `Pack of ${product.quantityPack}`,
-        key: "quantityPack",
-      });
+    const type = product.productType || "candle";
+
+    if (type === "scented-stick") {
+      if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
+
+      const availSizes = Array.isArray(product.variants) ? product.variants.filter(v => v.isAvailable !== false).length : 0;
+      if (availSizes > 0) chips.push({ label: `${availSizes} Sizes`, key: "sizes" });
+    } else if (type === "perfume") {
+      if (product.scentFamily) chips.push({ label: product.scentFamily, key: "scentFamily" });
+      if (product.isAlcoholFree) chips.push({ label: "Alcohol Free", key: "alcoholFree" });
+      const availSizes = Array.isArray(product.variants) ? product.variants.filter(v => v.isAvailable !== false).length : 0;
+      if (availSizes > 0) chips.push({ label: `${availSizes} Volumes`, key: "sizes" });
+    } else {
+      // Default: Candle
+      if (product.waxType) {
+        chips.push({
+          label:
+            product.waxType.charAt(0).toUpperCase() +
+            product.waxType.slice(1) +
+            " Wax",
+          key: "waxType",
+        });
+      }
+      if (product.weightGrams) chips.push({ label: `${product.weightGrams}g`, key: "weight" });
+      if (product.dimensions) chips.push({ label: product.dimensions, key: "dimensions" });
+      if (product.quantityPack) chips.push({ label: `Pack of ${product.quantityPack}`, key: "quantityPack" });
     }
     return chips;
   };
@@ -115,6 +122,8 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
     if (!url || typeof url !== "string") return url;
     if (!url.includes("res.cloudinary.com")) return url;
     if (!url.includes("/image/upload/")) return url;
+    // Guard: don't double-transform if transformations already exist
+    if (url.includes("/image/upload/w_") || url.includes("/image/upload/q_") || url.includes("/image/upload/c_")) return url;
     const parts = url.split("/image/upload/");
     if (parts.length !== 2) return url;
     // Optimized thumbnail for grid performance
@@ -122,11 +131,17 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
   };
 
   const handleAddToCart = () => {
+    if ((product.productType === "scented-stick" || product.productType === "perfume") && Array.isArray(product.variants) && product.variants.length > 0) {
+      onOpenQuickView();
+      return;
+    }
+
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
       category: product.category,
+      productType: product.productType || "candle",
       weightGrams: product.weightGrams || 0,
       dimensions: product.dimensions || null,
       quantityPack: product.quantityPack || 1,
@@ -211,7 +226,34 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
           >
             {product.name}
           </h3>
-          {discount && discount.hasDiscount ? (
+          {/* VARIANT-BASED PRODUCT: show "From ₹X" and redirect to quick view for size selection */}
+          {(product.productType === "scented-stick" || product.productType === "perfume") && Array.isArray(product.variants) && product.variants.length > 0 ? (
+            (() => {
+              const availPrices = product.variants.filter(v => v.isAvailable !== false && Number(v.price) > 0).map(v => Number(v.price));
+              const fromPrice = availPrices.length > 0 ? Math.min(...availPrices) : null;
+              
+              if (fromPrice !== null && discount?.hasDiscount) {
+                return (
+                  <div className="flex items-center gap-1 bg-yellow-accent/60 border border-yellow-accent/70 px-1 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
+                    <span className="text-[9px] text-gray-400 diagonal-strike font-medium leading-none">
+                      From ₹{fromPrice.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] sm:text-sm font-bold text-green-700 leading-none">
+                      ₹{discount.discountedPrice.toLocaleString()}
+                    </span>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex items-center bg-yellow-accent/60 border border-yellow-accent/70 px-2 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
+                  <span className="text-[10px] sm:text-sm md:text-base lg:text-sm font-bold text-[#6F573D] leading-none">
+                    {fromPrice !== null ? `From ₹${fromPrice.toLocaleString()}` : "Select Size"}
+                  </span>
+                </div>
+              );
+            })()
+          ) : discount && discount.hasDiscount ? (
             <div className="flex items-center gap-1 bg-yellow-accent/60 border border-yellow-accent/70 px-1 py-0 rounded-full shadow-sm self-center sm:self-auto whitespace-nowrap shrink-0 ml-auto">
               <span className="text-[9px] text-gray-400 diagonal-strike font-medium leading-none">
                 ₹{product.price.toLocaleString()}
@@ -257,7 +299,7 @@ export default function ProductCard({ product, onOpenQuickView, activeOffer }) {
             </div>
 
             {/* CART BUTTONS */}
-            {quantity > 0 ? (
+            {quantity > 0 && !(product.productType === "scented-stick" || product.productType === "perfume") ? (
               <div
                 className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-2 py-1"
                 onClick={(e) => e.stopPropagation()}

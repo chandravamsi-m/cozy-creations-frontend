@@ -8,7 +8,7 @@ import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCat
 import ProductForm from "../../components/admin/ProductForm";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
-import { Loader2, FileText, Truck } from "lucide-react";
+import { Loader2, FileText, Truck, Pencil, Trash2, Package } from "lucide-react";
 import { optimizeCloudinaryUrl } from "../../utils/image";
 
 // Cloudinary config
@@ -40,7 +40,6 @@ export default function AdminBulkProducts() {
     waxType: "soy",
     waxTypeOther: "",
     weightGrams: "",
-    burnTimeHours: "",
     dimensions: "",
     dimensionUnit: "cm",
     price: "",
@@ -113,7 +112,6 @@ export default function AdminBulkProducts() {
       waxType: p.waxType || "soy",
       waxTypeOther: p.waxTypeOther || "",
       weightGrams: String(p.weightGrams ?? ""),
-      burnTimeHours: p.burnTimeHours || "",
       dimensions: p.dimensions ? p.dimensions.replace(/cm|mm/gi, "") : "",
       dimensionUnit: p.dimensionUnit || "cm",
       price: String(p.price ?? ""),
@@ -471,11 +469,11 @@ export default function AdminBulkProducts() {
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
               {bulkProducts.map((p) => {
                 return (
-                  <div key={p.id} className={`bg-white border border-gray-100 rounded-2xl p-2.5 sm:p-3 shadow-sm flex flex-col hover:shadow-md transition-shadow duration-300 relative ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
+                  <div key={p.id} className={`bg-white rounded-2xl p-2 sm:p-2.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex flex-col hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 relative group/card ${p.isActive === false ? "opacity-75 grayscale-[0.3]" : ""}`}>
                     {/* Product Image - Clickable for Quick View */}
                     <div 
                       onClick={() => setQuickViewProduct(p)}
-                      className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2 bg-gray-50 relative group isolation-isolate cursor-pointer"
+                      className="w-full aspect-[4/3] rounded-xl overflow-hidden mb-1 sm:mb-1.5 bg-gray-50 relative group isolation-isolate cursor-pointer"
                     >
                       <img
                         src={toCloudinaryThumb(p.imageUrl)}
@@ -489,68 +487,87 @@ export default function AdminBulkProducts() {
                         }}
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-110 transform-gpu"
                       />
+
+                      {p.isActive === false && (
+                        <div className="absolute top-1.5 sm:top-2 left-1.5 sm:left-2 bg-[#121212] text-[#fff] text-[8px] sm:text-[10px] font-medium px-1.5 sm:px-2.5 py-[2px] sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5 z-10 shadow-sm">
+                          <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red-500 rounded-full" />
+                          Inactive
+                        </div>
+                      )}
                     </div>
 
                     {/* Product Info - Clickable for Quick View */}
                     <div 
                       onClick={() => setQuickViewProduct(p)}
-                      className="mb-0.5 min-h-[2.8rem] flex flex-col justify-start cursor-pointer group/info"
+                      className="flex items-start justify-between mb-0.5 cursor-pointer group/info"
                     >
-                      <h3 className="font-semibold text-[clamp(14px,4vw,16px)] text-gray-900 leading-[1.2] whitespace-normal mb-1.5 group-hover/info:text-blue-600 transition-colors">{p.name}</h3>
+                      <h3 className="font-bold text-[13px] sm:text-[15px] text-[#1a1f36] leading-[1.2] whitespace-normal line-clamp-2 group-hover/info:text-blue-600 transition-colors">{p.name}</h3>
+                    </div>
+
+                    <div className="flex flex-col mb-1">
                       {p.bulkPricingTiers && p.bulkPricingTiers.length > 0 ? (
-                        <div className="space-y-0.5">
+                        <div className="space-y-0.5 mt-0.5 w-full">
                           {p.bulkPricingTiers.map((tier, idx) => (
-                            <p key={idx} className="text-[11px] flex justify-between items-center bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                              <span className="text-gray-700 font-medium">
-                                {tier.minQty} Pcs
-                              </span>
-                              <span className="text-green-700 font-bold">₹{tier.pricePerPc}/pc</span>
-                            </p>
+                            <div key={idx} className="flex justify-between items-center bg-gray-50/80 px-2 py-0.5 rounded border border-gray-100/50">
+                              <span className="text-[9px] sm:text-[10px] text-gray-600 font-medium">{tier.minQty} Pcs</span>
+                              <span className="text-[9px] sm:text-[10px] text-green-600 font-bold">₹{tier.pricePerPc}/pc</span>
+                            </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-400">No tiers set</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">No tiers set</p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-auto mb-1 bg-gray-50/50 px-2 py-1 rounded-md border border-gray-100/50">
+                      <p className="text-[8px] sm:text-[9px] text-gray-500 font-medium">Status</p>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[8px] sm:text-[10px] font-bold ${p.isActive === false ? 'text-gray-500' : 'text-[#059669]'}`}>
+                          {p.isActive === false ? 'Inactive' : 'Active'}
+                        </span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            p.isActive === false ? handleActivate(p.id) : handleDelete(p.id);
+                          }}
+                          className={`relative inline-flex h-3 w-6 sm:h-4 sm:w-8 items-center rounded-full transition-colors shadow-sm ${p.isActive === false ? 'bg-gray-300' : 'bg-[#059669]'}`}
+                        >
+                          <span className={`inline-block h-2 w-2 sm:h-3 sm:w-3 transform rounded-full bg-white shadow-sm transition-transform ${p.isActive === false ? 'translate-x-0.5' : 'translate-x-[14px] sm:translate-x-[18px]'}`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-0.5 mb-1 mt-0.5">
+                      <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[7px] sm:text-[9px] text-gray-600 font-medium whitespace-nowrap">
+                        Cat: <span className="text-gray-900 font-bold uppercase">{p.category}</span>
+                      </div>
+                      <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[7px] sm:text-[9px] text-gray-600 font-medium whitespace-nowrap">
+                        Wax: <span className="text-gray-900 font-bold capitalize">{p.waxType}</span>
+                      </div>
+                      {p.dimensions && (
+                        <div className="px-1.5 sm:px-2 py-[2px] sm:py-0.5 bg-gray-50 border border-gray-100 rounded text-[7px] sm:text-[9px] text-gray-600 font-medium whitespace-nowrap">
+                          Size: <span className="text-gray-900 font-bold">{p.dimensions}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] sm:text-[10px] text-gray-400 border-y border-gray-50 py-1 mb-1.5">
-                      <p className="shrink-0">Cat: <span className="text-gray-900 font-medium uppercase">{p.category}</span></p>
-                      <p className="shrink-0">Wax: <span className="text-gray-900 font-medium capitalize">{p.waxType}</span></p>
-                      {p.dimensions && <p className="shrink-0">Size: <span className="text-gray-900 font-medium">{p.dimensions}</span></p>}
-                    </div>
-
                     {/* Action Buttons */}
-                    <div className="mt-auto pt-1 space-y-1.5">
-                      <div className="flex flex-row gap-1">
-                        <button
-                          onClick={() => handleOpenEditModal(p)}
-                          className="flex-1 bg-blue-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-1"
-                        >
-                          Edit
-                        </button>
-
-                        {p.isActive !== false ? (
-                          <button
-                            onClick={() => handleDelete(p.id)}
-                            className="flex-1 bg-orange-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-orange-700 transition-all active:scale-95 flex items-center justify-center gap-1"
-                          >
-                            Deactivate
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleActivate(p.id)}
-                            className="flex-1 bg-green-600 text-white px-1 sm:px-2 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-1"
-                          >
-                            Activate
-                          </button>
-                        )}
-                      </div>
+                    <div className="mt-auto pt-1 border-t border-gray-50 flex items-center gap-1.5 sm:gap-2">
+                      <button
+                        onClick={() => handleOpenEditModal(p)}
+                        className="flex-1 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 py-1 sm:py-1.5 rounded sm:rounded-lg text-[9px] sm:text-[10px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
+                      >
+                        <Pencil className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        Edit
+                      </button>
 
                       <button
                         onClick={() => handlePermanentDelete(p.id)}
-                        className="w-full bg-red-50 border border-red-100 text-red-600 py-1.5 rounded-lg font-bold text-[10px] tracking-tight hover:bg-red-100 transition-all active:scale-[0.98]"
+                        className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 py-1 sm:py-1.5 rounded sm:rounded-lg text-[9px] sm:text-[10px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
+                        title="Delete Product"
                       >
-                        Delete Permanently
+                        <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        Delete
                       </button>
                     </div>
                   </div>

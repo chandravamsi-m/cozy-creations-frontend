@@ -134,7 +134,6 @@ export default function MyOrders() {
               });
               const data = await res.json();
               if (data?.success) {
-                // Patch local state with healed AWB and/or new status
                 setOrders((prev) =>
                   prev.map((o) => {
                     if (o.id !== order.id) return o;
@@ -202,10 +201,7 @@ export default function MyOrders() {
     if (s === "delivered") return { ...base, icon: <CheckCircle2 className="w-3.5 h-3.5" /> };
     if (s === "shipped") return { ...base, icon: <Truck className="w-3.5 h-3.5" /> };
     if (s === "cancelled") return { ...base, icon: <XCircle className="w-3.5 h-3.5" /> };
-
-
     if (s === "packed") return { ...base, icon: <Package className="w-3.5 h-3.5" /> };
-
     return { ...base, icon: <AlertCircle className="w-3.5 h-3.5" /> };
   };
 
@@ -281,7 +277,6 @@ export default function MyOrders() {
                   >
                     <option value="all">Status</option>
                     <option value="new">New</option>
-
                     <option value="packed">Packed</option>
                     <option value="shipped">Shipped</option>
                     <option value="delivered">Delivered</option>
@@ -398,11 +393,9 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
               const timestamp = history[s] || order.createdAt;
               const labels = {
                 new: "Placed on",
-
                 shipped: "Shipped on",
                 delivered: "Delivered on",
                 cancelled: "Cancelled on",
-
                 "in transit": "Shipped on"
               };
               return <p className="text-[10px] sm:text-xs text-gray-400 font-medium">{labels[s] || "Updated on"} {formatDate(timestamp)}</p>;
@@ -415,7 +408,7 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-50">
-          {/* Track Package – shown when shipment is dispatched or scheduled */}
+          {/* Track Package – shown when shipment is dispatched */}
           {order.shiprocket?.awbCode && !["cancelled", "delivered"].includes(order.status?.toLowerCase()) && (
             <a
               href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
@@ -451,6 +444,9 @@ const OrderCard = React.memo(({ order, isExpanded, onToggle, getStatusConfig, fo
                       </div>
                       <div>
                         <p className="font-bold text-gray-900 text-[13px]">{item.name || "Custom Candle"}</p>
+                        {item.variantLabel && (
+                          <p className="text-[10px] text-gray-500 font-semibold tracking-wide">Size: {item.variantLabel}</p>
+                        )}
                         <p className="text-[10px] text-gray-400 font-medium tracking-wide">QTY: {item.quantity} • ₹{(item.totalAmount || item.itemTotal || (item.price * item.quantity)) / item.quantity}/unit</p>
                       </div>
                     </div>
