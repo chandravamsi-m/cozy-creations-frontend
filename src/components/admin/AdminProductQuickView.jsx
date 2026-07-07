@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  X, ChevronLeft, ChevronRight, Pencil, Trash2
+  X, ChevronLeft, ChevronRight, Pencil, Trash2, Play, Image
 } from "lucide-react";
 import { optimizeCloudinaryUrl } from "../../utils/image";
 import { getEffectiveDiscount } from "../../utils/offerUtils";
@@ -20,6 +20,10 @@ export default function AdminProductQuickView({
   const galleryImages = Array.isArray(product.images) && product.images.length > 0
     ? product.images.map(url => optimizeCloudinaryUrl(url, { width: 800 }))
     : [optimizeCloudinaryUrl(product.imageUrl || product.image, { width: 800 })].filter(Boolean);
+
+  if (product.videoUrl) {
+    galleryImages.push(product.videoUrl);
+  }
 
   const isBulk = product.bulkPricingTiers && product.bulkPricingTiers.length > 0;
 
@@ -53,20 +57,32 @@ export default function AdminProductQuickView({
         <div className="w-full h-full flex flex-col md:flex-row overflow-y-auto md:overflow-hidden custom-scrollbar">
           {/* LEFT: Image Section */}
           <div className="w-full md:w-1/2 h-64 sm:h-80 md:h-full bg-[#F8F8F5] relative flex flex-col border-r border-gray-100 shrink-0">
-            <div className="relative flex-1 overflow-hidden">
-              <img 
-                src={galleryImages[activeIndex]} 
-                alt={product.name}
-                onError={(e) => {
-                  const original = Array.isArray(product.images) && product.images.length > activeIndex 
-                    ? product.images[activeIndex] 
-                    : (product.imageUrl || product.image);
-                  if (e.target.src !== original && original) {
-                    e.target.src = original;
-                  }
-                }}
-                className="w-full h-full object-cover transition-transform duration-500"
-              />
+            <div className={`relative flex-1 overflow-hidden ${galleryImages[activeIndex] === product.videoUrl ? 'bg-black' : ''}`}>
+              {galleryImages[activeIndex] === product.videoUrl ? (
+                <video
+                  src={product.videoUrl}
+                  className="w-full h-full object-contain bg-black"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <img 
+                  src={galleryImages[activeIndex]} 
+                  alt={product.name}
+                  onError={(e) => {
+                    const original = Array.isArray(product.images) && product.images.length > activeIndex 
+                      ? product.images[activeIndex] 
+                      : (product.imageUrl || product.image);
+                    if (e.target.src !== original && original) {
+                      e.target.src = original;
+                    }
+                  }}
+                  className="w-full h-full object-cover transition-transform duration-500"
+                />
+              )}
               
               {galleryImages.length > 1 && (
                 <>
@@ -102,6 +118,7 @@ export default function AdminProductQuickView({
                 </>
               )}
             </div>
+
           </div>
 
           {/* RIGHT: Content Section */}
