@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   X, ChevronLeft, ChevronRight, Pencil, Trash2, Play, Image
 } from "lucide-react";
-import { optimizeCloudinaryUrl } from "../../utils/image";
+import { optimizeCloudinaryUrl, optimizeCloudinaryVideoUrl } from "../../utils/image";
 import { getEffectiveDiscount } from "../../utils/offerUtils";
 
 export default function AdminProductQuickView({ 
@@ -21,8 +21,10 @@ export default function AdminProductQuickView({
     ? product.images.map(url => optimizeCloudinaryUrl(url, { width: 800 }))
     : [optimizeCloudinaryUrl(product.imageUrl || product.image, { width: 800 })].filter(Boolean);
 
-  if (product.videoUrl) {
-    galleryImages.push(product.videoUrl);
+  const optimizedVideoUrl = product.videoUrl ? optimizeCloudinaryVideoUrl(product.videoUrl) : null;
+
+  if (optimizedVideoUrl) {
+    galleryImages.push(optimizedVideoUrl);
   }
 
   const isBulk = product.bulkPricingTiers && product.bulkPricingTiers.length > 0;
@@ -57,10 +59,10 @@ export default function AdminProductQuickView({
         <div className="w-full h-full flex flex-col md:flex-row overflow-y-auto md:overflow-hidden custom-scrollbar">
           {/* LEFT: Image Section */}
           <div className="w-full md:w-1/2 h-64 sm:h-80 md:h-full bg-[#F8F8F5] relative flex flex-col border-r border-gray-100 shrink-0">
-            <div className={`relative flex-1 overflow-hidden ${galleryImages[activeIndex] === product.videoUrl ? 'bg-black' : ''}`}>
-              {galleryImages[activeIndex] === product.videoUrl ? (
+            <div className={`relative flex-1 overflow-hidden ${galleryImages[activeIndex] === optimizedVideoUrl ? 'bg-black' : ''}`}>
+              {galleryImages[activeIndex] === optimizedVideoUrl ? (
                 <video
-                  src={product.videoUrl}
+                  src={optimizedVideoUrl}
                   className="w-full h-full object-contain bg-black"
                   controls
                   autoPlay
