@@ -11,11 +11,12 @@ import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/ima
 import { getEffectiveDiscount } from "../../utils/offerUtils";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import { coerceAdminNumberInput } from "../../utils/adminNumberInputs";
-import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles, MoreVertical, Leaf, Droplet, Clock, ImagePlus } from "lucide-react";
+import { Loader2, Plus, X, Search, ChevronDown, Pencil, Trash2, ToggleLeft, ToggleRight, Package, Sparkles, MoreVertical, Leaf, Droplet, Clock, ImagePlus, Video, Play } from "lucide-react";
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
 // Default size labels for Attar
 const DEFAULT_ATTAR_VARIANTS = [
@@ -42,6 +43,17 @@ async function uploadToCloudinary(file) {
   const res = await fetch(url, { method: "POST", body: form });
   const data = await res.json();
   if (!res.ok || !data?.secure_url) throw new Error(data?.error?.message || "Upload failed");
+  return data.secure_url;
+}
+
+async function uploadVideoToCloudinary(file) {
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
+  const form = new FormData();
+  form.append("file", file);
+  form.append("upload_preset", UPLOAD_PRESET);
+  const res = await fetch(url, { method: "POST", body: form });
+  const data = await res.json();
+  if (!res.ok || !data?.secure_url) throw new Error(data?.error?.message || "Video upload failed");
   return data.secure_url;
 }
 
@@ -72,6 +84,10 @@ export default function AdminPerfumes() {
   const [previews, setPreviews] = useState([null, null, null, null, null]);
   const [formLoading, setFormLoading] = useState(false);
   const [formMsg, setFormMsg] = useState("");
+  // Video upload state
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const [existingVideoUrl, setExistingVideoUrl] = useState(null);
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => { }, type: "default", confirmText: "Confirm" });
   const closeConfirm = () => setConfirmModal(p => ({ ...p, isOpen: false }));
@@ -126,6 +142,9 @@ export default function AdminPerfumes() {
     setVariants(DEFAULT_ATTAR_VARIANTS.map(v => ({ ...v })));
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
+    setVideoFile(null);
+    setVideoPreviewUrl(null);
+    setExistingVideoUrl(null);
     setFormMsg("");
     setShowModal(true);
   };
@@ -156,6 +175,10 @@ export default function AdminPerfumes() {
     if (Array.isArray(item.images) && item.images.length > 0) item.images.slice(0, 5).forEach((u, i) => p[i] = u);
     else if (item.imageUrl) p[0] = item.imageUrl;
     setPreviews(p);
+    const existingVideo = item.videoUrl || null;
+    setExistingVideoUrl(existingVideo);
+    setVideoPreviewUrl(existingVideo);
+    setVideoFile(null);
     setImageFiles([null, null, null, null, null]);
     setFormMsg("");
     setShowModal(true);
@@ -165,8 +188,12 @@ export default function AdminPerfumes() {
     setShowModal(false); 
     setEditingId(null); 
     previews.forEach(p => { if (p && p.startsWith("blob:")) URL.revokeObjectURL(p); });
+    if (videoPreviewUrl && videoPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(videoPreviewUrl);
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
+    setVideoFile(null);
+    setVideoPreviewUrl(null);
+    setExistingVideoUrl(null);
     setFormMsg(""); 
   };
 
@@ -182,6 +209,26 @@ export default function AdminPerfumes() {
     const np = [...previews];
     if (np[index]?.startsWith("blob:")) URL.revokeObjectURL(np[index]);
     np.splice(index, 1); np.push(null); setPreviews(np);
+  };
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > MAX_VIDEO_BYTES) {
+      setFormMsg(`Video is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Please keep it under 50 MB.`);
+      return;
+    }
+    if (videoPreviewUrl && videoPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(videoPreviewUrl);
+    setVideoFile(file);
+    setVideoPreviewUrl(URL.createObjectURL(file));
+    setFormMsg("");
+  };
+
+  const removeVideo = () => {
+    if (videoPreviewUrl && videoPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(videoPreviewUrl);
+    setVideoFile(null);
+    setVideoPreviewUrl(null);
+    setExistingVideoUrl(null);
   };
 
   const updateVariant = (idx, field, value) => {
@@ -216,6 +263,13 @@ export default function AdminPerfumes() {
       const finalImages = uploadedUrls.filter(u => u !== null);
       const imageUrl = finalImages[0];
 
+      // Upload video if a new one was selected
+      let finalVideoUrl = existingVideoUrl || null;
+      if (videoFile) {
+        setFormMsg("Uploading video...");
+        finalVideoUrl = await uploadVideoToCloudinary(videoFile);
+      }
+
       const payload = {
         name: formData.name,
         scentFamily: formData.scentFamily,
@@ -229,6 +283,7 @@ export default function AdminPerfumes() {
         ingredients: formData.ingredients,
         altText: formData.altText || formData.name,
         imageUrl, thumbnailUrl: imageUrl, images: finalImages,
+        videoUrl: finalVideoUrl || null,
         variants: validVariants.map(v => ({
           label: v.label.trim(),
           price: Number(v.price) || 0,
@@ -625,6 +680,37 @@ export default function AdminPerfumes() {
                     })}
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PNG, JPG up to 5MB per image.</p>
+                </div>
+
+                {/* Video Upload — Optional */}
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <div>
+                    <label className="text-sm font-bold text-gray-900 block">Product Video <span className="text-gray-400 font-medium">(Optional)</span></label>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Upload a short video. Max 50MB. Accepted: MP4, MOV, WebM.</p>
+                  </div>
+                  {videoPreviewUrl ? (
+                    <div className="relative rounded-2xl overflow-hidden border-2 border-gray-100 bg-gray-50 group">
+                      <video src={videoPreviewUrl} className="w-full max-h-48 object-cover" controls muted playsInline />
+                      <button type="button" onClick={removeVideo} className="absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="px-3 py-2 bg-white border-t border-gray-100">
+                        <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1.5"><Play className="w-3 h-3 text-green-600" />Video ready to upload</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-2xl p-6 cursor-pointer hover:border-black/30 hover:bg-gray-50 transition-all group">
+                      <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                        <Video className="w-5 h-5 text-gray-400 group-hover:text-gray-700 transition-colors" />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-500">Click to select video</span>
+                      <span className="text-[10px] text-gray-400">MP4, MOV, WebM — max 50MB</span>
+                      <input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" className="hidden" onChange={handleVideoFileChange} />
+                    </label>
+                  )}
+                  <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    <p className="text-[10px] text-amber-800 font-semibold leading-relaxed">📱 <strong>Tip:</strong> Record in <strong>1080p or less standard quality</strong> (not 4K) and share as MP4 for best compatibility.</p>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">

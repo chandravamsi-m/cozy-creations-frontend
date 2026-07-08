@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getImageSrc, optimizeCloudinaryUrl } from "../utils/image";
+import { getImageSrc, optimizeCloudinaryUrl, optimizeCloudinaryVideoUrl } from "../utils/image";
 import { useCart } from "../hooks/useCart";
 import { calculateProductDiscount, getEffectiveDiscount } from "../utils/offerUtils";
-import { X, ShoppingCart, Plus, Minus, CheckCircle2, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react";
+import { X, ShoppingCart, Plus, Minus, CheckCircle2, ChevronLeft, ChevronRight, Share2, Check, Play, Image } from "lucide-react";
 
 import FlowerIcon from "../assets/svgs/flower-icon.svg";
 import AnimalIcon from "../assets/svgs/animal-icon.svg";
@@ -84,6 +84,12 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
   const galleryImages = product && Array.isArray(product.images) && product.images.length > 0
     ? product.images.map(url => optimizeCloudinaryUrl(url, { width: 1000 }))
     : [optimizeCloudinaryUrl(product?.imageUrl || product?.image, { width: 1000 })].filter(Boolean);
+
+  const optimizedVideoUrl = product?.videoUrl ? optimizeCloudinaryVideoUrl(product.videoUrl) : null;
+
+  if (optimizedVideoUrl) {
+    galleryImages.push(optimizedVideoUrl);
+  }
 
   const isBulk = product ? (product.isBulk === true || (product.bulkPricingTiers && product.bulkPricingTiers.length > 0)) : false;
 
@@ -228,34 +234,47 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
 
         {/* Left: Image Section (Gallery) */}
         <div className="w-full md:w-[45%] lg:w-1/2 bg-[#F8F8F5] relative group flex flex-col shrink-0">
-          {/* Main Large Image */}
+          {/* Main Large Image / Video */}
           <div 
-            className="relative w-full aspect-square md:aspect-auto md:flex-1 overflow-hidden cursor-zoom-in md:min-h-[400px] group"
+            className={`relative w-full aspect-square md:aspect-auto md:flex-1 overflow-hidden cursor-zoom-in md:min-h-[400px] group ${galleryImages[activeIndex] === optimizedVideoUrl ? 'bg-black' : ''}`}
             onClick={() => setIsZoomed(true)}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
             {/* Preload images for instant switching */}
-            <div className="hidden">
-              {galleryImages.map((img, i) => (
-                <img key={i} src={img} alt="preload" />
-              ))}
-            </div>
+            {galleryImages[activeIndex] !== optimizedVideoUrl && (
+              <div className="hidden">
+                {galleryImages.filter(url => url !== optimizedVideoUrl).map((img, i) => (
+                  <img key={i} src={img} alt="preload" />
+                ))}
+              </div>
+            )}
 
-            <img
-              src={galleryImages[activeIndex]}
-              alt={product.name}
-              onError={(e) => {
-                const original = Array.isArray(product.images) && product.images.length > activeIndex 
-                  ? product.images[activeIndex] 
-                  : (product.imageUrl || product.image);
-                if (e.target.src !== original && original) {
-                  e.target.src = original;
-                }
-              }}
-              className="w-full h-full object-cover transition-transform duration-500"
-            />
+            {galleryImages[activeIndex] === optimizedVideoUrl ? (
+              <video
+                src={optimizedVideoUrl}
+                className="w-full h-full object-contain bg-black pointer-events-none"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <img
+                src={galleryImages[activeIndex]}
+                alt={product.name}
+                onError={(e) => {
+                  const original = Array.isArray(product.images) && product.images.length > activeIndex 
+                    ? product.images[activeIndex] 
+                    : (product.imageUrl || product.image);
+                  if (e.target.src !== original && original) {
+                    e.target.src = original;
+                  }
+                }}
+                className="w-full h-full object-cover transition-transform duration-500"
+              />
+            )}
 
             {/* Arrows */}
             {galleryImages.length > 1 && (
@@ -514,16 +533,26 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
           {/* Spacer for top */}
           <div className="h-8 sm:h-12 w-full shrink-0"></div>
 
-          {/* Main Image */}
+          {/* Main Image / Video */}
           <div 
             className="relative w-full max-w-5xl flex-1 flex items-center justify-center min-h-0"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={getImageSrc(galleryImages[activeIndex])}
-              alt={product.name}
-              className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp select-none"
-            />
+            {galleryImages[activeIndex] === optimizedVideoUrl ? (
+              <video
+                src={optimizedVideoUrl}
+                className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp bg-black"
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <img
+                src={getImageSrc(galleryImages[activeIndex])}
+                alt={product.name}
+                className="max-w-full max-h-full object-contain shadow-2xl animate-scaleUp select-none"
+              />
+            )}
             
             {/* Lightbox Arrows */}
             {galleryImages.length > 1 && (
@@ -560,9 +589,16 @@ export default function ProductQuickView({ product, onClose, activeOffer }) {
                     e.stopPropagation();
                     setActiveIndex(i);
                   }}
-                  className={`relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden snap-center transition-all border-2 ${activeIndex === i ? "border-white opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-100"}`}
+                  className={`relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden snap-center transition-all border-2 bg-black ${activeIndex === i ? "border-white opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-100"}`}
                 >
-                  <img src={getImageSrc(imgUrl)} alt={`Thumbnail ${i}`} className="w-full h-full object-cover" />
+                  {imgUrl === optimizedVideoUrl ? (
+                    <div className="relative w-full h-full flex items-center justify-center bg-black">
+                      <video src={`${imgUrl}#t=0.1`} className="absolute inset-0 w-full h-full object-cover opacity-70" preload="metadata" muted playsInline />
+                      <Play className="relative w-6 h-6 text-white drop-shadow-md z-10" />
+                    </div>
+                  ) : (
+                    <img src={getImageSrc(imgUrl)} alt={`Thumbnail ${i}`} className="w-full h-full object-cover" />
+                  )}
                 </button>
               ))}
             </div>

@@ -15,6 +15,7 @@ import { optimizeCloudinaryUrl } from "../../utils/image";
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
 export default function AdminBulkProducts() {
   const { idToken } = useAuth();
@@ -34,6 +35,10 @@ export default function AdminBulkProducts() {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [imageFiles, setImageFiles] = useState([null, null, null, null, null]);
   const [previews, setPreviews] = useState([null, null, null, null, null]);
+  // Video upload state
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const [existingVideoUrl, setExistingVideoUrl] = useState(null);
   const [product, setProduct] = useState({
     name: "",
     category: "",
@@ -132,6 +137,10 @@ export default function AdminBulkProducts() {
     } else if (p.imageUrl) {
       initialPreviews[0] = p.imageUrl;
     }
+    const existingVideo = p.videoUrl || null;
+    setExistingVideoUrl(existingVideo);
+    setVideoPreviewUrl(existingVideo);
+    setVideoFile(null);
     setPreviews(initialPreviews);
     setImageFiles([null, null, null, null, null]);
     setShowEditModal(true);
@@ -148,8 +157,12 @@ export default function AdminBulkProducts() {
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setEditingProductId(null);
+    if (videoPreviewUrl && videoPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(videoPreviewUrl);
     setImageFiles([null, null, null, null, null]);
     setPreviews([null, null, null, null, null]);
+    setVideoFile(null);
+    setVideoPreviewUrl(null);
+    setExistingVideoUrl(null);
   };
 
   const updateField = (field, value) => {
@@ -260,6 +273,42 @@ export default function AdminBulkProducts() {
     return data.secure_url;
   };
 
+  const uploadVideoToCloudinary = async (file) => {
+    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
+    const form = new FormData();
+    form.append("file", file);
+    form.append("upload_preset", UPLOAD_PRESET);
+    const res = await fetch(url, { method: "POST", body: form });
+    let data = null;
+    try { data = await res.json(); } catch { data = null; }
+    if (!res.ok) {
+      const msg = data?.error?.message || data?.message || `Video upload failed (HTTP ${res.status})`;
+      throw new Error(msg);
+    }
+    if (!data?.secure_url) throw new Error("Video upload failed: missing secure_url from Cloudinary");
+    return data.secure_url;
+  };
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > MAX_VIDEO_BYTES) {
+      setFormMsg(`Video is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Please keep it under 50 MB.`);
+      return;
+    }
+    if (videoPreviewUrl && videoPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(videoPreviewUrl);
+    setVideoFile(file);
+    setVideoPreviewUrl(URL.createObjectURL(file));
+    setFormMsg("");
+  };
+
+  const removeVideo = () => {
+    if (videoPreviewUrl && videoPreviewUrl.startsWith("blob:")) URL.revokeObjectURL(videoPreviewUrl);
+    setVideoFile(null);
+    setVideoPreviewUrl(null);
+    setExistingVideoUrl(null);
+  };
+
   const addTier = () => {
     setBulkPricingTiers([...bulkPricingTiers, { minQty: "", pricePerPc: "" }]);
   };
@@ -306,6 +355,14 @@ export default function AdminBulkProducts() {
       }
 
       const imageUrl = finalImages[0];
+
+      // Upload video if a new one was selected
+      let finalVideoUrl = existingVideoUrl || null;
+      if (videoFile) {
+        setFormMsg("Uploading video...");
+        finalVideoUrl = await uploadVideoToCloudinary(videoFile);
+      }
+
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;
 
       const payload = { 
@@ -315,6 +372,7 @@ export default function AdminBulkProducts() {
         imageUrl,
         thumbnailUrl: imageUrl,
         images: finalImages,
+        videoUrl: finalVideoUrl || null,
         bulkPricingTiers 
       };
 
@@ -638,6 +696,9 @@ export default function AdminBulkProducts() {
                   addTier={addTier}
                   removeTier={removeTier}
                   updateTier={updateTier}
+                  videoPreviewUrl={videoPreviewUrl}
+                  handleVideoFileChange={handleVideoFileChange}
+                  removeVideo={removeVideo}
                 />
               </div>
             </div>
