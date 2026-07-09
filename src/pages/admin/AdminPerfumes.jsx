@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
 import { apiFetch } from "../../lib/api";
+import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus, uploadVideoToCloudinary } from "../../api/adminProducts";
 import ConfirmModal from "../../components/ConfirmModal";
 import Skeleton from "../../components/common/Skeleton";
 import { compressToWebpUnderLimit, optimizeCloudinaryUrl } from "../../utils/image";
@@ -46,16 +47,7 @@ async function uploadToCloudinary(file) {
   return data.secure_url;
 }
 
-async function uploadVideoToCloudinary(file) {
-  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
-  const form = new FormData();
-  form.append("file", file);
-  form.append("upload_preset", UPLOAD_PRESET);
-  const res = await fetch(url, { method: "POST", body: form });
-  const data = await res.json();
-  if (!res.ok || !data?.secure_url) throw new Error(data?.error?.message || "Video upload failed");
-  return data.secure_url;
-}
+
 
 function getPriceRange(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return null;
@@ -266,8 +258,7 @@ export default function AdminPerfumes() {
       // Upload video if a new one was selected
       let finalVideoUrl = existingVideoUrl || null;
       if (videoFile) {
-        setFormMsg("Uploading video...");
-        finalVideoUrl = await uploadVideoToCloudinary(videoFile);
+        finalVideoUrl = await uploadVideoToCloudinary(videoFile, idToken);
       }
 
       const payload = {

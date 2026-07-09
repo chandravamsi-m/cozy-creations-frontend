@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
-import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue, getCatalogueStatus } from "../../api/adminProducts";
+import { updateProduct, deleteProduct, permanentlyDeleteProduct, generateBulkCatalogue, getCatalogueStatus, uploadVideoToCloudinary } from "../../api/adminProducts";
 import ProductForm from "../../components/admin/ProductForm";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -273,21 +273,7 @@ export default function AdminBulkProducts() {
     return data.secure_url;
   };
 
-  const uploadVideoToCloudinary = async (file) => {
-    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
-    const form = new FormData();
-    form.append("file", file);
-    form.append("upload_preset", UPLOAD_PRESET);
-    const res = await fetch(url, { method: "POST", body: form });
-    let data = null;
-    try { data = await res.json(); } catch { data = null; }
-    if (!res.ok) {
-      const msg = data?.error?.message || data?.message || `Video upload failed (HTTP ${res.status})`;
-      throw new Error(msg);
-    }
-    if (!data?.secure_url) throw new Error("Video upload failed: missing secure_url from Cloudinary");
-    return data.secure_url;
-  };
+
 
   const handleVideoFileChange = (e) => {
     const file = e.target.files[0];
@@ -359,8 +345,7 @@ export default function AdminBulkProducts() {
       // Upload video if a new one was selected
       let finalVideoUrl = existingVideoUrl || null;
       if (videoFile) {
-        setFormMsg("Uploading video...");
-        finalVideoUrl = await uploadVideoToCloudinary(videoFile);
+        finalVideoUrl = await uploadVideoToCloudinary(videoFile, idToken);
       }
 
       const { waxTypeOther, ...productWithoutWaxTypeOther } = product;

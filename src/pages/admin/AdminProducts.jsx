@@ -6,7 +6,7 @@ import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useProducts } from "../../contexts/ProductsContext";
-import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus } from "../../api/adminProducts";
+import { createProduct, deleteProduct, updateProduct, permanentlyDeleteProduct, generateCatalogue, getCatalogueStatus, uploadVideoToCloudinary } from "../../api/adminProducts";
 import { calculateProductDiscount, getEffectiveDiscount } from "../../utils/offerUtils";
 import ProductForm from "../../components/admin/ProductForm";
 import AdminProductQuickView from "../../components/admin/AdminProductQuickView";
@@ -437,21 +437,7 @@ export default function AdminProducts() {
     return data.secure_url;
   };
 
-  const uploadVideoToCloudinary = async (file) => {
-    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
-    const form = new FormData();
-    form.append("file", file);
-    form.append("upload_preset", UPLOAD_PRESET);
-    const res = await fetch(url, { method: "POST", body: form });
-    let data = null;
-    try { data = await res.json(); } catch { data = null; }
-    if (!res.ok) {
-      const msg = data?.error?.message || data?.message || `Video upload failed (HTTP ${res.status})`;
-      throw new Error(msg);
-    }
-    if (!data?.secure_url) throw new Error("Video upload failed: missing secure_url from Cloudinary");
-    return data.secure_url;
-  };
+
 
   const handleVideoFileChange = (e) => {
     const file = e.target.files[0];
@@ -541,7 +527,7 @@ export default function AdminProducts() {
         thumbnailUrl: imageUrl,
         images: finalImages,
         altText: product.name,
-        videoUrl: (videoFile ? await uploadVideoToCloudinary(videoFile) : (existingVideoUrl || null)),
+        videoUrl: (videoFile ? await uploadVideoToCloudinary(videoFile, idToken) : (existingVideoUrl || null)),
         bulkPricingTiers: bulkPricingTiers.map(tier => ({
           minQty: String(tier.minQty),
           pricePerPc: parseAdminNumber(tier.pricePerPc)
@@ -616,7 +602,7 @@ export default function AdminProducts() {
         thumbnailUrl: imageUrl,
         images: finalImages,
         altText: product.name,
-        videoUrl: (videoFile ? await uploadVideoToCloudinary(videoFile) : (existingVideoUrl || null)),
+        videoUrl: (videoFile ? await uploadVideoToCloudinary(videoFile, idToken) : (existingVideoUrl || null)),
         bulkPricingTiers: bulkPricingTiers.map(tier => ({
           minQty: String(tier.minQty),
           pricePerPc: parseAdminNumber(tier.pricePerPc)
