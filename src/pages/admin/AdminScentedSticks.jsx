@@ -585,14 +585,6 @@ export default function AdminScentedSticks() {
                   </div>
                 </div>
 
-                {formMsg && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300 mb-2">
-                    <p className="text-xs font-bold text-red-600 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
-                      {formMsg}
-                    </p>
-                  </div>
-                )}
 
                 {/* Images */}
                 <div className="space-y-3 pt-2">
@@ -655,6 +647,15 @@ export default function AdminScentedSticks() {
                     <p className="text-[10px] text-amber-800 font-semibold leading-relaxed">📱 <strong>Tip:</strong> Record in <strong>1080p or less standard quality</strong> (not 4K) and share as MP4 for best compatibility.</p>
                   </div>
                 </div>
+
+                {formMsg && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300 mb-2">
+                    <p className="text-xs font-bold text-red-600 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
+                      {formMsg}
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-2">
                   <button type="submit" disabled={formLoading} className="flex-1 bg-black text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest hover:bg-gray-800 transition-all disabled:bg-gray-200 disabled:text-gray-400 active:scale-95 shadow-sm flex items-center justify-center min-h-[44px]">
