@@ -1,65 +1,26 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import whatsapp2 from '../assets/images/whatsapp-2.webp';
-import whatsapp3 from '../assets/images/whatsapp-3.webp';
+import ccLogoFull from '../assets/images/cc-logo-full.png';
 import mailRounded from '../assets/svgs/mail-rounded.svg';
 import call from '../assets/svgs/call.svg';
-import { MapPin, Instagram } from 'lucide-react';
+import { Instagram } from 'lucide-react';
 
 
 export default function Footer() {
     return (
-        <div className="relative w-full bg-[#191816] text-white pt-4 md:pt-10 pb-8 md:pb-12 overflow-visible z-10">
-            <div className="hidden xl:block overflow-visible absolute bottom-[52px] right-0 w-[280px] h-[400px] opacity-100 pointer-events-none">
-                <img src={whatsapp2} alt="Decor" className="w-full h-[100%] object-contain object-right" />
-            </div>
-
-
+        <div className="relative w-full bg-[#191816] text-white pt-6 pb-6 md:pt-8 md:pb-8 overflow-visible z-10">
             <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-8 relative z-10">
-                <div className="flex flex-col md:flex-row gap-8 md:gap-4 lg:gap-10 xl:gap-16 items-center md:items-start justify-start w-full">
-                    <div className="flex flex-col gap-1 items-center flex-shrink-0 w-full sm:w-[280px] md:w-[200px] lg:w-[280px]">
-                        <div className="w-full h-auto rounded-2xl overflow-hidden relative">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-6 lg:gap-12 xl:gap-20 items-start justify-between w-full">
+                    {/* ── Logo column ── */}
+                    <div className="flex flex-col items-start flex-shrink-0 w-full sm:w-[280px] md:w-[220px] lg:w-[260px]">
+                        {/* Logo image with transparent background */}
+                        <Link to="/" aria-label="Go to Cozy Creations home" className="w-[150px] sm:w-[160px] md:w-[150px] lg:w-[160px] flex items-center justify-start transition-transform hover:scale-105 duration-300">
                             <img
-                                src={whatsapp3}
-                                alt="Footer Candle"
-                                className="w-full h-auto max-h-[140px] sm:max-h-[180px] md:max-h-[200px] object-contain object-center"
+                                src={ccLogoFull}
+                                alt="Cozy Creations"
+                                className="w-full h-auto object-contain"
                             />
-                        </div>
-                        {/* Social & Contact Icons */}
-                        <div className="flex items-center justify-center gap-4 px-2 w-full mt-0">
-                            <a
-                                href="https://www.instagram.com/cozycreationscandle"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="group relative p-2 bg-white/5 rounded-full hover:bg-white transition-all duration-300 flex items-center justify-center text-white hover:text-[#191816] hover:scale-110 shadow-md"
-                            >
-                                <Instagram className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-300 text-white group-hover:text-[#191816]" />
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 text-[10px] font-semibold text-[#191816] bg-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
-                                    @cozycreationscandle
-                                    <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-white"></span>
-                                </span>
-                            </a>
-                            <a
-                                href="mailto:cozycandlecorner13@gmail.com"
-                                className="group relative p-2 bg-white/5 rounded-full hover:bg-white transition-all duration-300 flex items-center justify-center text-white hover:text-[#191816] hover:scale-110 shadow-md"
-                            >
-                                <img src={mailRounded} alt="Email" className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-300 group-hover:brightness-0" />
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 text-[10px] font-semibold text-[#191816] bg-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
-                                    cozycandlecorner13@gmail.com
-                                    <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-white"></span>
-                                </span>
-                            </a>
-                            <a
-                                href="tel:8019401322"
-                                className="group relative p-2 bg-white/5 rounded-full hover:bg-white transition-all duration-300 flex items-center justify-center text-white hover:text-[#191816] hover:scale-110 shadow-md"
-                            >
-                                <img src={call} alt="Call" className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-300 group-hover:brightness-0" />
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 text-[10px] font-semibold text-[#191816] bg-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
-                                    8019401322
-                                    <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-white"></span>
-                                </span>
-                            </a>
-                        </div>
+                        </Link>
                     </div>
 
 
@@ -96,17 +57,51 @@ export default function Footer() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Invisible Spacer for Lamp Alignment */}
-                    <div className="hidden xl:block w-[240px] h-[1px] flex-shrink-0"></div>
                 </div>
 
                 <div className="w-full h-[1px] bg-white mt-6 mb-4 opacity-20"></div>
 
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-x-6 gap-y-2 text-[10px] md:text-xs text-white opacity-90">
-                    <div>© 2025 Cozy Creations. All rights reserved.</div>
-                    <div className="hidden sm:block w-[1px] h-3 bg-white opacity-30"></div>
-                    <div className="tracking-widest uppercase">GSTIN: 09CWMPG6310F1ZL</div>
+                <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-y-6 text-[10px] md:text-xs text-white opacity-90">
+                    <div className="flex flex-col sm:flex-row items-center gap-x-6 gap-y-2">
+                        <div>© 2025 Cozy Creations. All rights reserved.</div>
+                        <div className="hidden sm:block w-[1px] h-3 bg-white opacity-30"></div>
+                        <div className="tracking-widest uppercase">GSTIN: 09CWMPG6310F1ZL</div>
+                    </div>
+                    {/* Social & Contact Icons */}
+                    <div className="flex items-center gap-4">
+                        <a
+                            href="https://www.instagram.com/cozycreationscandle"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group relative p-2 bg-white/5 rounded-full hover:bg-white transition-all duration-300 flex items-center justify-center text-white hover:text-[#191816] hover:scale-110 shadow-md"
+                        >
+                            <Instagram className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-300 text-white group-hover:text-[#191816]" />
+                            <span className="absolute bottom-[120%] right-0 mb-1 px-2.5 py-1 text-[10px] font-semibold text-[#191816] bg-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
+                                @cozycreationscandle
+                                <span className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-white"></span>
+                            </span>
+                        </a>
+                        <a
+                            href="mailto:cozycandlecorner13@gmail.com"
+                            className="group relative p-2 bg-white/5 rounded-full hover:bg-white transition-all duration-300 flex items-center justify-center text-white hover:text-[#191816] hover:scale-110 shadow-md"
+                        >
+                            <img src={mailRounded} alt="Email" className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-300 group-hover:brightness-0" />
+                            <span className="absolute bottom-[120%] right-0 mb-1 px-2.5 py-1 text-[10px] font-semibold text-[#191816] bg-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
+                                cozycandlecorner13@gmail.com
+                                <span className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-white"></span>
+                            </span>
+                        </a>
+                        <a
+                            href="tel:8019401322"
+                            className="group relative p-2 bg-white/5 rounded-full hover:bg-white transition-all duration-300 flex items-center justify-center text-white hover:text-[#191816] hover:scale-110 shadow-md"
+                        >
+                            <img src={call} alt="Call" className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-300 group-hover:brightness-0" />
+                            <span className="absolute bottom-[120%] right-0 mb-1 px-2.5 py-1 text-[10px] font-semibold text-[#191816] bg-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
+                                8019401322
+                                <span className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-white"></span>
+                            </span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

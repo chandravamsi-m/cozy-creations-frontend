@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import logo from "../assets/images/logo image.webp";
+import logo from "../assets/images/cc-logo.png";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../hooks/useCart";
 import { useLoginModal } from "../contexts/LoginModalContext";
