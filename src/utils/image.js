@@ -58,18 +58,6 @@ export function optimizeCloudinaryUrl(url, options = {}) {
   return optimizedUrl;
 }
 
-export function optimizeCloudinaryVideoUrl(url) {
-  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com") || !url.includes("/video/upload/")) return url;
-  if (url.includes("/upload/q_auto") || url.startsWith("data:") || url.startsWith("blob:")) return url;
-
-  const transformations = `q_auto,f_auto,vc_auto,w_1080`;
-
-  return url.replace(
-    /\/(upload)\/(v[0-9]+\/)?/, 
-    `/$1/${transformations}/$2`
-  );
-}
-
 
 export const compressToWebpUnderLimit = async (file, maxBytes = 5 * 1024 * 1024) => {
   if (!(file instanceof File) || !file.type.startsWith("image/")) return file;

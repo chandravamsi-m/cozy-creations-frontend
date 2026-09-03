@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ImagePlus, Video, X, Play } from "lucide-react";
+import { ChevronDown, ImagePlus } from "lucide-react";
 import {
   coerceAdminNumberInput,
   preventNumberWheelChange,
@@ -21,11 +21,7 @@ const ProductForm = ({
   addTier,
   removeTier,
   updateTier,
-  formMsg,
-  // Video props
-  videoPreviewUrl,
-  handleVideoFileChange,
-  removeVideo,
+  formMsg
 }) => {
   const handleIntegerFieldChange = (field, value) => {
     updateField(field, coerceAdminNumberInput(String(product[field] ?? ""), value));
@@ -397,60 +393,6 @@ const ProductForm = ({
         })}
       </div>
       <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">PNG, JPG up to 5MB per image.</p>
-    </div>
-
-    {/* Video Upload — Optional */}
-    <div className="space-y-3 pt-4 border-t border-gray-200">
-      <div>
-        <label className="text-sm font-bold text-gray-900 block">Product Video <span className="text-gray-400 font-medium">(Optional)</span></label>
-        <p className="text-[10px] text-gray-400 mt-0.5">Upload a short video so customers can see the product in real life. Max 50MB. Accepted: MP4, MOV, WebM.</p>
-      </div>
-
-      {videoPreviewUrl ? (
-        <div className="relative rounded-2xl overflow-hidden border-2 border-gray-100 bg-gray-50 group">
-          <video
-            src={videoPreviewUrl}
-            className="w-full max-h-48 object-cover"
-            controls
-            muted
-            playsInline
-          />
-          <button
-            type="button"
-            onClick={removeVideo}
-            className="absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
-            title="Remove video"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <div className="px-3 py-2 bg-white border-t border-gray-100">
-            <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1.5">
-              <Play className="w-3 h-3 text-green-600" />
-              Video ready to upload
-            </p>
-          </div>
-        </div>
-      ) : (
-        <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-2xl p-6 cursor-pointer hover:border-black/30 hover:bg-gray-50 transition-all group">
-          <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-            <Video className="w-5 h-5 text-gray-400 group-hover:text-gray-700 transition-colors" />
-          </div>
-          <span className="text-xs font-semibold text-gray-500 group-hover:text-gray-700 transition-colors">Click to select video</span>
-          <span className="text-[10px] text-gray-400">MP4, MOV, WebM — max 50MB</span>
-          <input
-            type="file"
-            accept="video/mp4,video/quicktime,video/webm,video/x-m4v"
-            className="hidden"
-            onChange={handleVideoFileChange}
-          />
-        </label>
-      )}
-
-      <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-        <p className="text-[10px] text-amber-800 font-semibold leading-relaxed">
-          📱 <strong>Tip:</strong> For best compatibility across all browsers, record in <strong>1080p or less standard quality</strong> (not 4K or ProRes) and share the video as MP4 if possible.
-        </p>
-      </div>
     </div>
 
     {/* Validation Error Message */}
