@@ -7,7 +7,7 @@ import rectangle60 from "../../assets/images/rectangle-60.webp";
 import macbookAir2 from "../../assets/images/macbook-air-2.webp";
 
 // Cloudinary hero image
-const HOME_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1767176149/unnamed-7_j6fal6.webp";
+const HOME_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1788458917/ChatGPT_Image_Sep_3_2026_11_27_18_PM_fy6tlm.webp";
 
 import searchBold from "../../assets/svgs/search-bold.svg";
 import ScrollDownIndicator from "../../components/ScrollDownIndicator";

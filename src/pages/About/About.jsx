@@ -13,7 +13,7 @@ import ScrollDownIndicator from "../../components/ScrollDownIndicator";
 import usePageSEO from "../../hooks/usePageSEO";
 
 // Cloudinary hero image
-const ABOUT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307254/image_6_dal1ii.webp";
+const ABOUT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1788458917/ChatGPT_Image_Sep_3_2026_11_36_35_PM_bhgoo5.webp";
 
 export default function About() {
   usePageSEO({

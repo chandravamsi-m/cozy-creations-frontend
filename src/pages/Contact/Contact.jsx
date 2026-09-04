@@ -16,7 +16,7 @@ import usePageSEO from "../../hooks/usePageSEO";
 import { apiFetch } from "../../lib/api";
 
 // Cloudinary hero image
-const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307253/image_3_i18muy.webp";
+const CONTACT_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1788458917/ChatGPT_Image_Sep_3_2026_11_34_33_PM_lppbvm.webp";
 
 const COLLECTIONS = [
   { label: "Flower Collection", value: "flower" },

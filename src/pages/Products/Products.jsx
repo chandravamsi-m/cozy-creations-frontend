@@ -23,7 +23,7 @@ import agarbattiBg from "../../assets/images/agarbatti_category_bg.png";
 import attarBg from "../../assets/images/attar_category_bg.png";
 
 // Cloudinary hero image
-const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1771307257/image_5_ympux0.webp";
+const PRODUCTS_HERO_IMAGE = "https://res.cloudinary.com/dumkblp3v/image/upload/v1788458916/ChatGPT_Image_Sep_3_2026_11_32_58_PM_hfv8pi.webp";
 
 // COLLECTIONS LIST — Candles
 const CANDLE_COLLECTIONS = {
